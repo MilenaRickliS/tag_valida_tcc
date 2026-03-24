@@ -1,0 +1,9 @@
+fastapi
+uvicorn
+pillow
+ultralytics
+python-multipart
+opencv-python
+scikit-learn 
+matplotlib 
+numpy
