@@ -5,6 +5,9 @@ import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/templates_provider.dart';
 import '../../widgets/menu.dart';
+import './widgets/template_card.dart';
+import './widgets/templates_empty_state.dart';
+import './widgets/templates_header.dart';
 
 class EtiquetasDiariasScreen extends StatefulWidget {
   const EtiquetasDiariasScreen({super.key});
@@ -116,79 +119,8 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
             return const Center(child: CircularProgressIndicator());
           }
 
-          Widget emptyState({
-            required IconData icon,
-            required String title,
-            required String subtitle,
-            required VoidCallback onRefresh,
-          }) {
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(18),
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 520),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: card,
-                          borderRadius: BorderRadius.circular(18),
-                          border: Border.all(color: border),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
-                              blurRadius: 18,
-                              offset: const Offset(0, 10),
-                            ),
-                          ],
-                        ),
-                        child: Icon(
-                          icon,
-                          size: 30,
-                          color: isDark ? gold : const Color(0xFF2B2B2B),
-                        ),
-                      ),
-                      const SizedBox(height: 14),
-                      Text(
-                        title,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: text,
-                        ),
-                      ),
-                      const SizedBox(height: 6),
-                      Text(
-                        subtitle,
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: muted, height: 1.35),
-                      ),
-                      const SizedBox(height: 14),
-                      ElevatedButton.icon(
-                        onPressed: onRefresh,
-                        icon: Icon(Icons.refresh, color: isDark ? Colors.black : Colors.white),
-                        label: const Text("Atualizar"),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: isDark ? gold : const Color(0xFF2B2B2B),
-                          foregroundColor: isDark ? Colors.black : Colors.white,
-                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                          elevation: 0,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            );
-          }
-
           if (p.items.isEmpty) {
-            return emptyState(
+            return TemplatesEmptyState(
               icon: Icons.inventory_2_outlined,
               title: "Nenhum modelo salvo ainda.",
               subtitle:
@@ -216,257 +148,41 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
 
           final isPhone = w < 560;
 
-          Widget buildHeader() {
-            Widget dropdown({
-              required String label,
-              required String? value,
-              required List<String> items,
-              required ValueChanged<String?> onChanged,
-              required IconData icon,
-            }) {
-              return DropdownButtonFormField<String>(
-                value: value,
-                isExpanded: true,
-                dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                style: TextStyle(color: text),
-                decoration: InputDecoration(
-                  labelText: label,
-                  prefixIcon: Icon(
-                    icon,
-                    color: isDark ? gold : const Color(0xFF2B2B2B),
-                  ),
-                  labelStyle: TextStyle(
-                    color: muted,
-                    fontWeight: FontWeight.w600,
-                  ),
-                  floatingLabelStyle: TextStyle(
-                    color: isDark ? gold : const Color(0xFF2B2B2B),
-                    fontWeight: FontWeight.w800,
-                  ),
-                  filled: true,
-                  fillColor: cardAlt,
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(color: border),
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide(
-                      color: isDark ? gold : const Color(0xFF2B2B2B),
-                      width: 1.6,
-                    ),
-                  ),
-                  contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                ),
-                items: [
-                  const DropdownMenuItem<String>(value: null, child: Text("Todos")),
-                  ...items.map(
-                    (e) => DropdownMenuItem<String>(
-                      value: e,
-                      child: Text(e, overflow: TextOverflow.ellipsis),
-                    ),
-                  ),
-                ],
-                onChanged: onChanged,
-              );
-            }
-
-            final search = TextField(
-              controller: _searchCtrl,
-              textInputAction: TextInputAction.search,
-              style: TextStyle(color: text),
-              decoration: InputDecoration(
-                hintText: "Pesquisar por nome do produto...",
-                hintStyle: TextStyle(color: muted),
-                prefixIcon: Icon(
-                  Icons.search,
-                  color: isDark ? gold : const Color(0xFF2B2B2B),
-                ),
-                suffixIcon: (_query.isEmpty)
-                    ? null
-                    : IconButton(
-                        tooltip: "Limpar",
-                        onPressed: () {
-                          _searchCtrl.clear();
-                          FocusManager.instance.primaryFocus?.unfocus();
-                        },
-                        icon: Icon(
-                          Icons.close,
-                          color: isDark ? gold : const Color(0xFF2B2B2B),
-                        ),
-                      ),
-                filled: true,
-                fillColor: cardAlt,
-                border: OutlineInputBorder(borderRadius: BorderRadius.circular(16)),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(color: border),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(16),
-                  borderSide: BorderSide(
-                    color: isDark ? gold : const Color(0xFF2B2B2B),
-                    width: 1.6,
-                  ),
-                ),
-                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
-              ),
-            );
-
-            final filters = LayoutBuilder(
-              builder: (context, c) {
-                final wide = c.maxWidth >= 900;
-
-                if (wide) {
-                  return Row(
-                    children: [
-                      Expanded(child: search),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: dropdown(
-                          label: "Setor",
-                          icon: Icons.storefront_outlined,
-                          value: _setorSel,
-                          items: setores,
-                          onChanged: (v) => setState(() => _setorSel = v),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: dropdown(
-                          label: "Categoria",
-                          icon: Icons.category_outlined,
-                          value: _categoriaSel,
-                          items: categorias,
-                          onChanged: (v) => setState(() => _categoriaSel = v),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      _ClearFiltersButton(
-                        enabled: _query.isNotEmpty || _setorSel != null || _categoriaSel != null,
-                        onPressed: _clearAll,
-                      ),
-                    ],
-                  );
-                }
-
-                return Column(
-                  children: [
-                    search,
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: dropdown(
-                            label: "Setor",
-                            icon: Icons.storefront_outlined,
-                            value: _setorSel,
-                            items: setores,
-                            onChanged: (v) => setState(() => _setorSel = v),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: dropdown(
-                            label: "Categoria",
-                            icon: Icons.category_outlined,
-                            value: _categoriaSel,
-                            items: categorias,
-                            onChanged: (v) => setState(() => _categoriaSel = v),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: _ClearFiltersButton(
-                        enabled: _query.isNotEmpty || _setorSel != null || _categoriaSel != null,
-                        onPressed: _clearAll,
-                      ),
-                    ),
-                  ],
-                );
-              },
-            );
-
-            return Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: card,
-                borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: border),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
-                  ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    "Etiquetas diárias",
-                    style: TextStyle(
-                      fontSize: 22,
-                      fontWeight: FontWeight.w900,
-                      color: text,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    "Escolha um molde para criar uma nova etiqueta no estoque de forma rápida.",
-                    style: TextStyle(color: muted, height: 1.35),
-                  ),
-                  const SizedBox(height: 14),
-                  filters,
-                  const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: cardAlt,
-                          borderRadius: BorderRadius.circular(999),
-                          border: Border.all(color: border),
-                        ),
-                        child: Text(
-                          "${filtered.length} item(ns)",
-                          style: TextStyle(
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? gold : text,
-                          ),
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        tooltip: "Recarregar",
-                        onPressed: () => p.fetch(uid),
-                        icon: Icon(
-                          Icons.refresh,
-                          color: isDark ? gold : text,
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }
-
           return CustomScrollView(
             slivers: [
               SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
-                sliver: SliverToBoxAdapter(child: buildHeader()),
+                sliver: SliverToBoxAdapter(
+                  child: TemplatesHeader(
+                    isDark: isDark,
+                    card: card,
+                    cardAlt: cardAlt,
+                    text: text,
+                    muted: muted,
+                    border: border,
+                    gold: gold,
+                    searchCtrl: _searchCtrl,
+                    query: _query,
+                    setorSel: _setorSel,
+                    categoriaSel: _categoriaSel,
+                    setores: setores,
+                    categorias: categorias,
+                    filteredCount: filtered.length,
+                    onRefresh: () => p.fetch(uid),
+                    onClearAll: _clearAll,
+                    onSetorChanged: (v) => setState(() => _setorSel = v),
+                    onCategoriaChanged: (v) => setState(() => _categoriaSel = v),
+                    onClearSearch: () {
+                      _searchCtrl.clear();
+                      FocusManager.instance.primaryFocus?.unfocus();
+                    },
+                  ),
+                ),
               ),
               if (filtered.isEmpty)
                 SliverFillRemaining(
                   hasScrollBody: false,
-                  child: emptyState(
+                  child: TemplatesEmptyState(
                     icon: Icons.search_off_rounded,
                     title: "Nada por aqui…",
                     subtitle: "Tente ajustar a pesquisa ou limpe os filtros.",
@@ -481,7 +197,7 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
                     separatorBuilder: (_, __) => const SizedBox(height: 12),
                     itemBuilder: (_, i) {
                       final t = filtered[i];
-                      return _TemplateCard(
+                      return TemplateCard(
                         dense: true,
                         produtoNome: t.produtoNome,
                         linha2: "${t.tipoNome} • ${t.categoriaNome}",
@@ -513,7 +229,7 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
                     delegate: SliverChildBuilderDelegate(
                       (context, i) {
                         final t = filtered[i];
-                        return _TemplateCard(
+                        return TemplateCard(
                           dense: false,
                           produtoNome: t.produtoNome,
                           linha2: "${t.tipoNome} • ${t.categoriaNome}",
@@ -537,356 +253,6 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
             ],
           );
         },
-      ),
-    );
-  }
-}
-
-class _ClearFiltersButton extends StatelessWidget {
-  final bool enabled;
-  final VoidCallback onPressed;
-
-  const _ClearFiltersButton({
-    required this.enabled,
-    required this.onPressed,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final border = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.16)
-        : Colors.black.withOpacity(0.12);
-    final fg = isDark ? const Color(0xFFD4AF37) : const Color(0xFF2B2B2B);
-    final bg = isDark ? const Color(0xFF1E1E1E) : Colors.transparent;
-
-    return OutlinedButton.icon(
-      onPressed: enabled ? onPressed : null,
-      icon: const Icon(Icons.filter_alt_off_outlined, size: 18),
-      label: const Text("Limpar"),
-      style: OutlinedButton.styleFrom(
-        foregroundColor: fg,
-        backgroundColor: bg,
-        side: BorderSide(color: border),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-      ),
-    );
-  }
-}
-
-class _TemplateCard extends StatefulWidget {
-  final String produtoNome;
-  final String linha2;
-  final String linha3;
-  final VoidCallback onTap;
-  final VoidCallback onDelete;
-  final bool dense;
-
-  const _TemplateCard({
-    required this.produtoNome,
-    required this.linha2,
-    required this.linha3,
-    required this.onTap,
-    required this.onDelete,
-    required this.dense,
-  });
-
-  @override
-  State<_TemplateCard> createState() => _TemplateCardState();
-}
-
-class _TemplateCardState extends State<_TemplateCard> {
-  bool _hover = false;
-  bool _pressed = false;
-
-  Future<bool> _confirmDelete(BuildContext context) async {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final text = isDark ? Colors.white : const Color(0xFF2B2B2B);
-    final border = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.16)
-        : Colors.black.withOpacity(0.12);
-    final cancelColor = isDark ? const Color(0xFFD4AF37) : const Color(0xFF2B2B2B);
-
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (_) => AlertDialog(
-        backgroundColor: card,
-        surfaceTintColor: Colors.transparent,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
-        title: Row(
-          children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: Colors.red.withOpacity(0.12),
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(color: Colors.red.withOpacity(0.22)),
-              ),
-              child: const Icon(Icons.delete_outline, color: Colors.red),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Text(
-                "Excluir template?",
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: text,
-                ),
-              ),
-            ),
-          ],
-        ),
-        content: Text(
-          "Isso remove o modelo diário salvo. Você pode criar novamente depois, se precisar.",
-          style: TextStyle(color: isDark ? const Color(0xFFD6D6D6) : null),
-        ),
-        actions: [
-          OutlinedButton(
-            onPressed: () => Navigator.pop(context, false),
-            style: OutlinedButton.styleFrom(
-              foregroundColor: cancelColor,
-              side: BorderSide(color: border),
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-            ),
-            child: const Text("Cancelar"),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-              elevation: 0,
-            ),
-            child: const Text("Excluir"),
-          ),
-        ],
-      ),
-    );
-    return ok ?? false;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final card = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final text = isDark ? Colors.white : const Color(0xFF2B2B2B);
-    final muted = isDark ? const Color(0xFFD6D6D6) : Colors.black.withOpacity(0.75);
-    final border = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.16)
-        : Colors.black.withOpacity(0.06);
-    final gold = const Color(0xFFD4AF37);
-
-    final scale = _pressed ? 0.985 : (_hover ? 1.01 : 1.0);
-    final dy = _hover ? -2.0 : 0.0;
-
-    final parts = widget.linha2.split("•").map((e) => e.trim()).toList();
-    final tipo = parts.isNotEmpty ? parts.first : widget.linha2;
-    final categoria = parts.length > 1 ? parts[1] : "";
-    final setor = widget.linha3;
-
-    Widget infoRow({
-      required IconData icon,
-      required String label,
-      required String value,
-    }) {
-      if (value.trim().isEmpty) return const SizedBox.shrink();
-
-      return Padding(
-        padding: const EdgeInsets.only(top: 6),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(
-              icon,
-              size: 15,
-              color: isDark ? gold : Colors.black.withOpacity(0.55),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: RichText(
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                text: TextSpan(
-                  style: TextStyle(
-                    color: muted,
-                    fontSize: 13.5,
-                    height: 1.3,
-                  ),
-                  children: [
-                    TextSpan(
-                      text: "$label: ",
-                      style: TextStyle(
-                        fontWeight: FontWeight.w800,
-                        color: text,
-                      ),
-                    ),
-                    const TextSpan(
-                      text: "",
-                    ),
-                    TextSpan(
-                      text: value,
-                      style: const TextStyle(
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
-
-    return MouseRegion(
-      cursor: SystemMouseCursors.click,
-      onEnter: (_) => setState(() => _hover = true),
-      onExit: (_) => setState(() {
-        _hover = false;
-        _pressed = false;
-      }),
-      child: GestureDetector(
-        onTap: widget.onTap,
-        onTapDown: (_) => setState(() => _pressed = true),
-        onTapCancel: () => setState(() => _pressed = false),
-        onTapUp: (_) => setState(() => _pressed = false),
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 180),
-          curve: Curves.easeOut,
-          transform: Matrix4.identity()..translate(0.0, dy)..scale(scale),
-          decoration: BoxDecoration(
-            color: card,
-            borderRadius: BorderRadius.circular(18),
-            border: Border.all(
-              color: _hover
-                  ? (isDark ? gold.withOpacity(0.25) : Colors.black.withOpacity(0.10))
-                  : border,
-              width: _hover ? 1.2 : 1.0,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(_hover ? (isDark ? 0.22 : 0.08) : (isDark ? 0.18 : 0.05)),
-                blurRadius: _hover ? 26 : 18,
-                offset: const Offset(0, 12),
-              ),
-            ],
-          ),
-          child: Padding(
-            padding: EdgeInsets.all(widget.dense ? 12 : 10),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: widget.dense ? 46 : 52,
-                  height: widget.dense ? 46 : 52,
-                  decoration: BoxDecoration(
-                    color: isDark ? gold : const Color(0xFF428E2E),
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: (isDark ? gold : const Color(0xFF428E2E)).withOpacity(0.22),
-                        blurRadius: 14,
-                        offset: const Offset(0, 6),
-                      ),
-                    ],
-                  ),
-                  child: Icon(
-                    Icons.add,
-                    color: isDark ? Colors.black : Colors.white,
-                    size: 22,
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Expanded(
-                            child: Text(
-                              widget.produtoNome,
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontWeight: FontWeight.w900,
-                                fontSize: widget.dense ? 15.5 : 16.8,
-                                height: 1.15,
-                                color: text,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          PopupMenuButton<String>(
-                            tooltip: "Opções",
-                            color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-                            surfaceTintColor: Colors.transparent,
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                            padding: EdgeInsets.zero,
-                            splashRadius: 20,
-                            iconSize: 20,
-                            icon: Icon(
-                              Icons.more_horiz,
-                              color: isDark ? gold : const Color(0xFF2B2B2B),
-                            ),
-                            onSelected: (v) async {
-                              if (v == "delete") {
-                                final ok = await _confirmDelete(context);
-                                if (ok) widget.onDelete();
-                              }
-                            },
-                            itemBuilder: (_) => [
-                              PopupMenuItem<String>(
-                                value: "delete",
-                                child: Row(
-                                  children: [
-                                    const Icon(Icons.delete_outline, color: Colors.red),
-                                    const SizedBox(width: 10),
-                                    Text(
-                                      "Excluir",
-                                      style: TextStyle(
-                                        color: isDark ? Colors.white : const Color(0xFF2B2B2B),
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
-                      infoRow(
-                        icon: Icons.local_offer_outlined,
-                        label: "Tipo",
-                        value: tipo,
-                      ),
-                      infoRow(
-                        icon: Icons.category_outlined,
-                        label: "Categoria",
-                        value: categoria,
-                      ),
-                      infoRow(
-                        icon: Icons.storefront_outlined,
-                        label: "Setor",
-                        value: setor,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

@@ -8,6 +8,9 @@ import '../../providers/tipos_etiqueta_local_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/tipo_etiqueta_model.dart';
 import '../../widgets/menu.dart';
+import './widgets/tipos_etiqueta_list.dart';
+import './widgets/novo_tipo_fab.dart';
+import './widgets/campo_custom_section.dart';
 
 final _nomeDeny = FilteringTextInputFormatter.deny(
   RegExp(r"[^0-9A-Za-zÀ-ÖØ-öø-ÿÇç ]"),
@@ -142,50 +145,13 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                 ],
               ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.28 : 0.10),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          backgroundColor: fabBg,
-          foregroundColor: fabFg,
-          elevation: 0,
-          onPressed: () => _openTipoDialog(context, uid),
-          icon: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: brand,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.add,
-              color: isDark ? Colors.black : Colors.white,
-              size: 20,
-            ),
-          ),
-          label: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 14),
-            child: Text(
-              "Novo tipo",
-              style: TextStyle(
-                fontWeight: FontWeight.w800,
-                color: fabFg,
-              ),
-            ),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: fabBorder),
-          ),
-        ),
+      floatingActionButton: NovoTipoFab(
+        isDark: isDark,
+        brand: brand,
+        backgroundColor: fabBg,
+        foregroundColor: fabFg,
+        borderColor: fabBorder,
+        onPressed: () => _openTipoDialog(context, uid),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -209,35 +175,13 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                   style: TextStyle(color: muted),
                 ),
                 const SizedBox(height: 16),
-                if (prov.loading)
-                  const Expanded(
-                    child: Center(child: CircularProgressIndicator()),
-                  )
-                else if (prov.items.isEmpty)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        "Nenhum tipo cadastrado ainda.\nClique em “Novo tipo”.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: muted),
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: prov.items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, i) {
-                        final t = prov.items[i];
-                        return _TipoCard(
-                          tipo: t,
-                          onEdit: () => _openTipoDialog(context, uid, tipo: t),
-                          onDelete: () => _confirmDelete(context, uid, t),
-                        );
-                      },
-                    ),
-                  ),
+                TiposEtiquetaList(
+                  loading: prov.loading,
+                  items: prov.items,
+                  mutedColor: muted,
+                  onEdit: (t) => _openTipoDialog(context, uid, tipo: t),
+                  onDelete: (t) => _confirmDelete(context, uid, t),
+                ),
               ],
             ),
           ),
@@ -434,6 +378,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                       ),
                       const SizedBox(height: 12),
                     ],
+                    const SizedBox(height: 12),
                     TextField(
                       controller: nomeCtrl,
                       style: TextStyle(color: text),
@@ -441,7 +386,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                       inputFormatters: [
                         const TitleCaseEachWordFormatter(),
                         _nomeDeny,
-                        LengthLimitingTextInputFormatter(60),
+                        LengthLimitingTextInputFormatter(40),
                       ],
                       decoration: _inputDecoration(
                         isDark: isDark,
@@ -561,158 +506,41 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                         ),
                       ),
                     ),
-                    const SizedBox(height: 18),
-                    Container(
-                      padding: const EdgeInsets.all(12),
-                      decoration: BoxDecoration(
-                        color: sectionBg,
-                        borderRadius: BorderRadius.circular(16),
-                        border: Border.all(color: border),
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  "Campos personalizados",
-                                  style: TextStyle(
-                                    fontSize: 16,
-                                    fontWeight: FontWeight.w900,
-                                    color: text,
-                                  ),
-                                ),
-                              ),
-                              ElevatedButton.icon(
-                                onPressed: () async {
-                                  final novo = await _openCampoDialog(context, campo: null);
-                                  if (novo != null) {
-                                    setLocal(() => campos.add(novo));
-                                  }
-                                },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: brand,
-                                  foregroundColor: onBrand,
-                                  elevation: 0,
-                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(14),
-                                  ),
-                                ),
-                                icon: Icon(Icons.add, color: onBrand),
-                                label: const Text(
-                                  "Adicionar",
-                                  style: TextStyle(fontWeight: FontWeight.w900),
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            "Adicione campos que você quer preencher ao criar etiquetas (ex: Lote, Peso, Observações).",
-                            style: TextStyle(color: muted),
-                          ),
-                          const SizedBox(height: 12),
-                          if (campos.isEmpty)
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: fieldBg,
-                                borderRadius: BorderRadius.circular(12),
-                                border: Border.all(color: border),
-                              ),
-                              child: Text(
-                                "Nenhum campo adicional.\nToque em “Adicionar” para criar o primeiro.",
-                                style: TextStyle(color: muted),
-                              ),
-                            )
-                          else
-                            ReorderableListView.builder(
-                              shrinkWrap: true,
-                              physics: const NeverScrollableScrollPhysics(),
-                              itemCount: campos.length,
-                              onReorder: (oldIndex, newIndex) {
-                                setLocal(() {
-                                  if (newIndex > oldIndex) newIndex--;
-                                  final item = campos.removeAt(oldIndex);
-                                  campos.insert(newIndex, item);
-                                });
-                              },
-                              itemBuilder: (context, i) {
-                                final c = campos[i];
-                                return Container(
-                                  key: ValueKey("${c.key}-$i"),
-                                  margin: const EdgeInsets.only(bottom: 10),
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: fieldBg,
-                                    borderRadius: BorderRadius.circular(14),
-                                    border: Border.all(color: border),
-                                  ),
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.drag_handle,
-                                        color: muted,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Expanded(
-                                        child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
-                                          children: [
-                                            Text(
-                                              "${c.label}${c.obrigatorio ? " *" : ""}",
-                                              style: TextStyle(
-                                                fontWeight: FontWeight.w900,
-                                                color: text,
-                                              ),
-                                            ),
-                                            const SizedBox(height: 4),
-                                            Text(
-                                              "Chave: ${c.key} • Tipo: ${_campoTipoLabel(c.tipo)}",
-                                              style: TextStyle(color: muted),
-                                            ),
-                                            const SizedBox(height: 2),
-                                            Text(
-                                              _campoTipoHint(c.tipo),
-                                              style: TextStyle(
-                                                color: muted,
-                                                fontSize: 12,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
-                                      IconButton(
-                                        tooltip: "Editar campo",
-                                        onPressed: () async {
-                                          final editado = await _openCampoDialog(context, campo: c);
-                                          if (editado != null) {
-                                            setLocal(() => campos[i] = editado);
-                                          }
-                                        },
-                                        icon: Icon(
-                                          Icons.edit_outlined,
-                                          color: isDark ? brand : null,
-                                        ),
-                                      ),
-                                      IconButton(
-                                        tooltip: "Remover campo",
-                                        onPressed: () => setLocal(() => campos.removeAt(i)),
-                                        icon: const Icon(
-                                          Icons.delete_outline,
-                                          color: Colors.red,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                );
-                              },
-                            ),
-                        ],
-                      ),
+                   const SizedBox(height: 18),
+                    CampoCustomSection(
+                      campos: campos,
+                      sectionBg: sectionBg,
+                      fieldBg: fieldBg,
+                      borderColor: border,
+                      textColor: text,
+                      mutedColor: muted,
+                      brandColor: brand,
+                      onBrandColor: onBrand,
+                      isDark: isDark,
+                      onAdd: () async {
+                        final novo = await _openCampoDialog(context, campo: null);
+                        if (novo != null) {
+                          setLocal(() => campos.add(novo));
+                        }
+                      },
+                      onEdit: (index, campo) async {
+                        final editado = await _openCampoDialog(context, campo: campo);
+                        if (editado != null) {
+                          setLocal(() => campos[index] = editado);
+                        }
+                      },
+                      onRemove: (index) {
+                        setLocal(() => campos.removeAt(index));
+                      },
+                      onReorder: (oldIndex, newIndex) {
+                        setLocal(() {
+                          if (newIndex > oldIndex) newIndex--;
+                          final item = campos.removeAt(oldIndex);
+                          campos.insert(newIndex, item);
+                        });
+                      },
+                      campoTipoLabel: _campoTipoLabel,
+                      campoTipoHint: _campoTipoHint,
                     ),
                   ],
                 ),
@@ -1252,81 +1080,3 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
   }
 }
 
-class _TipoCard extends StatelessWidget {
-  final TipoEtiquetaModel tipo;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _TipoCard({
-    required this.tipo,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final count = tipo.camposCustom.length;
-    final card = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final border = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.16)
-        : Colors.black.withOpacity(0.07);
-    final text = isDark ? Colors.white : const Color(0xFF2B2B2B);
-    final muted = isDark ? const Color(0xFFD6D6D6) : Colors.black.withOpacity(0.62);
-    final iconColor = isDark ? const Color(0xFFD4AF37) : null;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: border),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.24 : 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.layers_outlined, color: iconColor),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  tipo.nome,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: text,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  "$count campo(s) • validade automática: ${tipo.usarRegraValidadeCategoria ? "sim" : "não"} • lote: ${tipo.controlaLote ? "sim" : "não"}",
-                  style: TextStyle(color: muted),
-                ),
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: onEdit,
-            icon: Icon(
-              Icons.edit_outlined,
-              color: isDark ? const Color(0xFFD4AF37) : null,
-            ),
-          ),
-          IconButton(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-          ),
-        ],
-      ),
-    );
-  }
-}

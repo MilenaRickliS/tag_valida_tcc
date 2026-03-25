@@ -2,18 +2,27 @@
 
 import 'dart:typed_data';
 import 'dart:ui' as ui;
-
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/rendering.dart';
 import 'package:pdf/pdf.dart';
-import '../../widgets/menu.dart';
 import '../../providers/estoque_mov_local_provider.dart';
 import '../../models/estoque_mov_model.dart';
+import '../../widgets/menu.dart';
+import './widgets/chart_only_bar.dart';
+import './widgets/chart_only_pie.dart';
+import './widgets/charts_row.dart';
+import './widgets/header_actions.dart';
+import './widgets/insight_line.dart';
+import './widgets/kpi_grid.dart';
+import './widgets/mov_list.dart';
+import './widgets/rankings_row.dart';
+import './widgets/section_card.dart';
+import './models/named_value.dart';
+
 
 class RelatoriosScreen extends StatefulWidget {
   final String uid;
@@ -278,7 +287,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                   child: ListView(
                     padding: const EdgeInsets.fromLTRB(16, 10, 16, 24),
                     children: [
-                      _HeaderActions(
+                      HeaderActions(
                         isPhone: isPhone,
                         title: 'Relatórios',
                         subtitle: periodLabel,
@@ -286,14 +295,14 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                         onExportPdf: _exportPdf,
                       ),
                       const SizedBox(height: 14),
-                      _KpiGrid(kpis: kpis),
+                      KpiGrid(kpis: kpis),
                       const SizedBox(height: 14),
-                      _SectionCard(
+                      SectionCard(
                         title: 'Insights rápidos',
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            _InsightLine(
+                            InsightLine(
                               label: 'Produto mais vendido',
                               value: topSold.isEmpty
                                   ? '—'
@@ -304,7 +313,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                                   RelatorioCores.fg(EstoqueMovModel.tipoVenda),
                             ),
                             const SizedBox(height: 8),
-                            _InsightLine(
+                            InsightLine(
                               label: 'Produto com mais perda',
                               value: topLost.isEmpty
                                   ? '—'
@@ -315,7 +324,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                                   EstoqueMovModel.tipoExclusao),
                             ),
                             const SizedBox(height: 8),
-                            _InsightLine(
+                            InsightLine(
                               label: 'Total de movimentações no período',
                               value: '${_filtered.length}',
                             ),
@@ -323,20 +332,20 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                         ),
                       ),
                       const SizedBox(height: 14),
-                      _ChartsRow(
+                      ChartsRow(
                         pieKey: _pieKey,
                         barKey: _barKey,
                         movs: _filtered,
                       ),
                       const SizedBox(height: 14),
-                      _RankingsRow(
+                      RankingsRow(
                         topSold: topSold,
                         topLost: topLost,
                       ),
                       const SizedBox(height: 14),
-                      _SectionCard(
+                      SectionCard(
                         title: 'Movimentações (últimas do período)',
-                        child: _MovList(movs: _filtered.take(25).toList()),
+                        child: MovList(movs: _filtered.take(25).toList()),
                       ),
                     ],
                   ),
@@ -355,12 +364,12 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                   children: [
                     RepaintBoundary(
                       key: _pieKeyPrint,
-                      child: _ChartOnlyPie(movs: _filtered),
+                      child: ChartOnlyPie(movs: _filtered),
                     ),
                     const SizedBox(height: 12),
                     RepaintBoundary(
                       key: _barKeyPrint,
-                      child: _ChartOnlyBar(movs: _filtered),
+                      child: ChartOnlyBar(movs: _filtered),
                     ),
                   ],
                 ),
@@ -449,7 +458,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
     }
   }
 
-  List<_NamedValue> _topByType(List<EstoqueMovModel> movs, String tipo,
+  List<NamedValue> _topByType(List<EstoqueMovModel> movs, String tipo,
       {int topN = 5}) {
     final map = <String, num>{};
     for (final m in movs) {
@@ -459,12 +468,12 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
           : 'Sem nome';
       map[name] = (map[name] ?? 0) + m.quantidade;
     }
-    final list = map.entries.map((e) => _NamedValue(e.key, e.value)).toList()
+    final list = map.entries.map((e) => NamedValue(e.key, e.value)).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return list.take(topN).toList();
   }
 
-  List<_NamedValue> _topLosses(List<EstoqueMovModel> movs, {int topN = 5}) {
+  List<NamedValue> _topLosses(List<EstoqueMovModel> movs, {int topN = 5}) {
     final map = <String, num>{};
     for (final m in movs) {
       final isLoss = m.tipo == EstoqueMovModel.tipoCancelamento ||
@@ -475,7 +484,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
           : 'Sem nome';
       map[name] = (map[name] ?? 0) + m.quantidade;
     }
-    final list = map.entries.map((e) => _NamedValue(e.key, e.value)).toList()
+    final list = map.entries.map((e) => NamedValue(e.key, e.value)).toList()
       ..sort((a, b) => b.value.compareTo(a.value));
     return list.take(topN).toList();
   }
@@ -612,7 +621,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
     return doc.save();
   }
 
-  pw.Widget _pdfRankTable(List<_NamedValue> items) {
+  pw.Widget _pdfRankTable(List<NamedValue> items) {
     if (items.isEmpty) return pw.Text('Sem dados no período.');
     return pw.Table(
       border: pw.TableBorder.all(width: 0.5),
@@ -695,829 +704,3 @@ class RelatorioCores {
   static Color solid(String tipo) => fg(tipo);
 }
 
-class _NamedValue {
-  final String name;
-  final num value;
-  _NamedValue(this.name, this.value);
-}
-
-class _HeaderActions extends StatelessWidget {
-  final bool isPhone;
-  final String title;
-  final String subtitle;
-  final VoidCallback onPickRange;
-  final VoidCallback onExportPdf;
-
-  const _HeaderActions({
-    required this.isPhone,
-    required this.title,
-    required this.subtitle,
-    required this.onPickRange,
-    required this.onExportPdf,
-  });
-
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
-
-  @override
-  Widget build(BuildContext context) {
-    final accent =
-        _isDark(context) ? const Color(0xFFD4AF37) : const Color(0xff428e2e);
-
-    final trailing = Wrap(
-      spacing: 10,
-      runSpacing: 10,
-      children: [
-        OutlinedButton.icon(
-          onPressed: onPickRange,
-          style: OutlinedButton.styleFrom(
-            side: BorderSide(color: accent),
-            foregroundColor: accent,
-          ),
-          icon: Icon(Icons.date_range, color: accent),
-          label: Text('Período', style: TextStyle(color: accent)),
-        ),
-        FilledButton.icon(
-          onPressed: onExportPdf,
-          style: FilledButton.styleFrom(
-            backgroundColor: accent,
-            foregroundColor: _isDark(context) ? Colors.black : Colors.white,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(12),
-            ),
-          ),
-          icon: const Icon(Icons.picture_as_pdf),
-          label: const Text('Salvar PDF'),
-        ),
-      ],
-    );
-
-    return _SectionCard(
-      title: title,
-      trailing: isPhone ? null : trailing,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            subtitle,
-            style: TextStyle(
-              fontSize: 14,
-              color: _isDark(context)
-                  ? const Color(0xFFD6D6D6)
-                  : const Color(0xFF6B5E4B),
-            ),
-          ),
-          if (isPhone) ...[
-            const SizedBox(height: 12),
-            Align(alignment: Alignment.centerLeft, child: trailing),
-          ],
-        ],
-      ),
-    );
-  }
-}
-
-class _KpiGrid extends StatelessWidget {
-  final Map<String, num> kpis;
-  const _KpiGrid({required this.kpis});
-
-  @override
-  Widget build(BuildContext context) {
-    final entries = kpis.entries.toList();
-
-    String tipoForLabel(String label) {
-      switch (label) {
-        case 'Entradas':
-          return EstoqueMovModel.tipoEntrada;
-        case 'Vendas':
-          return EstoqueMovModel.tipoVenda;
-        case 'Cancelamentos':
-          return EstoqueMovModel.tipoCancelamento;
-        case 'Exclusões':
-          return EstoqueMovModel.tipoExclusao;
-        case 'Perdas':
-          return EstoqueMovModel.tipoExclusao;
-        case 'Saldo':
-          return EstoqueMovModel.tipoEntrada;
-        case 'Ajuste Entrada':
-          try {
-            return EstoqueMovModel.tipoAjusteEntrada;
-          } catch (_) {
-            return EstoqueMovModel.tipoEntrada;
-          }
-        case 'Ajuste Saída':
-          try {
-            return EstoqueMovModel.tipoAjusteSaida;
-          } catch (_) {
-            return EstoqueMovModel.tipoCancelamento;
-          }
-        default:
-          return EstoqueMovModel.tipoEntrada;
-      }
-    }
-
-    return LayoutBuilder(
-      builder: (context, c) {
-        final cols = c.maxWidth < 650 ? 2 : 3;
-        return GridView.builder(
-          shrinkWrap: true,
-          physics: const NeverScrollableScrollPhysics(),
-          itemCount: entries.length,
-          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-            crossAxisCount: cols,
-            mainAxisSpacing: 12,
-            crossAxisSpacing: 12,
-            childAspectRatio: 2.6,
-          ),
-          itemBuilder: (context, i) {
-            final e = entries[i];
-            final tipo = tipoForLabel(e.key);
-            return _KpiCard(
-              label: e.key,
-              value: e.value,
-              bg: RelatorioCores.bg(tipo),
-              fg: RelatorioCores.fg(tipo),
-            );
-          },
-        );
-      },
-    );
-  }
-}
-
-class _KpiCard extends StatelessWidget {
-  final String label;
-  final num value;
-  final Color bg;
-  final Color fg;
-
-  const _KpiCard({
-    required this.label,
-    required this.value,
-    required this.bg,
-    required this.fg,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final v =
-        (value % 1 == 0) ? value.toInt().toString() : value.toStringAsFixed(2);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: fg.withOpacity(0.18)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: fg.withOpacity(0.14),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(_iconFor(label), color: fg, size: 18),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: fg.withOpacity(0.95),
-                    fontWeight: FontWeight.w800,
-                  ),
-                ),
-                const SizedBox(height: 6),
-                Text(
-                  v,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: fg,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  IconData _iconFor(String label) {
-    switch (label) {
-      case 'Entradas':
-        return Icons.add_circle_outline;
-      case 'Vendas':
-        return Icons.shopping_cart_outlined;
-      case 'Cancelamentos':
-        return Icons.cancel_outlined;
-      case 'Exclusões':
-        return Icons.delete_outline;
-      case 'Perdas':
-        return Icons.warning_amber_rounded;
-      case 'Saldo':
-        return Icons.account_balance_wallet_outlined;
-      case 'Ajuste Entrada':
-        return Icons.tune;
-      case 'Ajuste Saída':
-        return Icons.tune;
-      default:
-        return Icons.analytics_outlined;
-    }
-  }
-}
-
-class _ChartsRow extends StatelessWidget {
-  final GlobalKey pieKey;
-  final GlobalKey barKey;
-  final List<EstoqueMovModel> movs;
-
-  const _ChartsRow({
-    required this.pieKey,
-    required this.barKey,
-    required this.movs,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final byType = <String, num>{};
-    for (final m in movs) {
-      byType[m.tipo] = (byType[m.tipo] ?? 0) + m.quantidade;
-    }
-
-    final total = byType.values.fold<num>(0, (a, b) => a + b);
-    final entries = byType.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return LayoutBuilder(
-      builder: (context, c) {
-        final isNarrow = c.maxWidth < 900;
-
-        final pieCard = _SectionCard(
-          title: 'Distribuição por tipo',
-          child: RepaintBoundary(
-            key: pieKey,
-            child: SizedBox(
-              height: 240,
-              child: total == 0
-                  ? const Center(child: Text('Sem dados no período'))
-                  : PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 48,
-                        sections: List.generate(entries.length, (i) {
-                          final e = entries[i];
-                          final pct = total == 0 ? 0 : (e.value / total * 100);
-                          final color = RelatorioCores.solid(e.key);
-                          return PieChartSectionData(
-                            value: e.value.toDouble(),
-                            title: '${e.key}\n${pct.toStringAsFixed(0)}%',
-                            radius: 78,
-                            color: color,
-                            titleStyle: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
-            ),
-          ),
-        );
-
-        final barCard = _SectionCard(
-          title: 'Top vendidos (barras)',
-          child: RepaintBoundary(
-            key: barKey,
-            child: SizedBox(height: 240, child: _TopSoldBarChart(movs: movs)),
-          ),
-        );
-
-        if (isNarrow) {
-          return Column(
-            children: [pieCard, const SizedBox(height: 12), barCard],
-          );
-        }
-
-        return Row(
-          children: [
-            Expanded(child: pieCard),
-            const SizedBox(width: 12),
-            Expanded(child: barCard),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _TopSoldBarChart extends StatelessWidget {
-  final List<EstoqueMovModel> movs;
-  const _TopSoldBarChart({required this.movs});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    final map = <String, num>{};
-    for (final m in movs) {
-      if (m.tipo != EstoqueMovModel.tipoVenda) continue;
-      final name = (m.produtoNome?.trim().isNotEmpty ?? false)
-          ? m.produtoNome!.trim()
-          : 'Sem nome';
-      map[name] = (map[name] ?? 0) + m.quantidade;
-    }
-
-    final list = map.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final top = list.take(6).toList();
-
-    if (top.isEmpty) {
-      return const Center(child: Text('Sem vendas no período'));
-    }
-
-    final rodColor = RelatorioCores.solid(EstoqueMovModel.tipoVenda);
-    final axisColor = isDark ? Colors.white70 : Colors.black87;
-    final gridColor = isDark ? Colors.white12 : Colors.black12;
-
-    return BarChart(
-      BarChartData(
-        gridData: FlGridData(show: true, getDrawingHorizontalLine: (_) {
-          return FlLine(color: gridColor, strokeWidth: 1);
-        }),
-        borderData: FlBorderData(show: false),
-        titlesData: FlTitlesData(
-          topTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          rightTitles: const AxisTitles(sideTitles: SideTitles(showTitles: false)),
-          leftTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              reservedSize: 34,
-              getTitlesWidget: (value, meta) {
-                return Text(
-                  value.toInt().toString(),
-                  style: TextStyle(
-                    color: axisColor,
-                    fontSize: 11,
-                    fontWeight: FontWeight.w700,
-                  ),
-                );
-              },
-            ),
-          ),
-          bottomTitles: AxisTitles(
-            sideTitles: SideTitles(
-              showTitles: true,
-              getTitlesWidget: (value, meta) {
-                final i = value.toInt();
-                if (i < 0 || i >= top.length) return const SizedBox.shrink();
-                final name = top[i].key;
-                final short =
-                    name.length > 10 ? '${name.substring(0, 10)}…' : name;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 6),
-                  child: Text(
-                    short,
-                    style: TextStyle(
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700,
-                      color: axisColor,
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-        barGroups: List.generate(top.length, (i) {
-          return BarChartGroupData(
-            x: i,
-            barRods: [
-              BarChartRodData(
-                toY: top[i].value.toDouble(),
-                width: 16,
-                color: rodColor,
-                borderRadius: BorderRadius.circular(8),
-              )
-            ],
-          );
-        }),
-      ),
-    );
-  }
-}
-
-class _RankingsRow extends StatelessWidget {
-  final List<_NamedValue> topSold;
-  final List<_NamedValue> topLost;
-
-  const _RankingsRow({required this.topSold, required this.topLost});
-
-  @override
-  Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, c) {
-        final isNarrow = c.maxWidth < 900;
-
-        final soldCard = _SectionCard(
-          title: 'Top 5 vendidos',
-          child: _RankList(items: topSold, tipo: EstoqueMovModel.tipoVenda),
-        );
-
-        final lostCard = _SectionCard(
-          title: 'Top 5 perdas',
-          child: _RankList(items: topLost, tipo: EstoqueMovModel.tipoExclusao),
-        );
-
-        if (isNarrow) {
-          return Column(
-            children: [soldCard, const SizedBox(height: 12), lostCard],
-          );
-        }
-        return Row(
-          children: [
-            Expanded(child: soldCard),
-            const SizedBox(width: 12),
-            Expanded(child: lostCard),
-          ],
-        );
-      },
-    );
-  }
-}
-
-class _RankList extends StatelessWidget {
-  final List<_NamedValue> items;
-  final String tipo;
-  const _RankList({required this.items, required this.tipo});
-
-  @override
-  Widget build(BuildContext context) {
-    final textColor =
-        Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
-
-    if (items.isEmpty) return const Text('Sem dados no período.');
-
-    final bg = RelatorioCores.bg(tipo);
-    final fg = RelatorioCores.fg(tipo);
-
-    return Column(
-      children: List.generate(items.length, (i) {
-        final it = items[i];
-        final v = (it.value % 1 == 0)
-            ? it.value.toInt().toString()
-            : it.value.toStringAsFixed(2);
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 8),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: fg.withOpacity(0.18)),
-          ),
-          child: Row(
-            children: [
-              CircleAvatar(
-                radius: 14,
-                backgroundColor: fg.withOpacity(0.18),
-                child: Text(
-                  '${i + 1}',
-                  style: TextStyle(fontWeight: FontWeight.w900, color: fg),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Text(
-                  it.name,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w800,
-                    color: textColor,
-                  ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                v,
-                style: TextStyle(fontWeight: FontWeight.w900, color: fg),
-              ),
-            ],
-          ),
-        );
-      }),
-    );
-  }
-}
-
-class _MovList extends StatelessWidget {
-  final List<EstoqueMovModel> movs;
-  const _MovList({required this.movs});
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final textColor = isDark ? Colors.white : Colors.black;
-    final mutedColor = isDark ? const Color(0xFFD6D6D6) : Colors.black.withOpacity(0.65);
-
-    if (movs.isEmpty) return const Text('Sem movimentações no período.');
-
-    final df = DateFormat('dd/MM HH:mm');
-
-    return Column(
-      children: movs.map((m) {
-        final produto = (m.produtoNome?.trim().isNotEmpty ?? false)
-            ? m.produtoNome!.trim()
-            : 'Sem nome';
-        final bg = RelatorioCores.bg(m.tipo);
-        final fg = RelatorioCores.fg(m.tipo);
-
-        return Container(
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: fg.withOpacity(0.18)),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 38,
-                height: 38,
-                decoration: BoxDecoration(
-                  color: fg.withOpacity(0.16),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(_iconForTipo(m.tipo), color: fg, size: 18),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      produto,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontWeight: FontWeight.w900,
-                        color: textColor,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      '${df.format(m.createdAt)} • ${m.tipo} • ${m.motivo ?? ""}',
-                      style: TextStyle(
-                        color: mutedColor,
-                        fontSize: 12.5,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text(
-                (m.quantidade % 1 == 0)
-                    ? m.quantidade.toInt().toString()
-                    : m.quantidade.toStringAsFixed(2),
-                style: TextStyle(fontWeight: FontWeight.w900, color: fg),
-              ),
-            ],
-          ),
-        );
-      }).toList(),
-    );
-  }
-
-  IconData _iconForTipo(String tipo) {
-    switch (tipo) {
-      case EstoqueMovModel.tipoEntrada:
-        return Icons.add_circle_outline;
-      case EstoqueMovModel.tipoVenda:
-        return Icons.shopping_cart_outlined;
-      case EstoqueMovModel.tipoCancelamento:
-        return Icons.cancel_outlined;
-      case EstoqueMovModel.tipoExclusao:
-        return Icons.delete_outline;
-      default:
-        try {
-          if (tipo == EstoqueMovModel.tipoAjusteEntrada) return Icons.tune;
-        } catch (_) {}
-        try {
-          if (tipo == EstoqueMovModel.tipoAjusteSaida) return Icons.tune;
-        } catch (_) {}
-        return Icons.analytics_outlined;
-    }
-  }
-}
-
-class _InsightLine extends StatelessWidget {
-  final String label;
-  final String value;
-  final Color? chipBg;
-  final Color? chipFg;
-
-  const _InsightLine({
-    required this.label,
-    required this.value,
-    this.chipBg,
-    this.chipFg,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final hasChip = chipBg != null && chipFg != null;
-    final labelColor = Theme.of(context).brightness == Brightness.dark
-        ? const Color(0xFFD6D6D6)
-        : const Color(0xFF6B5E4B);
-    final valueColor =
-        Theme.of(context).brightness == Brightness.dark ? Colors.white : Colors.black;
-
-    return Row(
-      children: [
-        Expanded(
-          child: Text(
-            label,
-            style: TextStyle(
-              color: labelColor,
-              fontWeight: FontWeight.w700,
-            ),
-          ),
-        ),
-        const SizedBox(width: 12),
-        if (!hasChip)
-          Text(
-            value,
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              color: valueColor,
-            ),
-          )
-        else
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-            decoration: BoxDecoration(
-              color: chipBg,
-              borderRadius: BorderRadius.circular(999),
-              border: Border.all(color: chipFg!.withOpacity(0.25)),
-            ),
-            child: Text(
-              value,
-              style: TextStyle(
-                fontWeight: FontWeight.w900,
-                color: chipFg,
-              ),
-            ),
-          ),
-      ],
-    );
-  }
-}
-
-class _SectionCard extends StatelessWidget {
-  final String title;
-  final Widget child;
-  final Widget? trailing;
-
-  const _SectionCard({
-    required this.title,
-    required this.child,
-    this.trailing,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(
-          color: isDark
-              ? const Color(0xFFD4AF37).withOpacity(0.16)
-              : const Color(0xFFE7D8C2),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.18 : 0.08),
-            blurRadius: 10,
-            offset: const Offset(0, 4),
-          )
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  title,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : Colors.black,
-                  ),
-                ),
-              ),
-              if (trailing != null) trailing!,
-            ],
-          ),
-          const SizedBox(height: 10),
-          child,
-        ],
-      ),
-    );
-  }
-}
-
-class _ChartOnlyPie extends StatelessWidget {
-  final List<EstoqueMovModel> movs;
-  const _ChartOnlyPie({required this.movs});
-
-  @override
-  Widget build(BuildContext context) {
-    final byType = <String, num>{};
-    for (final m in movs) {
-      byType[m.tipo] = (byType[m.tipo] ?? 0) + m.quantidade;
-    }
-    final total = byType.values.fold<num>(0, (a, b) => a + b);
-    final entries = byType.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE7D8C2)),
-      ),
-      child: SizedBox(
-        height: 260,
-        child: total == 0
-            ? const Center(child: Text('Sem dados no período'))
-            : PieChart(
-                PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 50,
-                  sections: List.generate(entries.length, (i) {
-                    final e = entries[i];
-                    final pct = total == 0 ? 0 : (e.value / total * 100);
-                    return PieChartSectionData(
-                      value: e.value.toDouble(),
-                      title: '${e.key}\n${pct.toStringAsFixed(0)}%',
-                      radius: 85,
-                      color: RelatorioCores.solid(e.key),
-                      titleStyle: const TextStyle(
-                        fontSize: 11,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    );
-                  }),
-                ),
-              ),
-      ),
-    );
-  }
-}
-
-class _ChartOnlyBar extends StatelessWidget {
-  final List<EstoqueMovModel> movs;
-  const _ChartOnlyBar({required this.movs});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: const Color(0xFFE7D8C2)),
-      ),
-      child: SizedBox(height: 260, child: _TopSoldBarChart(movs: movs)),
-    );
-  }
-}

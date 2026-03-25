@@ -8,6 +8,8 @@ import '../../providers/auth_provider.dart';
 import '../../providers/setores_local_provider.dart';
 import '../../models/setor_model.dart';
 import '../../widgets/menu.dart';
+import './widgets/setores_list.dart';
+import './widgets/novo_setor_fab.dart';
 
 final _nomeDeny = FilteringTextInputFormatter.deny(
   RegExp(r"[^0-9A-Za-zÀ-ÖØ-öø-ÿÇç ]"),
@@ -169,48 +171,11 @@ class _SetoresScreenState extends State<SetoresScreen> {
                 ],
               ),
       ),
-      floatingActionButton: Container(
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(_isDark(context) ? 0.18 : 0.10),
-              blurRadius: 18,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: FloatingActionButton.extended(
-          backgroundColor:
-              _isDark(context) ? const Color(0xFF1E1E1E) : Colors.white,
-          foregroundColor: _isDark(context) ? const Color(0xFFD4AF37) : brand,
-          elevation: 0,
-          onPressed: () => _openSetorDialog(context, uid),
-          icon: Container(
-            width: 34,
-            height: 34,
-            decoration: BoxDecoration(
-              color: brand,
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(
-              Icons.add,
-              color: _isDark(context) ? Colors.black : Colors.white,
-              size: 20,
-            ),
-          ),
-          label: Text(
-            "Novo setor",
-            style: TextStyle(
-              fontWeight: FontWeight.w800,
-              color: _isDark(context) ? const Color(0xFFD4AF37) : null,
-            ),
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-            side: BorderSide(color: border),
-          ),
-        ),
+     floatingActionButton: NovoSetorFab(
+        isDark: _isDark(context),
+        brand: brand,
+        border: border,
+        onPressed: () => _openSetorDialog(context, uid),
       ),
       body: Center(
         child: ConstrainedBox(
@@ -234,33 +199,13 @@ class _SetoresScreenState extends State<SetoresScreen> {
                   style: TextStyle(color: muted),
                 ),
                 const SizedBox(height: 16),
-                if (prov.loading)
-                  const Expanded(child: Center(child: CircularProgressIndicator()))
-                else if (prov.items.isEmpty)
-                  Expanded(
-                    child: Center(
-                      child: Text(
-                        "Nenhum setor cadastrado ainda.\nClique em “Novo setor”.",
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: muted),
-                      ),
-                    ),
-                  )
-                else
-                  Expanded(
-                    child: ListView.separated(
-                      itemCount: prov.items.length,
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemBuilder: (context, i) {
-                        final s = prov.items[i];
-                        return _SetorCard(
-                          setor: s,
-                          onEdit: () => _openSetorDialog(context, uid, setor: s),
-                          onDelete: () => _confirmDelete(context, uid, s),
-                        );
-                      },
-                    ),
-                  ),
+                SetoresList(
+                  loading: prov.loading,
+                  items: prov.items,
+                  mutedColor: muted,
+                  onEdit: (s) => _openSetorDialog(context, uid, setor: s),
+                  onDelete: (s) => _confirmDelete(context, uid, s),
+                ),
               ],
             ),
           ),
@@ -578,96 +523,3 @@ class _SetoresScreenState extends State<SetoresScreen> {
   }
 }
 
-class _SetorCard extends StatelessWidget {
-  final SetorModel setor;
-  final VoidCallback onEdit;
-  final VoidCallback onDelete;
-
-  const _SetorCard({
-    required this.setor,
-    required this.onEdit,
-    required this.onDelete,
-  });
-
-  bool _isDark(BuildContext context) =>
-      Theme.of(context).brightness == Brightness.dark;
-
-  Color _card(BuildContext context) =>
-      _isDark(context) ? const Color(0xFF1E1E1E) : Colors.white;
-
-  Color _text(BuildContext context) =>
-      _isDark(context) ? Colors.white : const Color(0xFF2B2B2B);
-
-  Color _muted(BuildContext context) =>
-      _isDark(context)
-          ? const Color(0xFFD6D6D6)
-          : Colors.black.withOpacity(0.62);
-
-  Color _border(BuildContext context) =>
-      _isDark(context)
-          ? const Color(0xFFD4AF37).withOpacity(0.16)
-          : Colors.black.withOpacity(0.07);
-
-  Color _iconColor(BuildContext context) =>
-      _isDark(context) ? const Color(0xFFD4AF37) : const Color(0xFF2B2B2B);
-
-  @override
-  Widget build(BuildContext context) {
-    final isDark = _isDark(context);
-
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: _card(context),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: _border(context)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.18 : 0.06),
-            blurRadius: 14,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
-      child: Row(
-        children: [
-          Icon(Icons.badge_outlined, color: _iconColor(context)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  setor.nome,
-                  style: TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w800,
-                    color: _text(context),
-                  ),
-                ),
-                if ((setor.descricao ?? "").isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    setor.descricao!,
-                    style: TextStyle(color: _muted(context)),
-                  ),
-                ],
-              ],
-            ),
-          ),
-          IconButton(
-            onPressed: onEdit,
-            icon: Icon(
-              Icons.edit_outlined,
-              color: isDark ? const Color(0xFFD4AF37) : null,
-            ),
-          ),
-          IconButton(
-            onPressed: onDelete,
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-          ),
-        ],
-      ),
-    );
-  }
-}
