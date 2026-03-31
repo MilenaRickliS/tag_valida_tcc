@@ -494,4 +494,81 @@ class EtiquetasLocalRepo {
       );
     });
   }
+
+ Future<void> reabrirEtiqueta({
+    required String uid,
+    required String etiquetaId,
+    required num quantidadeRestante,
+  }) async {
+    final db = await AppDb.instance.db;
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+
+    if (quantidadeRestante <= 0) {
+      throw Exception("A quantidade para reabrir deve ser maior que zero.");
+    }
+
+    final current = await getById(uid: uid, id: etiquetaId);
+    if (current == null) {
+      throw Exception("Etiqueta não encontrada.");
+    }
+
+    final updated = EtiquetaModel(
+      id: current.id,
+      tipoId: current.tipoId,
+      tipoNome: current.tipoNome,
+      produtoNome: current.produtoNome,
+      categoriaId: current.categoriaId,
+      categoriaNome: current.categoriaNome,
+      setorId: current.setorId,
+      setorNome: current.setorNome,
+      dataFabricacao: current.dataFabricacao,
+      dataValidade: current.dataValidade,
+      camposCustomValores: current.camposCustomValores,
+      status: "ativa",
+      lote: current.lote,
+      createdAt: current.createdAt,
+      quantidade: current.quantidade,
+      quantidadeRestante: quantidadeRestante,
+      statusEstoque: "ativo",
+      soldAt: null,
+    );
+
+    await db.transaction((txn) async {
+      await txn.insert(
+        'etiquetas',
+        updated.toLocalMap(uid: uid, nowMs: nowMs),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      final payload = <String, dynamic>{
+        "tipoId": updated.tipoId,
+        "tipoNome": updated.tipoNome,
+        "produtoNome": updated.produtoNome,
+        "categoriaId": updated.categoriaId,
+        "categoriaNome": updated.categoriaNome,
+        "setorId": updated.setorId,
+        "setorNome": updated.setorNome,
+        "dataFabricacaoMs": updated.dataFabricacao.millisecondsSinceEpoch,
+        "dataValidadeMs": updated.dataValidade.millisecondsSinceEpoch,
+        "camposCustomValores": updated.camposCustomValores,
+        "status": updated.status,
+        "lote": updated.lote ??
+            (updated.camposCustomValores["lote"]?["value"]?.toString()),
+        "quantidade": updated.quantidade,
+        "quantidadeRestante": updated.quantidadeRestante,
+        "statusEstoque": updated.statusEstoque,
+        "soldAtMs": updated.soldAt?.millisecondsSinceEpoch,
+        "createdAtMs": (updated.createdAt?.millisecondsSinceEpoch ?? nowMs),
+        "updatedAtMs": nowMs,
+      };
+
+      await OutboxHelper.enqueueUpsert(
+        txn: txn,
+        uid: uid,
+        entity: "etiquetas",
+        entityId: updated.id,
+        payload: payload,
+      );
+    });
+  }
 }

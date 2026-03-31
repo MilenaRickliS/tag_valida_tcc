@@ -557,4 +557,18 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     }
     super.dispose();
   }
+
+   Future<void> reabrirEtiqueta({
+    required String uid,
+    required String etiquetaId,
+    required num quantidadeRestante,
+  }) async {
+    await repo.reabrirEtiqueta(
+      uid: uid,
+      etiquetaId: etiquetaId,
+      quantidadeRestante: quantidadeRestante,
+    );
+
+    notifyListeners();
+  }
 }
