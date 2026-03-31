@@ -9,9 +9,10 @@ class AlimentoCatalogo {
   final List<String> cheiro;
   final List<String> textura;
   final List<String> cor;
-  final String? imagemAsset;
+  final String imagemAsset;
+  final bool veioDaIA;
 
-  AlimentoCatalogo({
+  const AlimentoCatalogo({
     required this.id,
     required this.nome,
     required this.categoria,
@@ -22,6 +23,7 @@ class AlimentoCatalogo {
     required this.cheiro,
     required this.textura,
     required this.cor,
-    this.imagemAsset,
+    required this.imagemAsset,
+    this.veioDaIA = false,
   });
 }

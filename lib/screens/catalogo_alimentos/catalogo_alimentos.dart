@@ -5,6 +5,7 @@ import '../../widgets/menu.dart';
 import '../../models/alimento_catalogo_model.dart';
 import '../catalogo_alimentos/widgets/alimento_card.dart';
 import '../catalogo_alimentos/widgets/catalogo_hero_card.dart';
+import './data/alimentos_catalogo_data.dart';
 
 class CatalogoAlimentosScreen extends StatefulWidget {
   const CatalogoAlimentosScreen({super.key});
@@ -29,110 +30,7 @@ class _CatalogoAlimentosScreenState extends State<CatalogoAlimentosScreen> {
     'Congelados',
   ];
 
-  final List<AlimentoCatalogo> alimentos = [
-    AlimentoCatalogo(
-      id: '1',
-      nome: 'Pão francês',
-      categoria: 'Panificados',
-      descricao: 'Produto assado de consumo rápido, sensível à umidade e mofo.',
-      sinaisBom: [
-        'Casca dourada e uniforme',
-        'Miolo macio sem manchas',
-        'Cheiro característico de pão fresco',
-      ],
-      sinaisAlerta: [
-        'Umidade excessiva',
-        'Cheiro diferente do habitual',
-        'Textura muito borrachuda',
-      ],
-      sinaisRuim: [
-        'Presença de mofo',
-        'Manchas esverdeadas ou escuras',
-        'Odor azedo ou desagradável',
-      ],
-      cheiro: [
-        'Suave e característico quando bom',
-        'Azedo ou estranho quando deteriorado',
-      ],
-      textura: [
-        'Leve crocância por fora e macio por dentro quando bom',
-        'Muito duro, úmido demais ou pegajoso quando alterado',
-      ],
-      cor: [
-        'Dourado natural quando bom',
-        'Pontos escuros, verdes ou brancos podem indicar mofo',
-      ],
-      imagemAsset: 'assets/alimentos/pao.jpg',
-    ),
-    AlimentoCatalogo(
-      id: '2',
-      nome: 'Queijo mussarela',
-      categoria: 'Laticínios',
-      descricao: 'Derivado lácteo refrigerado com risco de mofo e alteração de odor.',
-      sinaisBom: [
-        'Cor uniforme',
-        'Cheiro suave',
-        'Superfície firme e íntegra',
-      ],
-      sinaisAlerta: [
-        'Suor excessivo',
-        'Odor mais intenso',
-        'Textura muito mole',
-      ],
-      sinaisRuim: [
-        'Mofo visível',
-        'Viscosidade',
-        'Cheiro azedo forte',
-      ],
-      cheiro: [
-        'Suave e lácteo quando bom',
-        'Azedo ou fermentado quando impróprio',
-      ],
-      textura: [
-        'Firme e elástica quando boa',
-        'Pegajosa ou viscosa quando alterada',
-      ],
-      cor: [
-        'Branco-amarelado uniforme',
-        'Manchas verdes, pretas ou rosadas indicam deterioração',
-      ],
-      imagemAsset: 'assets/alimentos/queijo.jpg',
-    ),
-    AlimentoCatalogo(
-      id: '3',
-      nome: 'Maçã',
-      categoria: 'Frutas',
-      descricao: 'Fruta sensível a amassados, fermentação e apodrecimento.',
-      sinaisBom: [
-        'Casca firme',
-        'Cor viva',
-        'Cheiro suave e fresco',
-      ],
-      sinaisAlerta: [
-        'Pequenas áreas amassadas',
-        'Casca enrugada',
-        'Perda de firmeza',
-      ],
-      sinaisRuim: [
-        'Partes escuras profundas',
-        'Mofo',
-        'Cheiro fermentado',
-      ],
-      cheiro: [
-        'Fresco e suave quando boa',
-        'Fermentado quando deteriorada',
-      ],
-      textura: [
-        'Firme quando boa',
-        'Mole e úmida demais quando alterada',
-      ],
-      cor: [
-        'Coloração natural uniforme',
-        'Escurecimento intenso pode indicar apodrecimento',
-      ],
-      imagemAsset: 'assets/alimentos/maca.jpg',
-    ),
-  ];
+  final List<AlimentoCatalogo> alimentos = AlimentosCatalogoData.itens;
 
   @override
   Widget build(BuildContext context) {
@@ -326,7 +224,7 @@ class _CatalogoAlimentosScreenState extends State<CatalogoAlimentosScreen> {
                       crossAxisCount: w > 1000 ? 3 : 2,
                       crossAxisSpacing: 14,
                       mainAxisSpacing: 14,
-                      childAspectRatio: 1.02,
+                      childAspectRatio: 0.88,
                     ),
                     itemBuilder: (_, index) {
                       return AlimentoCard(

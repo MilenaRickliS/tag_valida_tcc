@@ -1,0 +1,193 @@
+import '../../../models/alimento_catalogo_model.dart';
+
+class AlimentosCatalogoData {
+  static final List<AlimentoCatalogo> itens = [
+
+    //PANIFICADOS
+    AlimentoCatalogo(
+      id: '1',
+      nome: 'Pão francês',
+      categoria: 'Panificados',
+      descricao: 'Produto assado de consumo rápido.',
+      sinaisBom: ['Casca dourada', 'Miolo macio', 'Cheiro fresco'],
+      sinaisAlerta: ['Umidade', 'Textura borrachuda'],
+      sinaisRuim: ['Mofo', 'Odor azedo'],
+      cheiro: ['Fresco quando bom', 'Azedo quando ruim'],
+      textura: ['Crocante fora e macio dentro', 'Duro ou pegajoso'],
+      cor: ['Dourado', 'Manchas escuras ou verdes'],
+      imagemAsset: 'assets/alimentos/pao.jpg',
+      veioDaIA: true,
+    ),
+
+    AlimentoCatalogo(
+      id: '4',
+      nome: 'Pão de forma',
+      categoria: 'Panificados',
+      descricao: 'Produto industrializado com maior durabilidade.',
+      sinaisBom: ['Macio', 'Sem manchas', 'Cheiro neutro'],
+      sinaisAlerta: ['Ressecamento', 'Cheiro estranho'],
+      sinaisRuim: ['Mofo visível', 'Odor azedo'],
+      cheiro: ['Leve quando bom', 'Azedo quando ruim'],
+      textura: ['Macia', 'Seca ou pegajosa'],
+      cor: ['Clara uniforme', 'Manchas verdes ou pretas'],
+      imagemAsset: 'assets/alimentos/pao_forma.jpg',
+      veioDaIA: true,
+    ),
+
+    AlimentoCatalogo(
+      id: '5',
+      nome: 'Croissant de presunto e queijo',
+      categoria: 'Panificados',
+      descricao: 'Produto recheado, sensível à deterioração.',
+      sinaisBom: ['Dourado', 'Cheiro agradável'],
+      sinaisAlerta: ['Recheio úmido demais'],
+      sinaisRuim: ['Odor azedo', 'Mofo'],
+      cheiro: ['Agradável', 'Azedo quando ruim'],
+      textura: ['Crocante', 'Mole ou úmido'],
+      cor: ['Dourado', 'Manchas escuras'],
+      imagemAsset: 'assets/alimentos/croissant.jpg',
+      veioDaIA: true,
+    ),
+
+    AlimentoCatalogo(
+      id: '6',
+      nome: 'Danesse de goiabada',
+      categoria: 'Panificados',
+      descricao: 'Doce recheado com alta umidade.',
+      sinaisBom: ['Cor viva', 'Cheiro doce'],
+      sinaisAlerta: ['Umidade excessiva'],
+      sinaisRuim: ['Mofo', 'Cheiro fermentado'],
+      cheiro: ['Doce', 'Fermentado quando ruim'],
+      textura: ['Macia', 'Pegajosa'],
+      cor: ['Vermelho vivo', 'Escurecido'],
+      imagemAsset: 'assets/alimentos/danesse.jpg',
+      veioDaIA: true,
+    ),
+
+    //LATICÍNIOS 
+    AlimentoCatalogo(
+      id: '2',
+      nome: 'Queijo mussarela',
+      categoria: 'Laticínios',
+      descricao: 'Derivado lácteo refrigerado.',
+      sinaisBom: ['Cor uniforme', 'Cheiro suave'],
+      sinaisAlerta: ['Suor', 'Odor forte'],
+      sinaisRuim: ['Mofo', 'Cheiro azedo'],
+      cheiro: ['Suave', 'Azedo quando ruim'],
+      textura: ['Firme', 'Pegajosa'],
+      cor: ['Branco-amarelado', 'Manchas'],
+      imagemAsset: 'assets/alimentos/queijo.jpg',
+      veioDaIA: true,
+    ),
+
+    AlimentoCatalogo(
+      id: '7',
+      nome: 'Leite',
+      categoria: 'Laticínios',
+      descricao: 'Produto altamente perecível.',
+      sinaisBom: ['Cor branca', 'Sem cheiro forte'],
+      sinaisAlerta: ['Leve odor'],
+      sinaisRuim: ['Talhado', 'Cheiro azedo'],
+      cheiro: ['Neutro', 'Azedo'],
+      textura: ['Líquido homogêneo', 'Talhado'],
+      cor: ['Branco', 'Amarelado'],
+      imagemAsset: 'assets/alimentos/leite.jpg',
+      veioDaIA: false,
+    ),
+
+    //CARNES
+    AlimentoCatalogo(
+      id: '8',
+      nome: 'Carne bovina',
+      categoria: 'Carnes',
+      descricao: 'Produto altamente sensível.',
+      sinaisBom: ['Vermelho vivo', 'Sem odor'],
+      sinaisAlerta: ['Escurecimento'],
+      sinaisRuim: ['Cheiro forte', 'Viscosidade'],
+      cheiro: ['Neutro', 'Forte quando ruim'],
+      textura: ['Firme', 'Pegajosa'],
+      cor: ['Vermelho', 'Escuro'],
+      imagemAsset: 'assets/alimentos/carne.jpg',
+      veioDaIA: false,
+    ),
+
+    //FRUTAS 
+    AlimentoCatalogo(
+      id: '3',
+      nome: 'Maçã',
+      categoria: 'Frutas',
+      descricao: 'Fruta sensível a impactos.',
+      sinaisBom: ['Firme', 'Cor viva'],
+      sinaisAlerta: ['Amassados'],
+      sinaisRuim: ['Mofo', 'Fermentação'],
+      cheiro: ['Fresco', 'Fermentado'],
+      textura: ['Firme', 'Mole'],
+      cor: ['Uniforme', 'Escura'],
+      imagemAsset: 'assets/alimentos/maca.jpg',
+      veioDaIA: false,
+    ),
+
+    AlimentoCatalogo(
+      id: '9',
+      nome: 'Banana',
+      categoria: 'Frutas',
+      descricao: 'Fruta com rápida maturação.',
+      sinaisBom: ['Amarela', 'Firme'],
+      sinaisAlerta: ['Manchas'],
+      sinaisRuim: ['Muito escura', 'Cheiro forte'],
+      cheiro: ['Doce', 'Fermentado'],
+      textura: ['Macia', 'Muito mole'],
+      cor: ['Amarela', 'Preta'],
+      imagemAsset: 'assets/alimentos/banana.jpg',
+      veioDaIA: false,
+    ),
+
+    //HORTALIÇAS
+    AlimentoCatalogo(
+      id: '10',
+      nome: 'Alface',
+      categoria: 'Hortaliças',
+      descricao: 'Folhosa sensível à umidade.',
+      sinaisBom: ['Folhas verdes', 'Crocantes'],
+      sinaisAlerta: ['Folhas murchas'],
+      sinaisRuim: ['Escurecimento', 'Cheiro ruim'],
+      cheiro: ['Fresco', 'Podre'],
+      textura: ['Crocante', 'Mole'],
+      cor: ['Verde', 'Escura'],
+      imagemAsset: 'assets/alimentos/alface.jpg',
+      veioDaIA: false,
+    ),
+
+    //CONGELADOS 
+    AlimentoCatalogo(
+      id: '11',
+      nome: 'Frango congelado',
+      categoria: 'Congelados',
+      descricao: 'Produto congelado, risco de recongelamento.',
+      sinaisBom: ['Congelado firme'],
+      sinaisAlerta: ['Cristais de gelo'],
+      sinaisRuim: ['Descongelado e recongelado'],
+      cheiro: ['Neutro', 'Forte'],
+      textura: ['Duro', 'Mole'],
+      cor: ['Clara', 'Escura'],
+      imagemAsset: 'assets/alimentos/frango.jpg',
+      veioDaIA: false,
+    ),
+
+    //IA
+    AlimentoCatalogo(
+      id: '12',
+      nome: 'Ovo',
+      categoria: 'Laticínios',
+      descricao: 'Produto sensível a contaminação.',
+      sinaisBom: ['Casca íntegra'],
+      sinaisAlerta: ['Casca suja'],
+      sinaisRuim: ['Cheiro forte ao abrir'],
+      cheiro: ['Neutro', 'Podre'],
+      textura: ['Clara firme', 'Muito líquida'],
+      cor: ['Normal', 'Alterada'],
+      imagemAsset: 'assets/alimentos/ovo.jpg',
+      veioDaIA: true,
+    ),
+  ];
+}
