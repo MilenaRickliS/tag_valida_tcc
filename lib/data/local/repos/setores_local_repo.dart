@@ -44,7 +44,7 @@ class SetoresLocalRepo {
         entity: "setores",
         entityId: setor.id,
         payload: payload,
-        nowMs: nowMs,
+       
       );
     });
   }
@@ -71,7 +71,7 @@ class SetoresLocalRepo {
           "ativo": false,
           "updatedAtMs": nowMs,
         },
-        nowMs: nowMs,
+      
       );
     });
   }

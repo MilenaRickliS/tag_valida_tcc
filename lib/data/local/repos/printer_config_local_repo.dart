@@ -107,7 +107,7 @@ class PrinterConfigLocalRepo {
         entity: 'printer_configs',
         entityId: toSave.id,
         payload: PrinterConfigMapper.toFirestore(toSave),
-        nowMs: now.millisecondsSinceEpoch,
+      
       );
     });
 
@@ -119,7 +119,7 @@ class PrinterConfigLocalRepo {
     required String id,
   }) async {
     final db = await _db;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
+    
 
     await db.transaction((txn) async {
       await txn.delete(
@@ -133,7 +133,7 @@ class PrinterConfigLocalRepo {
         uid: uid,
         entity: 'printer_configs',
         entityId: id,
-        nowMs: nowMs,
+        
       );
     });
   }
@@ -195,7 +195,7 @@ class PrinterConfigLocalRepo {
               'createdAtMs': row['createdAt'],
               'updatedAtMs': nowMs,
             },
-            nowMs: nowMs,
+           
           );
         }
       });

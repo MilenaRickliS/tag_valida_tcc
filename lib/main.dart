@@ -51,6 +51,7 @@ import 'screens/prever/prever.dart';
 import 'screens/configuracoes_impressora/configuracoes_impressora_screen.dart';
 import 'screens/resultado_previsao/resultado_previsao_screen.dart';
 import 'screens/catalogo_alimentos/catalogo_alimentos.dart';
+import 'screens/backup/backup_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -175,6 +176,16 @@ class MyApp extends StatelessWidget {
           final user = fb_auth.FirebaseAuth.instance.currentUser;
           if (user == null) return const LoginScreen();
           return RelatoriosScreen(uid: user.uid);
+        },
+        '/backup': (context) {
+          final user = fb_auth.FirebaseAuth.instance.currentUser;
+
+          if (user == null) return const LoginScreen();
+
+          return BackupScreen(
+            uid: user.uid,
+            syncService: context.read<SyncService>(),
+          );
         },
       },
       onGenerateRoute: (settings) {

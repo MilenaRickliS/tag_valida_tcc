@@ -61,7 +61,7 @@ class EtiquetasTemplatesLocalRepo {
         entity: "etiquetas_templates",
         entityId: t.id,
         payload: payload,
-        nowMs: nowMs,
+       
       );
     });
   }
@@ -118,7 +118,7 @@ class EtiquetasTemplatesLocalRepo {
 
   Future<void> delete({required String uid, required String id}) async {
     final db = await AppDb.instance.db;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
+   
 
     await db.transaction((txn) async {
       await txn.delete(
@@ -132,7 +132,7 @@ class EtiquetasTemplatesLocalRepo {
         uid: uid,
         entity: "etiquetas_templates",
         entityId: id,
-        nowMs: nowMs,
+      
       );
     });
   }

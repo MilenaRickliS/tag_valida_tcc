@@ -8,8 +8,17 @@ class OutboxHelper {
     required String entity,
     required String entityId,
     required Map<String, dynamic> payload,
-    required int nowMs,
   }) async {
+    assert(entityId.isNotEmpty);
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+
+    await txn.delete(
+      "outbox",
+      where: "uid = ? AND entity = ? AND entityId = ?",
+      whereArgs: [uid, entity, entityId],
+    );
+
     await txn.insert("outbox", {
       "uid": uid,
       "entity": entity,
@@ -27,8 +36,17 @@ class OutboxHelper {
     required String uid,
     required String entity,
     required String entityId,
-    required int nowMs,
   }) async {
+    assert(entityId.isNotEmpty);
+
+    final nowMs = DateTime.now().millisecondsSinceEpoch;
+
+    await txn.delete(
+      "outbox",
+      where: "uid = ? AND entity = ? AND entityId = ?",
+      whereArgs: [uid, entity, entityId],
+    );
+
     await txn.insert("outbox", {
       "uid": uid,
       "entity": entity,

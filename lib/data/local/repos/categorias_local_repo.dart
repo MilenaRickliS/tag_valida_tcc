@@ -44,7 +44,7 @@ class CategoriasLocalRepo {
         entity: "categorias",
         entityId: cat.id,
         payload: payload,
-        nowMs: nowMs,
+        
       );
     });
   }
@@ -70,7 +70,7 @@ class CategoriasLocalRepo {
           "ativo": false,
           "updatedAtMs": nowMs,
         },
-        nowMs: nowMs,
+    
       );
     });
   }

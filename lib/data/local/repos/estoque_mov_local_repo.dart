@@ -8,16 +8,32 @@ import '../outbox/outbox_helper.dart';
 class EstoqueMovLocalRepo {
   Future<void> insert(String uid, EstoqueMovModel mov) async {
     final db = await AppDb.instance.db;
-    await db.insert(
-      "estoque_mov",
-      mov.toLocalMap(uid: uid),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+
+    await db.transaction((txn) async {
+      final payload = mov.toLocalMap(uid: uid);
+
+      await txn.insert(
+        "estoque_mov",
+        payload,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      payload["createdAtMs"] = mov.createdAt.millisecondsSinceEpoch;
+      payload["updatedAtMs"] = mov.updatedAt.millisecondsSinceEpoch;
+
+      await OutboxHelper.enqueueUpsert(
+        txn: txn,
+        uid: uid,
+        entity: "estoque_mov",
+        entityId: mov.id,
+        payload: payload,
+      );
+    });
   }
 
   Future<void> insertAndEnqueue(String uid, EstoqueMovModel mov) async {
     final db = await AppDb.instance.db;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
+   
 
     await db.transaction((txn) async {
   
@@ -40,7 +56,7 @@ class EstoqueMovLocalRepo {
         entity: "estoque_mov",
         entityId: mov.id,
         payload: payload,
-        nowMs: nowMs,
+       
       );
     });
   }

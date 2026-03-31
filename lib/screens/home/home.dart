@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+
 import '../../providers/auth_provider.dart';
 import '../../widgets/menu.dart';
 import 'widgets/home_menu_card_v2.dart';
@@ -10,9 +11,8 @@ import 'widgets/produtos_status_card.dart';
 import '../../data/sync/sync_service.dart';
 import '../../data/local/repos/etiquetas_local_repo.dart';
 import '../../models/etiqueta_model.dart';
-
-final RouteObserver<PageRoute<dynamic>> routeObserver =
-    RouteObserver<PageRoute<dynamic>>();
+import '../../services/sync_status_service.dart';
+import '../../main.dart' show routeObserver;
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -21,8 +21,7 @@ class HomeScreen extends StatefulWidget {
   State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> with RouteAware  {
-  
+class _HomeScreenState extends State<HomeScreen> with RouteAware {
   bool _syncedOnce = false;
   bool _syncing = false;
 
@@ -30,67 +29,102 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware  {
   int _qtdVencidas = 0;
   int _qtdAlerta = 0;
 
+  DateTime? _lastSync;
+  String _syncStatus = 'pending'; // pending | success | error
+
   @override
   void initState() {
     super.initState();
-    
+    _carregarStatusSync();
   }
 
-   @override
-    Future<void> didChangeDependencies() async {
-      super.didChangeDependencies();
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
 
-     
-      final route = ModalRoute.of(context);
-      if (route is PageRoute) {
-        routeObserver.subscribe(this, route);
-      }
+    final route = ModalRoute.of(context);
+    if (route is PageRoute) {
+      routeObserver.subscribe(this, route);
+    }
 
-      
-      if (_syncedOnce) return;
+    if (_syncedOnce) return;
 
-      final user = context.read<AuthProvider>().user;
-      if (user == null) return;
-     
-      // if (user != null) {
-      //   await context.read<EtiquetasLocalRepo>().debugPrintEtiquetas(user.uid);
-      // }
+    _syncedOnce = true;
 
-      _syncedOnce = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _executarSincronizacaoAutomatica();
+    });
+  }
 
-      WidgetsBinding.instance.addPostFrameCallback((_) async {
-        if (!mounted) return;
+  @override
+  void dispose() {
+    routeObserver.unsubscribe(this);
+    super.dispose();
+  }
 
-        setState(() => _syncing = true);
+  @override
+  void didPopNext() {
+    final user = context.read<AuthProvider>().user;
+    if (user != null) {
+      _carregarIndicadores(user.uid);
+    }
+    _executarSincronizacaoAutomatica();
+  }
 
-        try {
-          await context.read<SyncService>().syncNow(user.uid);
-        } catch (_) {
-         
-        } finally {
-          if (mounted) setState(() => _syncing = false);
-        }
+  Future<void> _carregarStatusSync() async {
+    final data = await SyncStatusService.getStatus();
 
-        if (mounted) {
-          await _carregarIndicadores(user.uid);
-        }
+    if (!mounted) return;
+
+    setState(() {
+      _syncStatus = data['status'] as String? ?? 'pending';
+      _lastSync = data['lastSync'] as DateTime?;
+    });
+  }
+
+  Future<void> _executarSincronizacaoAutomatica() async {
+ 
+  if (!mounted || _syncing) return;
+
+  final user = context.read<AuthProvider>().user;
+  if (user == null) return;
+
+  setState(() => _syncing = true);
+  await SyncStatusService.setPending();
+
+
+
+  try {
+    // ignore: use_build_context_synchronously
+    await context.read<SyncService>().syncNow(user.uid);
+    await SyncStatusService.setSuccess();
+
+    if (mounted) {
+      setState(() {
+        _syncStatus = 'success';
+        _lastSync = DateTime.now();
       });
     }
+  } catch (e) {
+    // ignore: avoid_print
+    print('Erro ao sincronizar automaticamente: $e');
+    await SyncStatusService.setError();
 
-    @override
-    void dispose() {
-      routeObserver.unsubscribe(this);
-      super.dispose();
+    if (mounted) {
+      setState(() {
+        _syncStatus = 'error';
+      });
     }
+  } finally {
+    if (mounted) {
+      setState(() => _syncing = false);
+    }
+  }
 
-  
-    @override
-    void didPopNext() {
-      final user = context.read<AuthProvider>().user;
-      if (user != null) {
-        _carregarIndicadores(user.uid);
-      }
-    }
+  if (mounted) {
+    await _carregarIndicadores(user.uid);
+  }
+}
 
   DateTime _hojeStart() {
     final now = DateTime.now();
@@ -164,6 +198,120 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware  {
     return 1180;
   }
 
+  String _formatarUltimaSync(DateTime? data) {
+    if (data == null) return 'Aguardando sincronização...';
+
+    final now = DateTime.now();
+    final diff = now.difference(data);
+
+    if (diff.inSeconds < 60) {
+      return 'Última sincronização: agora';
+    }
+    if (diff.inMinutes < 60) {
+      return 'Última sincronização: ${diff.inMinutes} min atrás';
+    }
+    if (diff.inHours < 24) {
+      return 'Última sincronização: ${diff.inHours} h atrás';
+    }
+
+    final dia = data.day.toString().padLeft(2, '0');
+    final mes = data.month.toString().padLeft(2, '0');
+    final hora = data.hour.toString().padLeft(2, '0');
+    final minuto = data.minute.toString().padLeft(2, '0');
+
+    return 'Última sincronização: $dia/$mes às $hora:$minuto';
+  }
+
+  Widget _buildSyncStatusCard(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    Color iconColor;
+    IconData iconData;
+    String subtitle;
+
+    switch (_syncStatus) {
+      case 'success':
+        iconColor = Colors.green;
+        iconData = Icons.cloud_done_rounded;
+        subtitle = _formatarUltimaSync(_lastSync);
+        break;
+      case 'error':
+        iconColor = Colors.red;
+        iconData = Icons.cloud_off_rounded;
+        subtitle = _lastSync == null
+            ? 'Falha na sincronização'
+            : '${_formatarUltimaSync(_lastSync)} • última tentativa com erro';
+        break;
+      default:
+        iconColor = Colors.grey;
+        iconData = _syncing ? Icons.cloud_sync_rounded : Icons.cloud_queue_rounded;
+        subtitle = _syncing
+            ? 'Sincronizando dados...'
+            : _formatarUltimaSync(_lastSync);
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(16),
+        color: isDark
+            ? Colors.white.withOpacity(0.04)
+            : Colors.white.withOpacity(0.85),
+        border: Border.all(
+          color: iconColor.withOpacity(0.20),
+        ),
+      ),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 18,
+            backgroundColor: iconColor.withOpacity(0.12),
+            child: Icon(
+              iconData,
+              color: iconColor,
+              size: 20,
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Status da nuvem',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                    color: Theme.of(context).textTheme.bodyLarge?.color,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 12.5,
+                    color: Theme.of(context)
+                        .textTheme
+                        .bodyMedium
+                        ?.color
+                        ?.withOpacity(0.75),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (!_syncing)
+            IconButton(
+              tooltip: 'Sincronizar agora',
+              onPressed: _executarSincronizacaoAutomatica,
+              icon: const Icon(Icons.refresh_rounded),
+            ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final user = context.watch<AuthProvider>().user;
@@ -178,7 +326,6 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware  {
 
     final w = MediaQuery.of(context).size.width;
     final compact = w < 835;
-    
 
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
@@ -227,19 +374,15 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware  {
                     padding: EdgeInsets.all(isMobile ? 16 : 22),
                     decoration: BoxDecoration(
                       borderRadius: BorderRadius.circular(28),
-                   
                       color: Theme.of(context).cardColor.withOpacity(
-                        Theme.of(context).brightness == Brightness.dark ? 0.35 : 0.25,
+                        Theme.of(context).brightness == Brightness.dark
+                            ? 0.35
+                            : 0.25,
                       ),
                       border: Border.all(color: Colors.black.withOpacity(0.08)),
                     ),
                     child: Column(
                       children: [
-                        if (_syncing) ...[
-                          const LinearProgressIndicator(minHeight: 3),
-                          const SizedBox(height: 12),
-                        ],
-
                         ProdutosStatusCard(
                           qtdVencidas: _qtdVencidas,
                           qtdAlerta: _qtdAlerta,
@@ -254,7 +397,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware  {
                           child: CameraFabCard(
                             width: isMobile ? double.infinity : 420,
                             height: 98,
-                            onTap: () => Navigator.pushNamed(context, '/prever-validade'),
+                            onTap: () =>
+                                Navigator.pushNamed(context, '/prever-validade'),
                           ),
                         ),
 
@@ -272,28 +416,44 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware  {
                               icon: Icons.add_circle_outline,
                               title: "Criar etiqueta",
                               subtitle: "Crie uma nova etiqueta para seus produtos",
-                              onTap: () => Navigator.pushNamed(context, '/criar-etiqueta'),
+                              onTap: () =>
+                                  Navigator.pushNamed(context, '/criar-etiqueta'),
                             ),
                             HomeMenuCardV2(
                               icon: Icons.check_circle_outline,
                               title: "Etiquetas ativas",
                               subtitle: "Veja as etiquetas ativas no estoque",
-                              onTap: () => Navigator.pushNamed(context, '/etiquetas-ativas'),
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/etiquetas-ativas',
+                              ),
                             ),
                             HomeMenuCardV2(
                               icon: Icons.event_note_outlined,
                               title: "Etiquetas diárias",
                               subtitle: "Produtos feitos diariamente",
-                              onTap: () => Navigator.pushNamed(context, '/etiquetas-diarias'),
+                              onTap: () => Navigator.pushNamed(
+                                context,
+                                '/etiquetas-diarias',
+                              ),
                             ),
                             HomeMenuCardV2(
                               icon: Icons.settings_outlined,
                               title: "Configurações",
                               subtitle: "Ajustes do aplicativo",
-                              onTap: () => Navigator.pushNamed(context, '/configuracoes'),
+                              onTap: () =>
+                                  Navigator.pushNamed(context, '/configuracoes'),
                             ),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                        if (_syncing) ...[
+                          const LinearProgressIndicator(minHeight: 3),
+                          const SizedBox(height: 12),
+                        ],
+
+                        _buildSyncStatusCard(context),
+                        
                       ],
                     ),
                   ),
@@ -306,4 +466,3 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware  {
     );
   }
 }
-

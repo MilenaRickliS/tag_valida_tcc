@@ -150,7 +150,7 @@ class ConfiguracoesScreen extends StatelessWidget {
                             icon: Icons.cloud_upload_outlined,
                             title: "Backup de dados",
                             subtitle: "Salve e restaure informações",
-                            onTap: () => _soon(context),
+                            onTap: () => Navigator.pushNamed(context, "/backup"),
                           ),
                           ConfigTile(
                             icon: Icons.bar_chart_outlined,
@@ -178,18 +178,4 @@ class ConfiguracoesScreen extends StatelessWidget {
   }
 }
 
-void _soon(BuildContext context) {
-  final isDark = Theme.of(context).brightness == Brightness.dark;
-
-  ScaffoldMessenger.of(context).showSnackBar(
-    SnackBar(
-      content: const Text("Em breve 👀"),
-      backgroundColor: isDark ? const Color(0xFF1E1E1E) : null,
-      behavior: SnackBarBehavior.floating,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-      ),
-    ),
-  );
-}
 

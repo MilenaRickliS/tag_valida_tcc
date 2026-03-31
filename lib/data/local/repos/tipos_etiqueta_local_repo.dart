@@ -43,7 +43,7 @@ class TiposEtiquetaLocalRepo {
         entity: "tipos_etiqueta",
         entityId: tipo.id,
         payload: payload,
-        nowMs: nowMs,
+      
       );
     });
   }
@@ -51,7 +51,7 @@ class TiposEtiquetaLocalRepo {
 
   Future<void> delete(String uid, String id, {bool enqueueFirestoreDelete = true}) async {
     final db = await AppDb.instance.db;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
+  
 
     await db.transaction((txn) async {
       await txn.delete(
@@ -66,7 +66,7 @@ class TiposEtiquetaLocalRepo {
           uid: uid,
           entity: "tipos_etiqueta",
           entityId: id,
-          nowMs: nowMs,
+         
         );
       }
     });

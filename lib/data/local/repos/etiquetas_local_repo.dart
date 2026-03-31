@@ -52,7 +52,7 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: e.id,
         payload: payload,
-        nowMs: nowMs,
+       
       );
     });
   }
@@ -125,7 +125,7 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: updated.id,
         payload: payload,
-        nowMs: nowMs,
+      
       );
     });
   }
@@ -134,7 +134,7 @@ class EtiquetasLocalRepo {
   
   Future<void> deleteHard(String uid, String id) async {
     final db = await AppDb.instance.db;
-    final nowMs = DateTime.now().millisecondsSinceEpoch;
+
 
     await db.transaction((txn) async {
       await txn.delete(
@@ -148,7 +148,7 @@ class EtiquetasLocalRepo {
         uid: uid,
         entity: "etiquetas",
         entityId: id,
-        nowMs: nowMs,
+        
       );
     });
   }
@@ -403,7 +403,7 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: updated.id,
         payload: payload,
-        nowMs: nowMs,
+      
       );
     });
   }
@@ -490,7 +490,7 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: updated.id,
         payload: payload,
-        nowMs: nowMs,
+      
       );
     });
   }
