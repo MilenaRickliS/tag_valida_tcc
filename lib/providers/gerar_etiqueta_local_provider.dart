@@ -3,11 +3,12 @@ import '../models/categoria_model.dart';
 import '../models/setor_model.dart';
 import '../models/tipo_etiqueta_model.dart';
 import '../models/etiqueta_model.dart';
-import '../data/local/repos/etiquetas_local_repo.dart';
-import '../providers/estoque_mov_local_provider.dart';
 import '../models/estoque_mov_model.dart';
 import '../models/etiqueta_template_model.dart';
+import '../models/tabela_nutricional_model.dart';
 import './../data/local/repos/etiqueta_template_local_repo.dart';
+import '../data/local/repos/etiquetas_local_repo.dart';
+import '../providers/estoque_mov_local_provider.dart';
 import 'dart:math';
 
 class GerarEtiquetaLocalProvider extends ChangeNotifier {
@@ -38,6 +39,22 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
   num? editingQuantidadeRestante;
   String? editingStatusEstoque;
   DateTime? editingSoldAt;
+
+  bool incluirTabelaNutricional = false;
+
+  final porcoesPorEmbalagemCtrl = TextEditingController();
+  final porcaoCtrl = TextEditingController();
+  final medidaCaseiraCtrl = TextEditingController();
+  final valorEnergeticoCtrl = TextEditingController();
+  final carboidratosCtrl = TextEditingController();
+  final acucaresTotaisCtrl = TextEditingController();
+  final acucaresAdicionadosCtrl = TextEditingController();
+  final proteinasCtrl = TextEditingController();
+  final gordurasTotaisCtrl = TextEditingController();
+  final gordurasSaturadasCtrl = TextEditingController();
+  final gordurasTransCtrl = TextEditingController();
+  final fibraAlimentarCtrl = TextEditingController();
+  final sodioCtrl = TextEditingController();
 
 
   final Map<String, TextEditingController> customCtrls = {};
@@ -87,6 +104,39 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     }
   }
 
+  void setIncluirTabelaNutricional(bool v) {
+    incluirTabelaNutricional = v;
+    notifyListeners();
+  }
+
+  double _toDouble(TextEditingController c) {
+    return double.tryParse(c.text.trim().replaceAll(",", ".")) ?? 0;
+  }
+
+  TabelaNutricionalModel? _buildTabelaNutricional() {
+    if (!incluirTabelaNutricional) return null;
+
+    int toInt(TextEditingController c) {
+      return int.tryParse(c.text.trim()) ?? 1;
+    }
+
+    return TabelaNutricionalModel(
+      porcoesPorEmbalagem: toInt(porcoesPorEmbalagemCtrl),
+      porcao: porcaoCtrl.text.trim(),
+      medidaCaseira: medidaCaseiraCtrl.text.trim(),
+      valorEnergetico: _toDouble(valorEnergeticoCtrl),
+      carboidratos: _toDouble(carboidratosCtrl),
+      acucaresTotais: _toDouble(acucaresTotaisCtrl),
+      acucaresAdicionados: _toDouble(acucaresAdicionadosCtrl),
+      proteinas: _toDouble(proteinasCtrl),
+      gordurasTotais: _toDouble(gordurasTotaisCtrl),
+      gordurasSaturadas: _toDouble(gordurasSaturadasCtrl),
+      gordurasTrans: _toDouble(gordurasTransCtrl),
+      fibraAlimentar: _toDouble(fibraAlimentarCtrl),
+      sodio: _toDouble(sodioCtrl),
+    );
+  }
+
   void clearEditing() {
     editingEtiquetaId = null;
     editingCreatedAt = null;
@@ -109,6 +159,21 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     quantidadeCtrl.text = "1";
 
     editingStatusEstoque = "ativo";
+
+    incluirTabelaNutricional = false;
+    porcoesPorEmbalagemCtrl.clear();
+    porcaoCtrl.clear();
+    medidaCaseiraCtrl.clear();
+    valorEnergeticoCtrl.clear();
+    carboidratosCtrl.clear();
+    acucaresTotaisCtrl.clear();
+    acucaresAdicionadosCtrl.clear();
+    proteinasCtrl.clear();
+    gordurasTotaisCtrl.clear();
+    gordurasSaturadasCtrl.clear();
+    gordurasTransCtrl.clear();
+    fibraAlimentarCtrl.clear();
+    sodioCtrl.clear();
 
     camposValores.clear();
     for (final c in customCtrls.values) {
@@ -153,6 +218,24 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
     quantidadeCtrl.text = e.quantidade.toString();
 
+    incluirTabelaNutricional = e.incluirTabelaNutricional;
+
+    if (e.tabelaNutricional != null) {
+      porcoesPorEmbalagemCtrl.text = e.tabelaNutricional!.porcoesPorEmbalagem.toString();
+      porcaoCtrl.text = e.tabelaNutricional!.porcao;
+      medidaCaseiraCtrl.text = e.tabelaNutricional!.medidaCaseira;
+      valorEnergeticoCtrl.text = e.tabelaNutricional!.valorEnergetico.toString();
+      carboidratosCtrl.text = e.tabelaNutricional!.carboidratos.toString();
+      acucaresTotaisCtrl.text = e.tabelaNutricional!.acucaresTotais.toString();
+      acucaresAdicionadosCtrl.text = e.tabelaNutricional!.acucaresAdicionados.toString();
+      proteinasCtrl.text = e.tabelaNutricional!.proteinas.toString();
+      gordurasTotaisCtrl.text = e.tabelaNutricional!.gordurasTotais.toString();
+      gordurasSaturadasCtrl.text = e.tabelaNutricional!.gordurasSaturadas.toString();
+      gordurasTransCtrl.text = e.tabelaNutricional!.gordurasTrans.toString();
+      fibraAlimentarCtrl.text = e.tabelaNutricional!.fibraAlimentar.toString();
+      sodioCtrl.text = e.tabelaNutricional!.sodio.toString();
+    }
+
     camposValores
       ..clear()
       ..addAll((e.camposCustomValores).map((k, v) => MapEntry(k, Map<String, dynamic>.from(v as Map))));
@@ -172,11 +255,10 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setTipoId(String? id, {TipoEtiquetaModel? tipoAtual}) {
+ void setTipoId(String? id, {TipoEtiquetaModel? tipoAtual}) {
     tipoId = id;
 
     clearEditing();
-
     editingStatusEstoque = "ativo";
 
     camposValores.clear();
@@ -184,6 +266,23 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       c.dispose();
     }
     customCtrls.clear();
+
+    if (tipoAtual?.permiteTabelaNutricional != true) {
+      incluirTabelaNutricional = false;
+      porcoesPorEmbalagemCtrl.clear();
+      porcaoCtrl.clear();
+      medidaCaseiraCtrl.clear();
+      valorEnergeticoCtrl.clear();
+      carboidratosCtrl.clear();
+      acucaresTotaisCtrl.clear();
+      acucaresAdicionadosCtrl.clear();
+      proteinasCtrl.clear();
+      gordurasTotaisCtrl.clear();
+      gordurasSaturadasCtrl.clear();
+      gordurasTransCtrl.clear();
+      fibraAlimentarCtrl.clear();
+      sodioCtrl.clear();
+    }
 
     _recalcularValidadeSePossivel(tipoAtual);
     notifyListeners();
@@ -226,7 +325,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       validade = fabricacao!.add(Duration(days: categoria!.diasVencimento));
     }
   }
-  
+   
 
   
 
@@ -272,7 +371,47 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     if (setor == null) return "Selecione o setor/responsável.";
     if (fabricacao == null) return "Selecione a data de fabricação.";
     if (validade == null) return "Selecione a data de validade.";
-
+    if (tipoAtual.permiteTabelaNutricional && incluirTabelaNutricional) {
+      if (porcoesPorEmbalagemCtrl.text.trim().isEmpty) {
+        return "Informe as porções por embalagem.";
+      }
+      if (porcaoCtrl.text.trim().isEmpty) {
+        return "Informe a porção da tabela nutricional.";
+      }
+      if (medidaCaseiraCtrl.text.trim().isEmpty) {
+        return "Informe a medida caseira da tabela nutricional.";
+      }
+      if (valorEnergeticoCtrl.text.trim().isEmpty) {
+        return "Informe o valor energético.";
+      }
+      if (carboidratosCtrl.text.trim().isEmpty) {
+        return "Informe os carboidratos.";
+      }
+      if (acucaresTotaisCtrl.text.trim().isEmpty) {
+        return "Informe os açúcares totais.";
+      }
+      if (acucaresAdicionadosCtrl.text.trim().isEmpty) {
+        return "Informe os açúcares adicionados.";
+      }
+      if (proteinasCtrl.text.trim().isEmpty) {
+        return "Informe as proteínas.";
+      }
+      if (gordurasTotaisCtrl.text.trim().isEmpty) {
+        return "Informe as gorduras totais.";
+      }
+      if (gordurasSaturadasCtrl.text.trim().isEmpty) {
+        return "Informe as gorduras saturadas.";
+      }
+      if (gordurasTransCtrl.text.trim().isEmpty) {
+        return "Informe as gorduras trans.";
+      }
+      if (fibraAlimentarCtrl.text.trim().isEmpty) {
+        return "Informe a fibra alimentar.";
+      }
+      if (sodioCtrl.text.trim().isEmpty) {
+        return "Informe o sódio.";
+      }
+    }
     final raw = quantidadeCtrl.text.trim();
     final qtd = num.tryParse(raw.replaceAll(",", "."));
     if (qtd == null || qtd <= 0) return "Informe uma quantidade válida.";
@@ -305,6 +444,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     final safeCampos = _sanitizeCamposValores(camposValores);
     final lote = (safeCampos["lote"]?["value"] ?? "").toString().trim();
     final loteFinal = lote.isEmpty ? null : lote;
+    final tabela = _buildTabelaNutricional();
 
     final etiqueta = EtiquetaModel(
       id: id,
@@ -319,6 +459,8 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       dataValidade: validade!,
       camposCustomValores: safeCampos,
       lote: loteFinal,
+      incluirTabelaNutricional: incluirTabelaNutricional,
+      tabelaNutricional: tabela,
       status: "ativa",
       createdAt: now,
       quantidade: qtd,
@@ -481,6 +623,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     final safeCampos = _sanitizeCamposValores(camposValores);
     final lote = (safeCampos["lote"]?["value"] ?? "").toString().trim();
     final loteFinal = lote.isEmpty ? null : lote;
+    final tabela = _buildTabelaNutricional();
 
     final etiqueta = EtiquetaModel(
       id: before.id,
@@ -495,6 +638,8 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       dataValidade: validade!,
       camposCustomValores: safeCampos,
       lote: loteFinal,
+      incluirTabelaNutricional: incluirTabelaNutricional,
+      tabelaNutricional: tabela,
       status: "ativa",
       createdAt: before.createdAt,
       quantidade: qtdNova,

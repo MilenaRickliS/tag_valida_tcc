@@ -29,6 +29,7 @@ import './widgets/lote_read_only_card.dart';
 import './widgets/gerenciar_tipos_card.dart';
 import './widgets/criar_etiqueta_form_card.dart';
 import './widgets/campo_imagem_upload.dart';
+import './widgets/tabela_nutricional_section.dart';
 
 
 class TitleCaseFormatter extends TextInputFormatter {
@@ -276,6 +277,8 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
       dataValidade: now, 
       camposCustomValores: t.camposCustomValores,
       lote: loteFinal,
+      incluirTabelaNutricional: false,
+      tabelaNutricional: null,
       status: "ativa",
       quantidade: t.quantidadePadrao,
       quantidadeRestante: t.quantidadePadrao,
@@ -496,21 +499,7 @@ Widget build(BuildContext context) {
           ? tipos.firstWhere((t) => t.id == gerar.tipoId)
           : null);
 
-  final deveAutoValidade = tipoAtual?.usarRegraValidadeCategoria == true &&
-      gerar.categoria != null &&
-      gerar.fabricacao != null;
-
-  if (deveAutoValidade) {
-    final novaValidade =
-        gerar.fabricacao!.add(Duration(days: gerar.categoria!.diasVencimento));
-
-    if (gerar.validade != novaValidade) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!mounted) return;
-        context.read<GerarEtiquetaLocalProvider>().setValidadeManual(novaValidade);
-      });
-    }
-  }
+  
 
   return Scaffold(
     backgroundColor: bg,
@@ -812,6 +801,23 @@ Widget build(BuildContext context) {
                         );
                       }),
                       const SizedBox(height: 6),
+                    ],
+
+                    const SizedBox(height: 18),
+
+                    if (tipoAtual?.permiteTabelaNutricional == true) ...[
+                      const SizedBox(height: 18),
+                      TabelaNutricionalSection(
+                        isDark: isDark,
+                        brand: brand,
+                        onBrand: onBrand,
+                        text: text,
+                        muted: muted,
+                        border: border,
+                        softCard: softCard,
+                        gerar: gerar,
+                        inputDecoration: appInputDecoration,
+                      ),
                     ],
 
                     const SizedBox(height: 18),

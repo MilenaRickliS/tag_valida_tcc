@@ -126,6 +126,27 @@ class SyncService {
               }
               map.remove("soldAtMs");
             }
+
+            if (map.containsKey("incluirTabelaNutricional")) {
+              final v = map["incluirTabelaNutricional"];
+              if (v is int) map["incluirTabelaNutricional"] = v == 1;
+              if (v is num) map["incluirTabelaNutricional"] = v.toInt() == 1;
+              if (v is String) {
+                map["incluirTabelaNutricional"] =
+                    (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
+
+            if (map.containsKey("tabelaNutricional")) {
+              final v = map["tabelaNutricional"];
+              if (v is String) {
+                try {
+                  map["tabelaNutricional"] = jsonDecode(v);
+                } catch (_) {
+                  map["tabelaNutricional"] = null;
+                }
+              }
+            }
           }
 
           if (entity == "etiquetas_templates") {
@@ -262,6 +283,10 @@ class SyncService {
 
         "lote": d["lote"]?.toString(),
 
+        "incluirTabelaNutricional": (d["incluirTabelaNutricional"] ?? false) ? 1 : 0,
+        "tabelaNutricionalJson": d["tabelaNutricional"] == null
+            ? null
+            : jsonEncode(_jsonSafe(d["tabelaNutricional"])),
        
         "camposCustomValoresJson": jsonEncode(safeCampos),
 

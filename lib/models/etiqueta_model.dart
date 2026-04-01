@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'tabela_nutricional_model.dart';
 
 class EtiquetaModel {
   final String id;
@@ -21,6 +22,8 @@ class EtiquetaModel {
   final String status; 
   final String? lote;
 
+  final bool incluirTabelaNutricional;
+  final TabelaNutricionalModel? tabelaNutricional;
 
   final num quantidade; 
   final num quantidadeRestante; 
@@ -42,6 +45,8 @@ class EtiquetaModel {
     required this.camposCustomValores,
     required this.status,
     required this.lote,
+    required this.incluirTabelaNutricional,
+    this.tabelaNutricional,
     required this.quantidade,
     required this.quantidadeRestante,
     required this.statusEstoque,
@@ -72,6 +77,8 @@ class EtiquetaModel {
         "camposCustomValores": camposCustomValores,
         "status": status,
         "lote": lote,
+        "incluirTabelaNutricional": incluirTabelaNutricional,
+        "tabelaNutricional": tabelaNutricional?.toMap(),
         "quantidade": quantidade,
         "quantidadeRestante": quantidadeRestante,
         "statusEstoque": statusEstoque,

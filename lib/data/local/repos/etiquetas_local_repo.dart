@@ -1,4 +1,3 @@
-
 import 'package:sqflite/sqflite.dart';
 import '../app_db.dart';
 import '../outbox/outbox_helper.dart';
@@ -11,14 +10,12 @@ class EtiquetasLocalRepo {
     final nowMs = DateTime.now().millisecondsSinceEpoch;
 
     await db.transaction((txn) async {
-     
       await txn.insert(
         'etiquetas',
         e.toLocalMap(uid: uid, nowMs: nowMs),
         conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
-    
       final payload = <String, dynamic>{
         "tipoId": e.tipoId,
         "tipoNome": e.tipoNome,
@@ -27,21 +24,17 @@ class EtiquetasLocalRepo {
         "categoriaNome": e.categoriaNome,
         "setorId": e.setorId,
         "setorNome": e.setorNome,
-
-       
         "dataFabricacaoMs": e.dataFabricacao.millisecondsSinceEpoch,
         "dataValidadeMs": e.dataValidade.millisecondsSinceEpoch,
-
-        "camposCustomValores": e.camposCustomValores, 
+        "camposCustomValores": e.camposCustomValores,
         "status": e.status,
-
         "quantidade": e.quantidade,
         "quantidadeRestante": e.quantidadeRestante,
         "statusEstoque": e.statusEstoque,
         "soldAtMs": e.soldAt?.millisecondsSinceEpoch,
         "lote": e.lote ?? (e.camposCustomValores["lote"]?["value"]?.toString()),
-
-      
+        "incluirTabelaNutricional": e.incluirTabelaNutricional,
+        "tabelaNutricional": e.tabelaNutricional?.toMap(),
         "createdAtMs": (e.createdAt?.millisecondsSinceEpoch ?? nowMs),
         "updatedAtMs": nowMs,
       };
@@ -52,13 +45,11 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: e.id,
         payload: payload,
-       
       );
     });
   }
 
   Future<void> update(String uid, EtiquetaModel e) async {
-    
     await upsert(uid, e);
   }
 
@@ -66,7 +57,6 @@ class EtiquetasLocalRepo {
     final db = await AppDb.instance.db;
     final nowMs = DateTime.now().millisecondsSinceEpoch;
 
-  
     final current = await getById(uid: uid, id: id);
     if (current == null) return;
 
@@ -84,11 +74,13 @@ class EtiquetasLocalRepo {
       camposCustomValores: current.camposCustomValores,
       quantidade: current.quantidade,
       quantidadeRestante: current.quantidadeRestante,
-      statusEstoque: "cancelado", 
+      statusEstoque: "cancelado",
       soldAt: current.soldAt,
       status: "excluida",
       lote: current.lote,
       createdAt: current.createdAt,
+      incluirTabelaNutricional: current.incluirTabelaNutricional,
+      tabelaNutricional: current.tabelaNutricional,
     );
 
     await db.transaction((txn) async {
@@ -111,6 +103,8 @@ class EtiquetasLocalRepo {
         "camposCustomValores": updated.camposCustomValores,
         "status": updated.status,
         "lote": updated.lote ?? (updated.camposCustomValores["lote"]?["value"]?.toString()),
+        "incluirTabelaNutricional": updated.incluirTabelaNutricional,
+        "tabelaNutricional": updated.tabelaNutricional?.toMap(),
         "quantidade": updated.quantidade,
         "quantidadeRestante": updated.quantidadeRestante,
         "statusEstoque": updated.statusEstoque,
@@ -125,16 +119,12 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: updated.id,
         payload: payload,
-      
       );
     });
   }
 
-
-  
   Future<void> deleteHard(String uid, String id) async {
     final db = await AppDb.instance.db;
-
 
     await db.transaction((txn) async {
       await txn.delete(
@@ -148,14 +138,11 @@ class EtiquetasLocalRepo {
         uid: uid,
         entity: "etiquetas",
         entityId: id,
-        
       );
     });
   }
 
-
-
- Future<List<EtiquetaModel>> listByPeriodo({
+  Future<List<EtiquetaModel>> listByPeriodo({
     required String uid,
     required DateTime inicio,
     required DateTime fim,
@@ -210,29 +197,6 @@ class EtiquetasLocalRepo {
     return rows.map(EtiquetaLocalMapper.fromLocalMap).toList();
   }
 
-  // Future<void> debugPrintEtiquetas(String uid) async {
-  //   final db = await AppDb.instance.db;
-
-  //   final rows = await db.query(
-  //     'etiquetas',
-  //     where: 'uid = ?',
-  //     whereArgs: [uid],
-  //     orderBy: 'createdAt DESC',
-  //   );
-
-  //   print('====== ETIQUETAS ======');
-  //   print('Total: ${rows.length}');
-
-  //   for (final row in rows) {
-  //     print('-------------------------------');
-  //     row.forEach((key, value) {
-  //       print('$key: $value');
-  //     });
-  //   }
-
-  //   print('======================================');
-  // }
-
   Future<List<Map<String, Object?>>> countPorCategoria({
     required String uid,
     required DateTime inicio,
@@ -247,7 +211,10 @@ class EtiquetasLocalRepo {
       inicio.millisecondsSinceEpoch,
       fim.millisecondsSinceEpoch,
     ];
-    if (status != null) { where.add('status = ?'); args.add(status); }
+    if (status != null) {
+      where.add('status = ?');
+      args.add(status);
+    }
 
     return db.rawQuery('''
       SELECT categoriaId, categoriaNome, COUNT(*) as total
@@ -272,7 +239,10 @@ class EtiquetasLocalRepo {
       inicio.millisecondsSinceEpoch,
       fim.millisecondsSinceEpoch,
     ];
-    if (status != null) { where.add('status = ?'); args.add(status); }
+    if (status != null) {
+      where.add('status = ?');
+      args.add(status);
+    }
 
     return db.rawQuery('''
       SELECT setorId, setorNome, COUNT(*) as total
@@ -367,6 +337,8 @@ class EtiquetasLocalRepo {
       quantidadeRestante: novoRestante,
       statusEstoque: novoStatusEstoque,
       soldAt: soldAt,
+      incluirTabelaNutricional: current.incluirTabelaNutricional,
+      tabelaNutricional: current.tabelaNutricional,
     );
 
     await db.transaction((txn) async {
@@ -387,12 +359,14 @@ class EtiquetasLocalRepo {
         "dataFabricacaoMs": updated.dataFabricacao.millisecondsSinceEpoch,
         "dataValidadeMs": updated.dataValidade.millisecondsSinceEpoch,
         "camposCustomValores": updated.camposCustomValores,
-        "status": updated.status,       
+        "status": updated.status,
         "quantidade": updated.quantidade,
         "quantidadeRestante": updated.quantidadeRestante,
         "statusEstoque": updated.statusEstoque,
         "soldAtMs": updated.soldAt?.millisecondsSinceEpoch,
         "lote": updated.lote ?? (updated.camposCustomValores["lote"]?["value"]?.toString()),
+        "incluirTabelaNutricional": updated.incluirTabelaNutricional,
+        "tabelaNutricional": updated.tabelaNutricional?.toMap(),
         "createdAtMs": (updated.createdAt?.millisecondsSinceEpoch ?? nowMs),
         "updatedAtMs": nowMs,
       };
@@ -403,7 +377,6 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: updated.id,
         payload: payload,
-      
       );
     });
   }
@@ -425,7 +398,6 @@ class EtiquetasLocalRepo {
       throw Exception("Etiqueta não está ativa.");
     }
 
-    
     if (current.statusEstoque == "cancelado") {
       throw Exception("Etiqueta cancelada não pode ser ajustada.");
     }
@@ -454,6 +426,8 @@ class EtiquetasLocalRepo {
       quantidadeRestante: novoRestante,
       statusEstoque: statusEstoque,
       soldAt: soldAt,
+      incluirTabelaNutricional: current.incluirTabelaNutricional,
+      tabelaNutricional: current.tabelaNutricional,
     );
 
     await db.transaction((txn) async {
@@ -480,6 +454,8 @@ class EtiquetasLocalRepo {
         "statusEstoque": updated.statusEstoque,
         "soldAtMs": updated.soldAt?.millisecondsSinceEpoch,
         "lote": updated.lote ?? (updated.camposCustomValores["lote"]?["value"]?.toString()),
+        "incluirTabelaNutricional": updated.incluirTabelaNutricional,
+        "tabelaNutricional": updated.tabelaNutricional?.toMap(),
         "createdAtMs": (updated.createdAt?.millisecondsSinceEpoch ?? nowMs),
         "updatedAtMs": nowMs,
       };
@@ -490,12 +466,11 @@ class EtiquetasLocalRepo {
         entity: "etiquetas",
         entityId: updated.id,
         payload: payload,
-      
       );
     });
   }
 
- Future<void> reabrirEtiqueta({
+  Future<void> reabrirEtiqueta({
     required String uid,
     required String etiquetaId,
     required num quantidadeRestante,
@@ -531,6 +506,8 @@ class EtiquetasLocalRepo {
       quantidadeRestante: quantidadeRestante,
       statusEstoque: "ativo",
       soldAt: null,
+      incluirTabelaNutricional: current.incluirTabelaNutricional,
+      tabelaNutricional: current.tabelaNutricional,
     );
 
     await db.transaction((txn) async {
@@ -558,6 +535,8 @@ class EtiquetasLocalRepo {
         "quantidadeRestante": updated.quantidadeRestante,
         "statusEstoque": updated.statusEstoque,
         "soldAtMs": updated.soldAt?.millisecondsSinceEpoch,
+        "incluirTabelaNutricional": updated.incluirTabelaNutricional,
+        "tabelaNutricional": updated.tabelaNutricional?.toMap(),
         "createdAtMs": (updated.createdAt?.millisecondsSinceEpoch ?? nowMs),
         "updatedAtMs": nowMs,
       };

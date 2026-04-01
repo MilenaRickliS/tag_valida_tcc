@@ -7,7 +7,7 @@ class AppDb {
   static final AppDb instance = AppDb._();
 
   static const _dbName = 'tag_valida.db';
-  static const _dbVersion = 12;
+  static const _dbVersion = 13;
 
   Database? _db;
 
@@ -93,6 +93,9 @@ class AppDb {
       dataValidadeMs INTEGER NOT NULL,
 
       lote TEXT,
+
+      incluirTabelaNutricional INTEGER NOT NULL DEFAULT 0,
+      tabelaNutricionalJson TEXT,
 
       camposCustomValoresJson TEXT NOT NULL,
 
@@ -455,6 +458,22 @@ class AppDb {
       if (!hasTipoCol("permiteTabelaNutricional")) {
         await db.execute(
           "ALTER TABLE tipos_etiqueta ADD COLUMN permiteTabelaNutricional INTEGER NOT NULL DEFAULT 0;"
+        );
+      }
+    }
+    if (oldVersion < 13) {
+      final cols = await db.rawQuery("PRAGMA table_info(etiquetas)");
+      bool hasCol(String name) => cols.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasCol("incluirTabelaNutricional")) {
+        await db.execute(
+          "ALTER TABLE etiquetas ADD COLUMN incluirTabelaNutricional INTEGER NOT NULL DEFAULT 0;"
+        );
+      }
+
+      if (!hasCol("tabelaNutricionalJson")) {
+        await db.execute(
+          "ALTER TABLE etiquetas ADD COLUMN tabelaNutricionalJson TEXT;"
         );
       }
     }
