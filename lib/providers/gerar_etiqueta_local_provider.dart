@@ -493,7 +493,10 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       setorNome: etiqueta.setorNome,
       camposCustomValores: safeCampos,
       quantidadePadrao: etiqueta.quantidade,
+      incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,
+      tabelaNutricional: etiqueta.tabelaNutricional,
       createdAt: existing?.createdAt ?? DateTime.now(),
+      updatedAt: DateTime.now(),
     );
 
 

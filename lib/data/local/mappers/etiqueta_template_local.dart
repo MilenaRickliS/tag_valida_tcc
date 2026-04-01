@@ -1,5 +1,6 @@
 import 'dart:convert';
 import '../../../models/etiqueta_template_model.dart';
+import '../../../models/tabela_nutricional_model.dart';
 
 extension EtiquetaTemplateLocalMapper on EtiquetaTemplateModel {
   Map<String, dynamic> toLocalMap({
@@ -17,6 +18,10 @@ extension EtiquetaTemplateLocalMapper on EtiquetaTemplateModel {
       "setorId": setorId,
       "setorNome": setorNome,
       "camposCustomValoresJson": jsonEncode(camposCustomValores),
+      "incluirTabelaNutricional": incluirTabelaNutricional ? 1 : 0,
+      "tabelaNutricionalJson": tabelaNutricional == null
+          ? null
+          : jsonEncode(tabelaNutricional!.toMap()),
       "quantidadePadrao": quantidadePadrao,
       "createdAt": createdAt?.millisecondsSinceEpoch ?? nowMs,
       "updatedAt": nowMs,
@@ -41,6 +46,13 @@ extension EtiquetaTemplateLocalMapper on EtiquetaTemplateModel {
       (k, v) => MapEntry(k.toString(), v),
     );
 
+    final tabelaStr = m["tabelaNutricionalJson"]?.toString();
+    final tabela = (tabelaStr == null || tabelaStr.trim().isEmpty)
+        ? null
+        : TabelaNutricionalModel.fromMap(
+            Map<String, dynamic>.from(jsonDecode(tabelaStr)),
+          );
+
     return EtiquetaTemplateModel(
       id: (m["id"] ?? "").toString(),
       tipoId: (m["tipoId"] ?? "").toString(),
@@ -51,6 +63,8 @@ extension EtiquetaTemplateLocalMapper on EtiquetaTemplateModel {
       setorId: (m["setorId"] ?? "").toString(),
       setorNome: (m["setorNome"] ?? "").toString(),
       camposCustomValores: valores,
+      incluirTabelaNutricional: (m["incluirTabelaNutricional"] ?? 0) == 1,
+      tabelaNutricional: tabela,
       quantidadePadrao: asNum(m["quantidadePadrao"], def: 1),
       createdAt: dt(m["createdAt"]),
       updatedAt: dt(m["updatedAt"]),

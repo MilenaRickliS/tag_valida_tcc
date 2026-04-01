@@ -1,3 +1,5 @@
+import './tabela_nutricional_model.dart';
+
 class EtiquetaTemplateModel {
   final String id;
   final String tipoId;
@@ -12,6 +14,9 @@ class EtiquetaTemplateModel {
   final String setorNome;
 
   final Map<String, dynamic> camposCustomValores;
+
+  final bool incluirTabelaNutricional;
+  final TabelaNutricionalModel? tabelaNutricional;
 
   final num quantidadePadrao;
 
@@ -29,6 +34,8 @@ class EtiquetaTemplateModel {
     required this.setorNome,
     required this.camposCustomValores,
     required this.quantidadePadrao,
+    required this.incluirTabelaNutricional,
+    this.tabelaNutricional,
     this.createdAt,
     this.updatedAt,
   });

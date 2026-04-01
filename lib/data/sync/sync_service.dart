@@ -159,6 +159,27 @@ class SyncService {
             } else {
               map["camposCustomValores"] = {};
             }
+
+            if (map.containsKey("incluirTabelaNutricional")) {
+              final v = map["incluirTabelaNutricional"];
+              if (v is int) map["incluirTabelaNutricional"] = v == 1;
+              if (v is num) map["incluirTabelaNutricional"] = v.toInt() == 1;
+              if (v is String) {
+                map["incluirTabelaNutricional"] =
+                    (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
+
+            if (map.containsKey("tabelaNutricional")) {
+              final v = map["tabelaNutricional"];
+              if (v is String) {
+                try {
+                  map["tabelaNutricional"] = jsonDecode(v);
+                } catch (_) {
+                  map["tabelaNutricional"] = null;
+                }
+              }
+            }
           }
           if (entity == "printer_configs") {
             if (map.containsKey("ativo")) {
@@ -348,6 +369,11 @@ class SyncService {
         "camposCustomValoresJson": jsonEncode(d["camposCustomValores"] ?? {}),
 
         "quantidadePadrao": (d["quantidadePadrao"] as num?) ?? 1,
+
+        "incluirTabelaNutricional": (d["incluirTabelaNutricional"] ?? false) ? 1 : 0,
+        "tabelaNutricionalJson": d["tabelaNutricional"] == null
+            ? null
+            : jsonEncode(_jsonSafe(d["tabelaNutricional"])),
 
         "createdAt": ms(d["createdAt"]) ?? ms(d["createdAtMs"]),
         "updatedAt": ms(d["updatedAt"]) ?? ms(d["updatedAtMs"]),
