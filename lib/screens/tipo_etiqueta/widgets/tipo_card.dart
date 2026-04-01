@@ -59,7 +59,10 @@ class TipoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  "$count campo(s) • validade automática: ${tipo.usarRegraValidadeCategoria ? "sim" : "não"} • lote: ${tipo.controlaLote ? "sim" : "não"}",
+                  "$count campo(s) • "
+                  "validade automática: ${tipo.usarRegraValidadeCategoria ? "sim" : "não"} • "
+                  "lote: ${tipo.controlaLote ? "sim" : "não"} • "
+                  "tabela nutricional: ${tipo.permiteTabelaNutricional ? "sim" : "não"}",
                   style: TextStyle(color: muted),
                 ),
               ],

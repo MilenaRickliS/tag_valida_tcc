@@ -7,7 +7,7 @@ class AppDb {
   static final AppDb instance = AppDb._();
 
   static const _dbName = 'tag_valida.db';
-  static const _dbVersion = 11;
+  static const _dbVersion = 12;
 
   Database? _db;
 
@@ -65,6 +65,7 @@ class AppDb {
         descricao TEXT,
         usarRegraValidadeCategoria INTEGER NOT NULL,
         controlaLote INTEGER NOT NULL DEFAULT 0,
+        permiteTabelaNutricional INTEGER NOT NULL DEFAULT 0,
         camposCustomJson TEXT NOT NULL,
         createdAt INTEGER,
         updatedAt INTEGER,
@@ -445,6 +446,17 @@ class AppDb {
       await db.execute(
         'CREATE INDEX idx_printer_configs_uid ON printer_configs(uid)',
       );
+    }
+    if (oldVersion < 12) {
+      final colsTipo = await db.rawQuery("PRAGMA table_info(tipos_etiqueta)");
+      bool hasTipoCol(String name) =>
+          colsTipo.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasTipoCol("permiteTabelaNutricional")) {
+        await db.execute(
+          "ALTER TABLE tipos_etiqueta ADD COLUMN permiteTabelaNutricional INTEGER NOT NULL DEFAULT 0;"
+        );
+      }
     }
   }
 }

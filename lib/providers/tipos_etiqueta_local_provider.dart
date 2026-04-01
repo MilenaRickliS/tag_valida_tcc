@@ -35,6 +35,7 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
       descricao: _trimOrNull(tipo.descricao),
       usarRegraValidadeCategoria: tipo.usarRegraValidadeCategoria,
       controlaLote: tipo.controlaLote,
+       permiteTabelaNutricional: tipo.permiteTabelaNutricional,
       camposCustom: tipo.camposCustom,
     );
 
@@ -49,6 +50,7 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
       descricao: _trimOrNull(tipo.descricao),
       usarRegraValidadeCategoria: tipo.usarRegraValidadeCategoria,
       controlaLote: tipo.controlaLote,
+       permiteTabelaNutricional: tipo.permiteTabelaNutricional,
       camposCustom: tipo.camposCustom,
     );
 

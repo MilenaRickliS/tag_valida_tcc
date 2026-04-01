@@ -83,6 +83,15 @@ class SyncService {
               if (v is int) map["usarRegraValidadeCategoria"] = v == 1;
               if (v is num) map["usarRegraValidadeCategoria"] = v.toInt() == 1;
             }
+            if (map.containsKey("permiteTabelaNutricional")) {
+              final v = map["permiteTabelaNutricional"];
+              if (v is int) map["permiteTabelaNutricional"] = v == 1;
+              if (v is num) map["permiteTabelaNutricional"] = v.toInt() == 1;
+              if (v is String) {
+                map["permiteTabelaNutricional"] =
+                    (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
           }
           if (entity == "etiquetas") {
             if (map.containsKey("dataFabricacaoMs")) {
@@ -215,6 +224,7 @@ class SyncService {
         "descricao": d["descricao"]?.toString(),
         "usarRegraValidadeCategoria": (d["usarRegraValidadeCategoria"] ?? true) ? 1 : 0,
         "controlaLote": (d["controlaLote"] ?? false) ? 1 : 0,
+        "permiteTabelaNutricional": (d["permiteTabelaNutricional"] ?? false) ? 1 : 0,
         "camposCustomJson": jsonEncode(campos),
         "createdAt": (d["createdAt"] as Timestamp?)?.millisecondsSinceEpoch,
         "updatedAt": (d["updatedAt"] as Timestamp?)?.millisecondsSinceEpoch,

@@ -71,6 +71,7 @@ class TipoEtiquetaModel {
   final bool usarRegraValidadeCategoria;
   final List<CampoCustomModel> camposCustom;
   final bool controlaLote;
+  final bool permiteTabelaNutricional;
 
   TipoEtiquetaModel({
     required this.id,
@@ -79,6 +80,7 @@ class TipoEtiquetaModel {
     required this.usarRegraValidadeCategoria,
     required this.controlaLote,
     required this.camposCustom,
+    required this.permiteTabelaNutricional,
   });
 
   Map<String, dynamic> toMap() => {
@@ -86,6 +88,7 @@ class TipoEtiquetaModel {
         "descricao": descricao,
         "usarRegraValidadeCategoria": usarRegraValidadeCategoria,
         "controlaLote": controlaLote,
+        "permiteTabelaNutricional": permiteTabelaNutricional,
         "camposCustom": camposCustom.map((c) => c.toMap()).toList(),
         "updatedAt": FieldValue.serverTimestamp(),
         "createdAt": FieldValue.serverTimestamp(),
@@ -104,6 +107,7 @@ class TipoEtiquetaModel {
       usarRegraValidadeCategoria: data["usarRegraValidadeCategoria"] ?? true,
       camposCustom: list,
       controlaLote: data["controlaLote"] ?? false,
+       permiteTabelaNutricional: data["permiteTabelaNutricional"] ?? false,
     );
   }
 }

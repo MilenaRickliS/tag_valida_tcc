@@ -308,6 +308,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
     final descCtrl = TextEditingController(text: tipo?.descricao ?? "");
     bool usarRegra = tipo?.usarRegraValidadeCategoria ?? true;
     bool controlaLote = tipo?.controlaLote ?? false;
+    bool permiteTabelaNutricional = tipo?.permiteTabelaNutricional ?? false;
 
     final List<CampoCustomModel> campos = [
       ...(tipo?.camposCustom ?? []),
@@ -506,6 +507,52 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                         ),
                       ),
                     ),
+                    const SizedBox(height: 10),
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: permiteTabelaNutricional
+                              ? brand.withOpacity(0.22)
+                              : border,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        color: permiteTabelaNutricional
+                            ? brand.withOpacity(0.10)
+                            : fieldBg,
+                      ),
+                      child: SwitchTheme(
+                        data: SwitchThemeData(
+                          thumbColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) return brand;
+                            return null;
+                          }),
+                          trackColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return brand.withOpacity(0.35);
+                            }
+                            return null;
+                          }),
+                        ),
+                        child: SwitchListTile(
+                          title: Text(
+                            "Permitir tabela nutricional",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: text,
+                            ),
+                          ),
+                          subtitle: Text(
+                            "Se marcado, este tipo poderá exibir e imprimir tabela nutricional na criação da etiqueta.",
+                            style: TextStyle(
+                              color: muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                          value: permiteTabelaNutricional,
+                          onChanged: (v) => setLocal(() => permiteTabelaNutricional = v),
+                        ),
+                      ),
+                    ),
                    const SizedBox(height: 18),
                     CampoCustomSection(
                       campos: campos,
@@ -584,6 +631,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                     descricao: desc.isEmpty ? null : desc,
                     usarRegraValidadeCategoria: usarRegra,
                     controlaLote: controlaLote,
+                    permiteTabelaNutricional: permiteTabelaNutricional,
                     camposCustom: campos,
                   );
 
