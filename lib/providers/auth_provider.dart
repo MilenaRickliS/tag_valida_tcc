@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import '../models/user.dart';
 
 class AuthFailure implements Exception {
   final String message;
   AuthFailure(this.message);
+
   @override
   String toString() => message;
 }
@@ -13,6 +17,7 @@ class AuthFailure implements Exception {
 class AuthProvider with ChangeNotifier {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   UserModel? _user;
   UserModel? get user => _user;
@@ -32,7 +37,6 @@ class AuthProvider with ChangeNotifier {
       final doc = await _firestore.collection('usuarios').doc(uid).get();
 
       if (!doc.exists || doc.data() == null) {
-        
         await _auth.signOut();
         throw AuthFailure("Seu cadastro não foi encontrado. Contate o suporte.");
       }
@@ -41,7 +45,7 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       throw AuthFailure(_mapFirebaseAuthError(e));
-    } on FirebaseException catch (_) {
+    } on FirebaseException {
       throw AuthFailure("Falha ao acessar o servidor. Verifique sua internet.");
     } catch (_) {
       throw AuthFailure("Ocorreu um erro inesperado. Tente novamente.");
@@ -61,12 +65,15 @@ class AuthProvider with ChangeNotifier {
       case 'wrong-password':
         return "Senha incorreta.";
       case 'invalid-credential':
-       
         return "E-mail ou senha incorretos.";
       case 'too-many-requests':
         return "Muitas tentativas. Aguarde um pouco e tente novamente.";
       case 'network-request-failed':
         return "Sem conexão. Verifique sua internet.";
+      case 'email-already-in-use':
+        return "Este e-mail já está em uso.";
+      case 'weak-password':
+        return "A senha é muito fraca.";
       default:
         return "Não foi possível entrar (${e.code}).";
     }
@@ -79,6 +86,36 @@ class AuthProvider with ChangeNotifier {
       throw AuthFailure(_mapFirebaseAuthError(e));
     } catch (_) {
       throw AuthFailure("Erro ao enviar e-mail de recuperação.");
+    }
+  }
+
+  Future<String> _uploadLogo({
+    required String uid,
+    required File file,
+  }) async {
+    final ext = file.path.split('.').last.toLowerCase();
+    final ref = _storage.ref().child('usuarios/$uid/logo/logo.$ext');
+
+    final metadata = SettableMetadata(
+      contentType: _contentTypeFromExt(ext),
+    );
+
+    await ref.putFile(file, metadata);
+    final url = await ref.getDownloadURL();
+    return url;
+  }
+
+  String _contentTypeFromExt(String ext) {
+    switch (ext) {
+      case 'png':
+        return 'image/png';
+      case 'jpg':
+      case 'jpeg':
+        return 'image/jpeg';
+      case 'webp':
+        return 'image/webp';
+      default:
+        return 'application/octet-stream';
     }
   }
 
@@ -97,7 +134,7 @@ class AuthProvider with ChangeNotifier {
     required String estado,
     required String telefone,
     required String responsavel,
-    String? logo,
+    File? logoFile,
   }) async {
     try {
       final result = await _auth.createUserWithEmailAndPassword(
@@ -106,6 +143,11 @@ class AuthProvider with ChangeNotifier {
       );
 
       final uid = result.user!.uid;
+
+      String logoUrl = '';
+      if (logoFile != null) {
+        logoUrl = await _uploadLogo(uid: uid, file: logoFile);
+      }
 
       await _firestore.collection('usuarios').doc(uid).set({
         'uid': uid,
@@ -122,7 +164,7 @@ class AuthProvider with ChangeNotifier {
         'estado': estado,
         'telefone': telefone,
         'responsavel': responsavel,
-        'logo': logo ?? '',
+        'logo': logoUrl,
         'criadoEm': DateTime.now(),
       });
 
@@ -131,18 +173,10 @@ class AuthProvider with ChangeNotifier {
       notifyListeners();
     } on FirebaseAuthException catch (e) {
       throw AuthFailure(_mapFirebaseAuthError(e));
-    } catch (_) {
-      throw AuthFailure("Erro ao registrar. Tente novamente.");
+    } catch (e) {
+      throw AuthFailure("Erro ao registrar. Tente novamente. $e");
     }
   }
-
-  Future<void> signOut() async {
-    await _auth.signOut();
-    _user = null;
-    notifyListeners();
-  }
-
-  Future<void> logout() async => signOut();
 
   Future<void> updateProfile({
     required String nome,
@@ -156,10 +190,15 @@ class AuthProvider with ChangeNotifier {
     required String complemento,
     required String cidade,
     required String estado,
-    String? logo,
+    File? logoFile,
   }) async {
     final uid = _auth.currentUser?.uid;
     if (uid == null) throw AuthFailure("Usuário não autenticado.");
+
+    String? logoUrl;
+    if (logoFile != null) {
+      logoUrl = await _uploadLogo(uid: uid, file: logoFile);
+    }
 
     final data = <String, dynamic>{
       'nome': nome,
@@ -175,11 +214,12 @@ class AuthProvider with ChangeNotifier {
       'estado': estado,
     };
 
-    if (logo != null) data['logo'] = logo;
+    if (logoUrl != null) {
+      data['logo'] = logoUrl;
+    }
 
     await _firestore.collection('usuarios').doc(uid).update(data);
 
-   
     _user = UserModel(
       uid: _user!.uid,
       nome: nome,
@@ -195,9 +235,17 @@ class AuthProvider with ChangeNotifier {
       estado: estado,
       telefone: telefone,
       responsavel: responsavel,
-      logo: logo ?? _user!.logo,
+      logo: logoUrl ?? _user!.logo,
     );
 
     notifyListeners();
   }
+
+  Future<void> signOut() async {
+    await _auth.signOut();
+    _user = null;
+    notifyListeners();
+  }
+
+  Future<void> logout() async => signOut();
 }

@@ -49,7 +49,7 @@ class UserModel {
       estado: map['estado'],
       telefone: map['telefone'],
       responsavel: map['responsavel'],
-      logo: map['logo'],
+      logo: map['logo'] ?? '',
     );
   }
 

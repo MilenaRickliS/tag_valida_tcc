@@ -8,6 +8,9 @@ import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
 import './widgets/form_field.dart';
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import './widgets/build_logo_upload.dart';
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -41,7 +44,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final RegExp _lettersAccentsOnly = RegExp(r"^[A-Za-zÀ-ÿçÇ ]+$");
   final RegExp _onlyDigits = RegExp(r"^[0-9]+$");
   final RegExp _emailRegex = RegExp(r"^[^\s@]+@[^\s@]+\.[^\s@]+$");
-  final RegExp _urlRegex = RegExp(r"^https?:\/\/[^\s/$.?#].[^\s]*$", caseSensitive: false);
 
 
   final _formKey = GlobalKey<FormState>();
@@ -60,7 +62,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
   final estado = TextEditingController();
   final telefone = TextEditingController();
   final responsavel = TextEditingController();
-  final logo = TextEditingController();
+  File? _logoFile;
 
   bool _loading = false;
   bool _obscure = true;
@@ -82,7 +84,6 @@ class _CadastroScreenState extends State<CadastroScreen> {
     estado.dispose();
     telefone.dispose();
     responsavel.dispose();
-    logo.dispose();
     super.dispose();
   }
 
@@ -191,10 +192,55 @@ class _CadastroScreenState extends State<CadastroScreen> {
     return null;
   }
 
-  String? _vLogo(String? v) {
-    final s = (v ?? '').trim();
-    if (s.isEmpty) return null; 
-    if (!_urlRegex.hasMatch(s)) return "Logo deve ser um link válido (http/https).";
+  Future<void> _pickLogo() async {
+    try {
+      final picker = ImagePicker();
+
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (picked == null) return;
+
+      setState(() {
+        _logoFile = File(picked.path);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao selecionar logo: $e')),
+      );
+    }
+  }
+
+  void _removerLogo() {
+    setState(() {
+      _logoFile = null;
+    });
+  }
+
+  String? _vLogoFile() {
+    if (_logoFile == null) return null; 
+
+    final path = _logoFile!.path.toLowerCase();
+
+    final permitido = path.endsWith('.png') ||
+        path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.webp');
+
+    if (!permitido) {
+      return 'Selecione uma imagem PNG, JPG, JPEG ou WEBP.';
+    }
+
+    final tamanho = _logoFile!.lengthSync();
+    const maxBytes = 5 * 1024 * 1024;
+
+    if (tamanho > maxBytes) {
+      return 'A logo deve ter no máximo 5 MB.';
+    }
+
     return null;
   }
 
@@ -202,6 +248,14 @@ class _CadastroScreenState extends State<CadastroScreen> {
   Future<void> _cadastrar() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
+
+     final logoErro = _vLogoFile();
+      if (logoErro != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(logoErro)),
+        );
+        return;
+      }
 
     setState(() => _loading = true);
     try {
@@ -222,7 +276,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
             estado: estado.text.trim(),
             
             responsavel: responsavel.text.trim(),
-            logo: logo.text.trim(),
+            logoFile: _logoFile,
           );
 
       if (!mounted) return;
@@ -460,13 +514,13 @@ class _CadastroScreenState extends State<CadastroScreen> {
                             }
                           },
                         ),
-                      AppFormField(
-                          controller:  logo,
-                          label: "Logo (URL) (opcional)",
-                          validator: _vLogo,
-                          keyboardType: TextInputType.url,
-                          prefixIcon: const Icon(Icons.image_outlined),
-                        ),
+                      const SizedBox(height: 8),
+                      LogoUploadCard(
+                        logoFile: _logoFile,
+                        loading: _loading,
+                        onPickLogo: _pickLogo,
+                        onRemoveLogo: _removerLogo,
+                      ),
                         const SizedBox(height: 8),
 
                         ElevatedButton(

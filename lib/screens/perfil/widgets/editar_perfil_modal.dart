@@ -1,5 +1,6 @@
 // ignore_for_file: deprecated_member_use
-
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'dart:convert';
@@ -49,6 +50,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
   late final TextEditingController complemento;
   late final TextEditingController cidade;
   late final TextEditingController estado;
+  File? _logoFile;
 
   bool _saving = false;
 
@@ -76,6 +78,58 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     complemento = TextEditingController(text: u.complemento);
     cidade = TextEditingController(text: u.cidade);
     estado = TextEditingController(text: u.estado);
+  }
+
+  String? _vLogoFile() {
+    if (_logoFile == null) return null;
+
+    final path = _logoFile!.path.toLowerCase();
+
+    final permitido = path.endsWith('.png') ||
+        path.endsWith('.jpg') ||
+        path.endsWith('.jpeg') ||
+        path.endsWith('.webp');
+
+    if (!permitido) {
+      return 'Selecione uma imagem PNG, JPG, JPEG ou WEBP.';
+    }
+
+    final tamanho = _logoFile!.lengthSync();
+    const maxBytes = 5 * 1024 * 1024;
+
+    if (tamanho > maxBytes) {
+      return 'A logo deve ter no máximo 5 MB.';
+    }
+
+    return null;
+  }
+
+  Future<void> _pickLogo() async {
+    try {
+      final picker = ImagePicker();
+
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (picked == null) return;
+
+      setState(() {
+        _logoFile = File(picked.path);
+      });
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao selecionar foto: $e')),
+      );
+    }
+  }
+
+  void _removerLogo() {
+    setState(() {
+      _logoFile = null;
+    });
   }
 
   @override
@@ -217,9 +271,130 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     }
   }
 
+  Widget _buildFotoPerfilCard(bool isDark, Color text, Color border, Color brand) {
+  final user = context.read<AuthProvider>().user!;
+  final logoAtual = user.logo.trim();
+
+  Widget preview;
+
+  if (_logoFile != null) {
+    preview = ClipOval(
+      child: Image.file(
+        _logoFile!,
+        width: 86,
+        height: 86,
+        fit: BoxFit.cover,
+      ),
+    );
+  } else if (logoAtual.isNotEmpty && logoAtual.startsWith('http')) {
+    preview = ClipOval(
+      child: Image.network(
+        logoAtual,
+        width: 86,
+        height: 86,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => _fallbackAvatar(text),
+      ),
+    );
+  } else {
+    preview = _fallbackAvatar(text);
+  }
+
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(18),
+      border: Border.all(color: border),
+      color: isDark ? const Color(0xFF181818) : const Color(0xFFF8F8F8),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.photo_camera_back_outlined, color: brand),
+            const SizedBox(width: 8),
+            Text(
+              "Foto da empresa",
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w800,
+                color: text,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Center(child: preview),
+        const SizedBox(height: 12),
+        Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            OutlinedButton.icon(
+              onPressed: _saving ? null : _pickLogo,
+              icon: const Icon(Icons.upload_outlined),
+              label: Text(_logoFile == null ? "Selecionar foto" : "Trocar foto"),
+            ),
+            if (_logoFile != null)
+              OutlinedButton.icon(
+                onPressed: _saving ? null : _removerLogo,
+                icon: const Icon(Icons.delete_outline),
+                label: const Text("Remover"),
+              ),
+          ],
+        ),
+      ],
+    ),
+  );
+}
+
+Widget _fallbackAvatar(Color text) {
+  final u = context.read<AuthProvider>().user!;
+  final nome = u.nome.trim();
+  final partes = nome.split(RegExp(r'\s+')).where((e) => e.isNotEmpty).toList();
+
+  String iniciais = 'U';
+  if (partes.isNotEmpty) {
+    if (partes.length == 1) {
+      iniciais = partes.first[0].toUpperCase();
+    } else {
+      iniciais = '${partes.first[0]}${partes.last[0]}'.toUpperCase();
+    }
+  }
+
+  return Container(
+    width: 86,
+    height: 86,
+    decoration: BoxDecoration(
+      shape: BoxShape.circle,
+      color: Colors.black.withOpacity(0.06),
+    ),
+    child: Center(
+      child: Text(
+        iniciais,
+        style: TextStyle(
+          fontSize: 24,
+          fontWeight: FontWeight.w900,
+          color: text,
+        ),
+      ),
+    ),
+  );
+}
+
   Future<void> _save() async {
     FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
+
+    final logoErro = _vLogoFile();
+    if (logoErro != null) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(logoErro)),
+      );
+      return;
+    }
 
     setState(() => _saving = true);
     try {
@@ -235,6 +410,7 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
         complemento: complemento.text.trim(),
         cidade: cidade.text.trim(),
         estado: estado.text.trim(),
+        logoFile: _logoFile,
       );
 
       if (!mounted) return;
@@ -361,6 +537,8 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
                       key: _formKey,
                       child: Column(
                         children: [
+                          _buildFotoPerfilCard(isDark, text, border, brand),
+                          const SizedBox(height: 12),
                           _sectionTitle("Dados principais", brand, text),
                           ProfileFormField(
                             controller: nome,
@@ -603,3 +781,4 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     return _phoneMask.maskText(d);
   }
 }
+
