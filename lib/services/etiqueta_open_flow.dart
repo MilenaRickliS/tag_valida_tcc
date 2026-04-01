@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../data/local/repos/etiquetas_local_repo.dart';
 import '../models/etiqueta_model.dart';
+import '../utils/etiqueta_qr.dart';
 import 'etiqueta_firebase_service.dart';
 import 'etiqueta_pdf_service.dart';
 
@@ -18,18 +19,27 @@ Future<void> openEtiquetaPdfFlow(
   final fb = EtiquetaFirebaseService();
 
   EtiquetaModel? e = await repo.getById(uid: uid, id: etiquetaId);
-
   e ??= await fb.getById(uid: uid, id: etiquetaId);
 
   if (e == null) {
     if (!context.mounted) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text("Etiqueta não encontrada (offline e online).")),
+      const SnackBar(
+        content: Text("Etiqueta não encontrada (offline e online)."),
+      ),
     );
     return;
   }
 
-  final bytes = await EtiquetaPdfService.generateBytes(e);
+  final qrData = buildEtiquetaQrPayload(
+    uid: uid,
+    etiquetaId: e.id,
+  );
+
+  final bytes = await EtiquetaPdfService.generateBytes(
+    e,
+    qrData: qrData,
+  );
 
   final dir = await getTemporaryDirectory();
   final file = File("${dir.path}/etiqueta_${e.id}.pdf");

@@ -1,5 +1,7 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
-
+import 'dart:io';
+import 'package:image_picker/image_picker.dart';
+import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -26,6 +28,7 @@ import './widgets/date_field.dart';
 import './widgets/lote_read_only_card.dart';
 import './widgets/gerenciar_tipos_card.dart';
 import './widgets/criar_etiqueta_form_card.dart';
+import './widgets/campo_imagem_upload.dart';
 
 
 class TitleCaseFormatter extends TextInputFormatter {
@@ -388,6 +391,58 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
     return ok ?? false;
   }
 
+  Future<String?> _pickAndUploadCampoImagem({
+    required String uid,
+    required String campoKey,
+  }) async {
+    try {
+      final picker = ImagePicker();
+
+      final XFile? picked = await picker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (picked == null) return null;
+
+      final file = File(picked.path);
+      final ext = picked.path.split('.').last.toLowerCase();
+      final fileName =
+          '${DateTime.now().millisecondsSinceEpoch}_$campoKey.${ext.isEmpty ? 'jpg' : ext}';
+
+      final ref = FirebaseStorage.instance
+          .ref()
+          .child('usuarios/$uid/campos_custom/$fileName');
+
+      final metadata = SettableMetadata(
+        contentType: _contentTypeFromExt(ext),
+      );
+
+      await ref.putFile(file, metadata);
+      final url = await ref.getDownloadURL();
+      return url;
+    } catch (e) {
+      if (!mounted) return null;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao enviar imagem: $e')),
+      );
+      return null;
+    }
+  }
+
+  String _contentTypeFromExt(String ext) {
+    switch (ext) {
+      case 'png':
+        return 'image/png';
+      case 'webp':
+        return 'image/webp';
+      case 'jpeg':
+      case 'jpg':
+      default:
+        return 'image/jpeg';
+    }
+  }
+
   @override
 Widget build(BuildContext context) {
   debugPrint("templateId: ${widget.templateId} | editarEtiquetaId: ${widget.editarEtiquetaId}");
@@ -493,9 +548,11 @@ Widget build(BuildContext context) {
               ),
               const SizedBox(height: 18),
               CriarEtiquetaFormCard(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
+                child: Form(
+                  key: _formKey,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
                     Text(
                       isEditing ? "Editar etiqueta" : "Gerar etiqueta",
                       style: TextStyle(
@@ -889,7 +946,8 @@ Widget build(BuildContext context) {
                     ),
                     const SizedBox(height: 18),
                   ],
-                ),
+                 ),
+                )
               ),
             ],
           ),
@@ -1017,6 +1075,83 @@ Widget build(BuildContext context) {
           onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
             key: campo.key, label: campo.label, value: v,
           ),
+        );
+      }
+
+      case CampoTipo.image: {
+        final uid = context.read<AuthProvider>().user?.uid;
+        final valorAtual = gerar.camposValores[campo.key]?["value"];
+        final imageUrl = valorAtual?.toString();
+
+        return FormField<String>(
+          initialValue: imageUrl,
+          validator: (_) {
+            final atual = gerar.camposValores[campo.key]?["value"]?.toString() ?? "";
+            if (campo.obrigatorio && atual.trim().isEmpty) {
+              return "Campo obrigatório.";
+            }
+            return null;
+          },
+          builder: (field) {
+            final isDark = Theme.of(context).brightness == Brightness.dark;
+
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                CampoImagemUploadCard(
+                  label: campo.label,
+                  obrigatorio: campo.obrigatorio,
+                  isDark: isDark,
+                  imageUrl: imageUrl,
+                  onUpload: () async {
+                    if (uid == null) return;
+
+                    final url = await _pickAndUploadCampoImagem(
+                      uid: uid,
+                      campoKey: campo.key,
+                    );
+
+                    if (url == null) return;
+
+                    context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                      key: campo.key,
+                      label: campo.label,
+                      value: url,
+                    );
+
+                    field.didChange(url);
+                    if (context.mounted) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(content: Text("Imagem enviada com sucesso.")),
+                      );
+                    }
+                  },
+                  onRemove: () {
+                    context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                      key: campo.key,
+                      label: campo.label,
+                      value: "",
+                    );
+                    field.didChange("");
+                  },
+                ),
+                if (field.hasError) ...[
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      field.errorText!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         );
       }
     }

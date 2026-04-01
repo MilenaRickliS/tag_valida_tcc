@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum CampoTipo { text, number, multiline, date, boolType }
+enum CampoTipo { text, number, multiline, date, boolType, image }
 
 CampoTipo campoTipoFromString(String s) {
   switch (s) {
@@ -12,6 +12,8 @@ CampoTipo campoTipoFromString(String s) {
       return CampoTipo.date;
     case "bool":
       return CampoTipo.boolType;
+    case "image":
+      return CampoTipo.image;
     default:
       return CampoTipo.text;
   }
@@ -27,6 +29,8 @@ String campoTipoToString(CampoTipo t) {
       return "date";
     case CampoTipo.boolType:
       return "bool";
+    case CampoTipo.image:
+      return "image";
     case CampoTipo.text:
     return "text";
   }

@@ -209,6 +209,11 @@ class EtiquetaDetailsCard extends StatelessWidget {
               final label = (obj["label"] ?? entry.key).toString();
               final val = obj["value"];
 
+              if (_isImageValue(val)) {
+                return _linhaImagem(label, val.toString());
+              }
+
+
               String texto;
               if (val is int) {
                 texto = formatCustomDate(val);
@@ -224,6 +229,24 @@ class EtiquetaDetailsCard extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  bool _isImageValue(dynamic value) {
+    if (value == null) return false;
+
+    final s = value.toString().trim().toLowerCase();
+    if (s.isEmpty) return false;
+
+    final isHttp = s.startsWith('http://') || s.startsWith('https://');
+    final looksLikeImage = s.contains('.jpg') ||
+        s.contains('.jpeg') ||
+        s.contains('.png') ||
+        s.contains('.webp') ||
+        s.contains('firebasestorage') ||
+        s.contains('storage.googleapis.com') ||
+        s.contains('alt=media');
+
+    return isHttp && looksLikeImage;
   }
 
   Widget _linha(String label, String value) {
@@ -251,6 +274,67 @@ class EtiquetaDetailsCard extends StatelessWidget {
                 fontSize: 14,
                 fontWeight: FontWeight.w700,
                 color: textColor,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _linhaImagem(String label, String imageUrl) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12.5,
+              color: mutedColor,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF181818) : const Color(0xFFFAF7F1),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: borderColor),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: AspectRatio(
+                aspectRatio: 16 / 10,
+                child: Image.network(
+                  imageUrl,
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Center(
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFED7227),
+                      ),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) {
+                    return Container(
+                      alignment: Alignment.center,
+                      padding: const EdgeInsets.all(16),
+                      child: Text(
+                        "Não foi possível carregar a imagem.",
+                        style: TextStyle(
+                          color: mutedColor,
+                          fontWeight: FontWeight.w600,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    );
+                  },
+                ),
               ),
             ),
           ),

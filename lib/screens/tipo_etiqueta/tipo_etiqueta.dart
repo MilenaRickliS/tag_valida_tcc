@@ -872,7 +872,11 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                           value: CampoTipo.boolType,
                           child: Text("Sim/Não", style: TextStyle(color: text)),
                         ),
-                      ],
+                        DropdownMenuItem(
+                          value: CampoTipo.image,
+                          child: Text("Imagem", style: TextStyle(color: text)),
+                        ),
+                        ],
                       onChanged: (v) => setLocal(() => tipo = v ?? CampoTipo.text),
                     ),
                     const SizedBox(height: 8),
@@ -1013,6 +1017,8 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
         return "Data";
       case CampoTipo.boolType:
         return "Sim/Não";
+      case CampoTipo.image:
+        return "Imagem";
     }
   }
 
@@ -1028,6 +1034,8 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
         return "Selecionador de data (ex: Fabricação)";
       case CampoTipo.boolType:
         return "Alternância Sim/Não (ex: Conferido?)";
+      case CampoTipo.image:
+        return "Permite enviar uma imagem para o banco de dados.";
     }
   }
 
