@@ -59,7 +59,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
   final Map<String, TextEditingController> customCtrls = {};
 
-  Map<String, Map<String, dynamic>> _sanitizeCamposValores(
+ Map<String, Map<String, dynamic>> _sanitizeCamposValores(
     Map<String, Map<String, dynamic>> input,
   ) {
     dynamic fix(dynamic v) {
@@ -67,15 +67,17 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       if (v is DateTime) return v.millisecondsSinceEpoch;
       if (v is Map) return v.map((k, val) => MapEntry(k.toString(), fix(val)));
       if (v is List) return v.map(fix).toList();
-      return v; 
+      return v;
     }
 
     return input.map((k, v) {
-     
       final map = Map<String, dynamic>.from(v);
-      map["label"] = (map["label"] ?? "").toString();
-      map["value"] = fix(map["value"]);
-      return MapEntry(k, map);
+
+      return MapEntry(k, {
+        "label": (map["label"] ?? "").toString(),
+        "tipo": (map["tipo"] ?? "text").toString(), 
+        "value": fix(map["value"]),
+      });
     });
   }
 
@@ -216,7 +218,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     editingSoldAt = e.soldAt;
 
 
-    quantidadeCtrl.text = e.quantidade.toString();
+    quantidadeCtrl.text = _normalizarQuantidade(e.quantidade);
 
     incluirTabelaNutricional = e.incluirTabelaNutricional;
 
@@ -314,8 +316,13 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     required String key,
     required String label,
     required dynamic value,
+    required CampoTipo tipo,
   }) {
-    camposValores[key] = {"label": label, "value": value};
+    camposValores[key] = {
+      "label": label,
+      "tipo": campoTipoToString(tipo), 
+      "value": value,
+    };
     notifyListeners();
   }
 
@@ -356,6 +363,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       key: "lote",
       label: "Lote",
       value: lote,
+      tipo: CampoTipo.text,
     );
   }
 
@@ -424,6 +432,25 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       }
     }
     return null;
+  }
+
+  String _normalizarQuantidade(dynamic value) {
+    if (value == null) return '';
+
+    if (value is int) return value.toString();
+
+    if (value is double) {
+      return value % 1 == 0
+          ? value.toInt().toString()
+          : value.toString().replaceAll('.', ',');
+    }
+
+    final s = value.toString().trim().replaceAll(',', '.');
+    final n = num.tryParse(s);
+
+    if (n == null) return s;
+
+    return n % 1 == 0 ? n.toInt().toString() : n.toString();
   }
 
   Future<String> salvarEtiqueta({

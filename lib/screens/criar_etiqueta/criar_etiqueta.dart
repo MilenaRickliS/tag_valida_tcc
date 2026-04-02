@@ -263,7 +263,7 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
     final loteStr = (safeCampos["lote"]?["value"] ?? "").toString().trim();
     final String? loteFinal = loteStr.isEmpty ? null : loteStr;
 
-
+    
     final fake = EtiquetaModel(
       id: "temp",
       tipoId: t.tipoId,
@@ -773,6 +773,7 @@ Widget build(BuildContext context) {
                                 key: "lote",
                                 label: "Lote",
                                 value: "",
+                                tipo: CampoTipo.text,
                               );
                           context
                               .read<GerarEtiquetaLocalProvider>()
@@ -986,7 +987,7 @@ Widget build(BuildContext context) {
             return null;
           },
           onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
-            key: campo.key, label: campo.label, value: v,
+            key: campo.key, label: campo.label, value: v, tipo: campo.tipo,
           ),
         );
       }
@@ -1013,7 +1014,7 @@ Widget build(BuildContext context) {
             return null;
           },
           onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
-            key: campo.key, label: campo.label, value: int.tryParse(v),
+            key: campo.key, label: campo.label, value: int.tryParse(v), tipo: campo.tipo,
           ),
         );
       }
@@ -1037,6 +1038,7 @@ Widget build(BuildContext context) {
               key: campo.key,
               label: campo.label,
               value: v ?? false,
+              tipo: campo.tipo,
             ),
           ),
         );
@@ -1054,6 +1056,7 @@ Widget build(BuildContext context) {
             key: campo.key,
             label: campo.label,
             value: d.millisecondsSinceEpoch,
+            tipo: campo.tipo,
           ),
         );
 
@@ -1079,7 +1082,7 @@ Widget build(BuildContext context) {
             return null;
           },
           onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
-            key: campo.key, label: campo.label, value: v,
+            key: campo.key, label: campo.label, value: v,  tipo: campo.tipo,
           ),
         );
       }
@@ -1123,6 +1126,7 @@ Widget build(BuildContext context) {
                       key: campo.key,
                       label: campo.label,
                       value: url,
+                      tipo: campo.tipo,
                     );
 
                     field.didChange(url);
@@ -1137,6 +1141,7 @@ Widget build(BuildContext context) {
                       key: campo.key,
                       label: campo.label,
                       value: "",
+                      tipo: campo.tipo,
                     );
                     field.didChange("");
                   },

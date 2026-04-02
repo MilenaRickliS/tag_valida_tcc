@@ -214,22 +214,59 @@ class EtiquetaDetailsCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             ...customSemLote.entries.map((entry) {
+              
               final obj = Map<String, dynamic>.from(entry.value as Map);
               final label = (obj["label"] ?? entry.key).toString();
               final val = obj["value"];
+              final tipo = (obj["tipo"] ?? "text").toString();
 
               if (_isImageValue(val)) {
                 return _linhaImagem(label, val.toString());
               }
 
-
               String texto;
-              if (val is int) {
-                texto = formatCustomDate(val);
-              } else if (val is bool) {
-                texto = val ? "Sim" : "Não";
-              } else {
-                texto = val?.toString() ?? "";
+              debugPrint("label=$label | tipo=$tipo | val=$val | runtime=${val.runtimeType}");
+
+              switch (tipo) {
+                case "date":
+                  if (val is int) {
+                    texto = formatCustomDate(val);
+                  } else {
+                    texto = val?.toString() ?? "";
+                  }
+                  break;
+
+                case "bool":
+                case "boolType":
+                  if (val is bool) {
+                    texto = val ? "Sim" : "Não";
+                  } else {
+                    final s = (val ?? "").toString().toLowerCase().trim();
+
+                    const verdadeiros = ["true", "1", "sim", "yes"];
+                    const falsos = ["false", "0", "não", "nao", "no"];
+
+                    if (verdadeiros.contains(s)) {
+                      texto = "Sim";
+                    } else if (falsos.contains(s)) {
+                      texto = "Não";
+                    } else {
+                      texto = "Não";
+                    }
+                  }
+                  break;
+                                case "number":
+                  if (val is num) {
+                    texto = val % 1 == 0
+                        ? val.toInt().toString()
+                        : val.toString().replaceAll(".", ",");
+                  } else {
+                    texto = val?.toString() ?? "";
+                  }
+                  break;
+
+                default:
+                  texto = val?.toString() ?? "";
               }
 
               return _linha(label, texto);
