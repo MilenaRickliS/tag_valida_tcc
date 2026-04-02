@@ -837,6 +837,8 @@ class EtiquetaPreviewScreen extends StatelessWidget {
                       saidas: _fmtNum(saidas),
                       restante: _fmtNum(restanteView),
                       customSemLote: customSemLote,
+                      incluirTabelaNutricional: e.incluirTabelaNutricional,
+                      tabelaNutricional: e.tabelaNutricional,
                       formatCustomDate: (ms) =>
                           _fmtDate(DateTime.fromMillisecondsSinceEpoch(ms)),
                     ),

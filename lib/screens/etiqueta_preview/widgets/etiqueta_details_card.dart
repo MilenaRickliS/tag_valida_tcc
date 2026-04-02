@@ -3,6 +3,10 @@
 import 'package:flutter/material.dart';
 import 'badge_chip.dart';
 import 'status_chip.dart';
+import './tabela_nutricional_preview_card.dart';
+import './rotulagem_frontal_card.dart';
+import '../../../models/tabela_nutricional_model.dart';
+
 
 class EtiquetaDetailsCard extends StatelessWidget {
   final bool isDark;
@@ -37,6 +41,9 @@ class EtiquetaDetailsCard extends StatelessWidget {
   final Map<String, dynamic> customSemLote;
   final String Function(int ms) formatCustomDate;
 
+  final bool incluirTabelaNutricional;
+  final TabelaNutricionalModel? tabelaNutricional;
+
   const EtiquetaDetailsCard({
     super.key,
     required this.isDark,
@@ -64,6 +71,8 @@ class EtiquetaDetailsCard extends StatelessWidget {
     required this.restante,
     required this.customSemLote,
     required this.formatCustomDate,
+    required this.incluirTabelaNutricional,
+    required this.tabelaNutricional,
   });
 
   @override
@@ -225,6 +234,50 @@ class EtiquetaDetailsCard extends StatelessWidget {
 
               return _linha(label, texto);
             }),
+          ],
+          if (incluirTabelaNutricional && tabelaNutricional != null) ...[
+            const SizedBox(height: 14),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(20),
+                border: Border.all(color: borderColor),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Tabela nutricional',
+                    style: TextStyle(
+                      color: textColor,
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    'Visualização conforme padrão de rotulagem',
+                    style: TextStyle(
+                      color: mutedColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                 if (incluirTabelaNutricional && tabelaNutricional != null) ...[
+                  const SizedBox(height: 12),
+                  TabelaNutricionalPreviewCard(
+                    tabela: tabelaNutricional!,
+                  ),
+                  const SizedBox(height: 6),
+                  RotulagemFrontalImagem(
+                    tabela: tabelaNutricional!,
+                  ),
+                ],
+                ],
+              ),
+            ),
           ],
         ],
       ),
