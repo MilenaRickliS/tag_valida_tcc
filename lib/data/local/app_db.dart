@@ -7,7 +7,7 @@ class AppDb {
   static final AppDb instance = AppDb._();
 
   static const _dbName = 'tag_valida.db';
-  static const _dbVersion = 14;
+  static const _dbVersion = 16;
 
   Database? _db;
 
@@ -66,6 +66,8 @@ class AppDb {
         usarRegraValidadeCategoria INTEGER NOT NULL,
         controlaLote INTEGER NOT NULL DEFAULT 0,
         permiteTabelaNutricional INTEGER NOT NULL DEFAULT 0,
+        larguraMm REAL NOT NULL DEFAULT 60,
+        alturaMm REAL NOT NULL DEFAULT 40,
         camposCustomJson TEXT NOT NULL,
         createdAt INTEGER,
         updatedAt INTEGER,
@@ -225,6 +227,36 @@ class AppDb {
 
     await db.execute('CREATE INDEX idx_printer_configs_uid ON printer_configs(uid)');
   
+
+    await db.execute('''
+      CREATE TABLE design_etiqueta_configs (
+        tipoEtiquetaId TEXT NOT NULL,
+        uid TEXT NOT NULL,
+        tipoEtiquetaNome TEXT NOT NULL,
+
+        larguraMm REAL NOT NULL DEFAULT 60,
+        alturaMm REAL NOT NULL DEFAULT 40,
+
+        mostrarLogo INTEGER NOT NULL DEFAULT 1,
+        mostrarBordaInterna INTEGER NOT NULL DEFAULT 1,
+        destacarValidade INTEGER NOT NULL DEFAULT 1,
+
+        camposJson TEXT NOT NULL,
+
+        createdAt INTEGER,
+        updatedAt INTEGER,
+
+        PRIMARY KEY (uid, tipoEtiquetaId)
+      );
+    ''');
+
+    await db.execute(
+      'CREATE INDEX idx_design_etiqueta_uid ON design_etiqueta_configs(uid);',
+    );
+
+    await db.execute(
+      'CREATE INDEX idx_design_etiqueta_uid_tipo ON design_etiqueta_configs(uid, tipoEtiquetaId);',
+    );
   }
 
 
@@ -496,6 +528,54 @@ class AppDb {
       if (!hasCol("tabelaNutricionalJson")) {
         await db.execute(
           "ALTER TABLE etiquetas_templates ADD COLUMN tabelaNutricionalJson TEXT;"
+        );
+      }
+    }
+    if (oldVersion < 15) {
+      await db.execute('''
+        CREATE TABLE IF NOT EXISTS design_etiqueta_configs (
+          tipoEtiquetaId TEXT NOT NULL,
+          uid TEXT NOT NULL,
+          tipoEtiquetaNome TEXT NOT NULL,
+
+          larguraMm REAL NOT NULL DEFAULT 60,
+          alturaMm REAL NOT NULL DEFAULT 40,
+
+          mostrarLogo INTEGER NOT NULL DEFAULT 1,
+          mostrarBordaInterna INTEGER NOT NULL DEFAULT 1,
+          destacarValidade INTEGER NOT NULL DEFAULT 1,
+
+          camposJson TEXT NOT NULL,
+
+          createdAt INTEGER,
+          updatedAt INTEGER,
+
+          PRIMARY KEY (uid, tipoEtiquetaId)
+        );
+      ''');
+
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_design_etiqueta_uid ON design_etiqueta_configs(uid);',
+      );
+
+      await db.execute(
+        'CREATE INDEX IF NOT EXISTS idx_design_etiqueta_uid_tipo ON design_etiqueta_configs(uid, tipoEtiquetaId);',
+      );
+    }
+    if (oldVersion < 16) {
+      final colsTipo = await db.rawQuery("PRAGMA table_info(tipos_etiqueta)");
+      bool hasTipoCol(String name) =>
+          colsTipo.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasTipoCol("larguraMm")) {
+        await db.execute(
+          "ALTER TABLE tipos_etiqueta ADD COLUMN larguraMm REAL NOT NULL DEFAULT 60;"
+        );
+      }
+
+      if (!hasTipoCol("alturaMm")) {
+        await db.execute(
+          "ALTER TABLE tipos_etiqueta ADD COLUMN alturaMm REAL NOT NULL DEFAULT 40;"
         );
       }
     }

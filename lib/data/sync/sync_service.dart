@@ -200,6 +200,45 @@ class SyncService {
               }
             }
           }
+
+          if (entity == "design_etiqueta_configs") {
+            if (map.containsKey("mostrarLogo")) {
+              final v = map["mostrarLogo"];
+              if (v is int) map["mostrarLogo"] = v == 1;
+              if (v is num) map["mostrarLogo"] = v.toInt() == 1;
+              if (v is String) {
+                map["mostrarLogo"] = (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
+
+            if (map.containsKey("mostrarBordaInterna")) {
+              final v = map["mostrarBordaInterna"];
+              if (v is int) map["mostrarBordaInterna"] = v == 1;
+              if (v is num) map["mostrarBordaInterna"] = v.toInt() == 1;
+              if (v is String) {
+                map["mostrarBordaInterna"] =
+                    (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
+
+            if (map.containsKey("destacarValidade")) {
+              final v = map["destacarValidade"];
+              if (v is int) map["destacarValidade"] = v == 1;
+              if (v is num) map["destacarValidade"] = v.toInt() == 1;
+              if (v is String) {
+                map["destacarValidade"] =
+                    (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
+
+            if (map["campos"] is String) {
+              try {
+                map["campos"] = jsonDecode(map["campos"]);
+              } catch (_) {
+                map["campos"] = [];
+              }
+            }
+          }
           await _col(uid, entity).doc(entityId).set(map, SetOptions(merge: true));
         }
 
@@ -268,6 +307,8 @@ class SyncService {
         "controlaLote": (d["controlaLote"] ?? false) ? 1 : 0,
         "permiteTabelaNutricional": (d["permiteTabelaNutricional"] ?? false) ? 1 : 0,
         "camposCustomJson": jsonEncode(campos),
+        "larguraMm": (d["larguraMm"] as num?)?.toDouble() ?? 60,
+        "alturaMm": (d["alturaMm"] as num?)?.toDouble() ?? 40,
         "createdAt": (d["createdAt"] as Timestamp?)?.millisecondsSinceEpoch,
         "updatedAt": (d["updatedAt"] as Timestamp?)?.millisecondsSinceEpoch,
       };
@@ -416,6 +457,49 @@ class SyncService {
         "updatedAt": ms(d["updatedAt"]) ?? ms(d["updatedAtMs"]),
       };
     });
+
+    await _pullCollection(
+      uid,
+      "design_etiqueta_configs",
+      table: "design_etiqueta_configs",
+      mapToLocal: (doc) {
+        final d = doc.data();
+
+        int? ms(dynamic v) {
+          if (v is Timestamp) return v.millisecondsSinceEpoch;
+          if (v is int) return v;
+          if (v is num) return v.toInt();
+          return null;
+        }
+
+        bool toBool(dynamic v, {bool defaultValue = false}) {
+          if (v == null) return defaultValue;
+          if (v is bool) return v;
+          if (v is int) return v == 1;
+          if (v is num) return v.toInt() == 1;
+          final s = v.toString().trim().toLowerCase();
+          if (s == 'true' || s == '1') return true;
+          if (s == 'false' || s == '0') return false;
+          return defaultValue;
+        }
+
+        return {
+          "tipoEtiquetaId": doc.id,
+          "uid": uid,
+          "tipoEtiquetaNome": (d["tipoEtiquetaNome"] ?? "").toString(),
+          "larguraMm": (d["larguraMm"] as num?)?.toDouble() ?? 60,
+          "alturaMm": (d["alturaMm"] as num?)?.toDouble() ?? 40,
+          "mostrarLogo": toBool(d["mostrarLogo"], defaultValue: true) ? 1 : 0,
+          "mostrarBordaInterna":
+              toBool(d["mostrarBordaInterna"], defaultValue: true) ? 1 : 0,
+          "destacarValidade":
+              toBool(d["destacarValidade"], defaultValue: true) ? 1 : 0,
+          "camposJson": jsonEncode(d["campos"] ?? []),
+          "createdAt": ms(d["createdAt"]) ?? ms(d["createdAtMs"]),
+          "updatedAt": ms(d["updatedAt"]) ?? ms(d["updatedAtMs"]),
+        };
+      },
+    );
   }
 
   Future<void> _pullCollection(

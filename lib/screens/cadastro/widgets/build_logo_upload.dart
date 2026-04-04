@@ -1,3 +1,5 @@
+// ignore_for_file: deprecated_member_use
+
 import 'dart:io';
 import 'package:flutter/material.dart';
 
@@ -17,36 +19,48 @@ class LogoUploadCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final onSurface = theme.colorScheme.onSurface;
+    final isDark = theme.brightness == Brightness.dark;
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        color: const Color(0xFFF8F8F8),
+        color: isDark ? theme.cardColor : const Color(0xFFF8F8F8),
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.black12),
+        border: Border.all(
+          color: onSurface.withOpacity(0.10),
+        ),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
+          Row(
             children: [
-              Icon(Icons.image_outlined),
-              SizedBox(width: 8),
+              Icon(
+                Icons.image_outlined,
+                color: onSurface.withOpacity(0.80),
+              ),
+              const SizedBox(width: 8),
               Text(
                 'Logo da empresa (opcional)',
                 style: TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w600,
+                  color: onSurface,
                 ),
               ),
             ],
           ),
           const SizedBox(height: 10),
-          const Text(
+          Text(
             'Selecione uma imagem para usar como logo da empresa.',
-            style: TextStyle(fontSize: 13, color: Colors.black54),
+            style: TextStyle(
+              fontSize: 13,
+              color: onSurface.withOpacity(0.65),
+            ),
           ),
           const SizedBox(height: 12),
-
           if (logoFile != null) ...[
             Center(
               child: ClipRRect(
@@ -61,16 +75,19 @@ class LogoUploadCard extends StatelessWidget {
             ),
             const SizedBox(height: 12),
           ],
-
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: [
               OutlinedButton.icon(
                 onPressed: loading ? null : onPickLogo,
-                icon: const Icon(Icons.upload_outlined),
+                icon: Icon(
+                  Icons.upload_outlined,
+                  color: onSurface,
+                ),
                 label: Text(
                   logoFile == null ? 'Selecionar logo' : 'Trocar logo',
+                  style: TextStyle(color: onSurface),
                 ),
               ),
               if (logoFile != null)

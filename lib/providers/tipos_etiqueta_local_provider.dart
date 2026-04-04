@@ -21,7 +21,7 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
     notifyListeners();
   }
 
- String? _trimOrNull(String? s) {
+  String? _trimOrNull(String? s) {
     final t = s?.trim();
     if (t == null || t.isEmpty) return null;
     return t;
@@ -29,14 +29,17 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
 
   Future<void> create(String uid, TipoEtiquetaModel tipo) async {
     final id = DateTime.now().millisecondsSinceEpoch.toString();
+
     final novo = TipoEtiquetaModel(
       id: id,
       nome: tipo.nome.trim(),
       descricao: _trimOrNull(tipo.descricao),
       usarRegraValidadeCategoria: tipo.usarRegraValidadeCategoria,
       controlaLote: tipo.controlaLote,
-       permiteTabelaNutricional: tipo.permiteTabelaNutricional,
+      permiteTabelaNutricional: tipo.permiteTabelaNutricional,
       camposCustom: tipo.camposCustom,
+      larguraMm: tipo.larguraMm,
+      alturaMm: tipo.alturaMm,
     );
 
     await repo.upsert(uid, novo);
@@ -50,8 +53,10 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
       descricao: _trimOrNull(tipo.descricao),
       usarRegraValidadeCategoria: tipo.usarRegraValidadeCategoria,
       controlaLote: tipo.controlaLote,
-       permiteTabelaNutricional: tipo.permiteTabelaNutricional,
+      permiteTabelaNutricional: tipo.permiteTabelaNutricional,
       camposCustom: tipo.camposCustom,
+      larguraMm: tipo.larguraMm,
+      alturaMm: tipo.alturaMm,
     );
 
     await repo.upsert(uid, atualizado);
@@ -61,5 +66,25 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
   Future<void> delete(String uid, String id) async {
     await repo.delete(uid, id);
     await fetch(uid);
+  }
+
+  Future<void> updateMedidas({
+    required String uid,
+    required String tipoId,
+    required double larguraMm,
+    required double alturaMm,
+  }) async {
+    final index = items.indexWhere((e) => e.id == tipoId);
+    if (index == -1) return;
+
+    final atualizado = items[index].copyWith(
+      larguraMm: larguraMm,
+      alturaMm: alturaMm,
+    );
+
+    await repo.upsert(uid, atualizado);
+
+    _items[index] = atualizado;
+    notifyListeners();
   }
 }

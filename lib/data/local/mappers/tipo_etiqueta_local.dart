@@ -17,6 +17,8 @@ extension TipoEtiquetaLocalMapper on TipoEtiquetaModel {
       'controlaLote': controlaLote ? 1 : 0,
       'permiteTabelaNutricional': permiteTabelaNutricional ? 1 : 0,
       'camposCustomJson': camposJson,
+      'larguraMm': larguraMm,
+      'alturaMm': alturaMm,
       'createdAt': nowMs,
       'updatedAt': nowMs,
     };
@@ -37,6 +39,8 @@ extension TipoEtiquetaLocalMapper on TipoEtiquetaModel {
       camposCustom: campos,
       controlaLote: (m['controlaLote'] ?? 0) == 1,
       permiteTabelaNutricional: (m['permiteTabelaNutricional'] ?? 0) == 1,
+      larguraMm: (m['larguraMm'] ?? 60).toDouble(),
+      alturaMm: (m['alturaMm'] ?? 40).toDouble(),
     );
   }
 }

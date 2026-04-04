@@ -34,6 +34,8 @@ class TiposEtiquetaLocalRepo {
         "controlaLote": tipo.controlaLote,
         "permiteTabelaNutricional": tipo.permiteTabelaNutricional,
         "camposCustom": tipo.camposCustom.map((c) => c.toMap()).toList(),
+        "larguraMm": tipo.larguraMm,
+        "alturaMm": tipo.alturaMm,
         "createdAtMs": nowMs,
         "updatedAtMs": nowMs,
       };
@@ -44,15 +46,16 @@ class TiposEtiquetaLocalRepo {
         entity: "tipos_etiqueta",
         entityId: tipo.id,
         payload: payload,
-      
       );
     });
   }
 
-
-  Future<void> delete(String uid, String id, {bool enqueueFirestoreDelete = true}) async {
+  Future<void> delete(
+    String uid,
+    String id, {
+    bool enqueueFirestoreDelete = true,
+  }) async {
     final db = await AppDb.instance.db;
-  
 
     await db.transaction((txn) async {
       await txn.delete(
@@ -67,7 +70,6 @@ class TiposEtiquetaLocalRepo {
           uid: uid,
           entity: "tipos_etiqueta",
           entityId: id,
-         
         );
       }
     });

@@ -2,15 +2,17 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../providers/auth_provider.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 import 'package:http/http.dart' as http;
 import 'package:mask_text_input_formatter/mask_text_input_formatter.dart';
-import './widgets/form_field.dart';
 import 'dart:io';
 import 'package:image_picker/image_picker.dart';
+import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import './widgets/build_logo_upload.dart';
+import './widgets/form_field.dart';
+
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -346,240 +348,352 @@ class _CadastroScreenState extends State<CadastroScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7ED),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Cadastro", style: TextStyle(fontWeight: FontWeight.w600),),
-        backgroundColor: const Color(0xFFFDF7ED),
+        title: const Text(
+          "Cadastro",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/',
+              (_) => false,
+            );
+          },
+        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 8),
+            child: IconButton(
+              tooltip: isDark ? 'Modo claro' : 'Modo escuro',
+              onPressed: () {
+                context.read<ThemeProvider>().toggleTheme();
+              },
+              icon: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 250),
+                child: Icon(
+                  isDark
+                      ? Icons.light_mode_outlined
+                      : Icons.dark_mode_outlined,
+                  key: ValueKey(isDark),
+                  color: colorScheme.primary,
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16),
           child: ConstrainedBox(
             constraints: const BoxConstraints(maxWidth: 520),
-            child:
-            Column(
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
                 Image.asset(
-                  'assets/logo3.png',
+                  'assets/logo3-semfundo.png',
                   height: 150,
                 ),
-
-                const SizedBox(height: 16), 
-              Card(
-                color: Colors.white,
-                elevation: 3,
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-                child: Padding(
-                  padding: const EdgeInsets.all(16),
-                  child: Form(
-                    key: _formKey,
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                      children: [
-                        AppFormField(
+                const SizedBox(height: 16),
+                Card(
+                  color: theme.cardColor,
+                  elevation: 3,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Form(
+                      key: _formKey,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          AppFormField(
                             controller: nome,
                             label: "Nome (fantasia)",
                             validator: _vNome,
-                            prefixIcon: const Icon(Icons.storefront_outlined),
+                            prefixIcon: Icon(
+                              Icons.storefront_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
                           ),
-                        AppFormField(
-                          controller:  razao,
-                          label: "Razão social",
-                          validator: _vRazao,
-                          prefixIcon: const Icon(Icons.business_outlined),
-                        ),
-                        AppFormField(
-                          controller:  email,
-                          label: "E-mail",
-                          keyboardType: TextInputType.emailAddress,
-                          validator: _vEmail,
-                          prefixIcon: const Icon(Icons.email_outlined),
-                        ),
-                        AppFormField(
-                          controller:  senha,
-                          label: "Senha",
-                          obscureText: _obscure,
-                          validator: _vSenha,
-                          prefixIcon: const Icon(Icons.lock_outline),
-                          suffixIcon: IconButton(
-                            onPressed: () => setState(() => _obscure = !_obscure),
-                            icon: Icon(_obscure ? Icons.visibility_off : Icons.visibility),
+                          AppFormField(
+                            controller: razao,
+                            label: "Razão social",
+                            validator: _vRazao,
+                            prefixIcon: Icon(
+                              Icons.business_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
                           ),
-                        ),
-
-                        const Divider(height: 24),
-
-                        AppFormField(
-                          controller:  cnpj,
-                          label: "CNPJ",
-                          keyboardType: TextInputType.number,
-                          validator: _vCnpj,
-                          inputFormatters: [_cnpjMask],
-                          prefixIcon: const Icon(Icons.badge_outlined),
-                        ),
-                        AppFormField(
-                          controller:  telefone,
-                          label: "Telefone",
-                          keyboardType: TextInputType.phone,
-                          validator: _vTelefone,
-                          inputFormatters: [_phoneMask],
-                          prefixIcon: const Icon(Icons.phone_outlined),
-                        ),
-                        AppFormField(
-                          controller:  responsavel,
-                          label: "Responsável",
-                          validator: _vResponsavel,
-                          prefixIcon: const Icon(Icons.person_outline),
-                        ),
-
-                        const Divider(height: 24),
-
-                        AppFormField(
-                          controller:  cep,
-                          label: "CEP",
-                          keyboardType: TextInputType.number,
-                          validator: _vCep,
-                          inputFormatters: [_cepMask],
-                          prefixIcon: const Icon(Icons.location_on_outlined),
-                          suffixIcon: _cepLoading
-                              ? const Padding(
-                                  padding: EdgeInsets.all(12),
-                                  child: SizedBox(height: 18, width: 18, child: CircularProgressIndicator(strokeWidth: 2)),
-                                )
-                              : IconButton(
-                                  tooltip: "Buscar CEP",
-                                  onPressed: () => _buscarCep(_cepMask.getUnmaskedText()),
-                                  icon: const Icon(Icons.search),
-                                ),
-                          onChanged: (_) {
-                            final digits = _cepMask.getUnmaskedText();
-                            if (digits.length == 8) _buscarCep(digits);
-                          },
-                        ),
-                        AppFormField(
-                          controller:  rua,
-                          label: "Rua",
-                          validator: _vRua,
-                          prefixIcon: const Icon(Icons.signpost_outlined),
-                        ),
-                       AppFormField(
-                          controller:  numero,
-                          label: "Número",
-                          keyboardType: TextInputType.number,
-                          validator: _vNumero,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                          prefixIcon: const Icon(Icons.tag_outlined),
-                          focusNode: _numeroFocus,
-                        ),
-                       AppFormField(
-                          controller:  bairro,
-                          label: "Bairro",
-                          validator: _vBairro,
-                          prefixIcon: const Icon(Icons.map_outlined),
-                        ),
-                       AppFormField(
-                          controller:  complemento,
-                          label: "Complemento (opcional)",
-                          validator: (_) => null,
-                          prefixIcon: const Icon(Icons.add_location_alt_outlined),
-                        ),
-                        AppFormField(
-                          controller:  cidade,
-                          label: "Cidade",
-                          validator: _vCidade,
-                          prefixIcon: const Icon(Icons.location_city_outlined),
-                        ),
-
-                        AppFormField(
-                          controller:  estado,
-                          label: "Estado (UF)",
-                          validator: _vEstado,
-                          inputFormatters: [
-                            FilteringTextInputFormatter.allow(RegExp(r"[A-Za-zÀ-ÿçÇ]")),
-                            LengthLimitingTextInputFormatter(2),
-                          ],
-
-                          prefixIcon: const Icon(Icons.flag_outlined),
-                          onChanged: (v) {
-                            
-                            final up = v.toUpperCase();
-                            if (up != v) {
-                              estado.value = estado.value.copyWith(
-                                text: up,
-                                selection: TextSelection.collapsed(offset: up.length),
-                              );
-                            }
-                          },
-                        ),
-                      const SizedBox(height: 8),
-                      LogoUploadCard(
-                        logoFile: _logoFile,
-                        loading: _loading,
-                        onPickLogo: _pickLogo,
-                        onRemoveLogo: _removerLogo,
-                      ),
-                        const SizedBox(height: 8),
-
-                        ElevatedButton(
-                          onPressed: _loading ? null : _cadastrar,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor:const Color(0xFFC29500),
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                          side: const BorderSide(
-                                      color: Colors.black,
-                                      width: 1.5,
-                                    ),
+                          AppFormField(
+                            controller: email,
+                            label: "E-mail",
+                            keyboardType: TextInputType.emailAddress,
+                            validator: _vEmail,
+                            prefixIcon: Icon(
+                              Icons.email_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
                           ),
-
-                          child: _loading
-                              ? const SizedBox(
-                                  height: 22,
-                                  width: 22,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text("Cadastrar", style: TextStyle(
-                                        fontWeight: FontWeight.w600),
-                                  ),
-                        ),
-
-                        const SizedBox(height: 10),
-
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            TextButton(
-                            onPressed: _loading
-                                  ? null
-                                  : () => Navigator.pushNamed(context, '/login'),
-                              child: const Text(
-                                "Já possui conta? Faça login.",
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w600,
-                                  fontStyle: FontStyle.italic,
-                                  color: Colors.black,               
-                                  decoration: TextDecoration.underline, 
-                                  
-                                ),
+                          AppFormField(
+                            controller: senha,
+                            label: "Senha",
+                            obscureText: _obscure,
+                            validator: _vSenha,
+                            prefixIcon: Icon(
+                              Icons.lock_outline,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                            suffixIcon: IconButton(
+                              onPressed: () =>
+                                  setState(() => _obscure = !_obscure),
+                              icon: Icon(
+                                _obscure
+                                    ? Icons.visibility_off
+                                    : Icons.visibility,
+                                color: colorScheme.onSurface.withOpacity(0.75),
                               ),
                             ),
-                          ],
-                        ),
+                          ),
 
-                      ],
+                          Divider(
+                            height: 24,
+                            color: theme.dividerColor.withOpacity(0.35),
+                          ),
+
+                          AppFormField(
+                            controller: cnpj,
+                            label: "CNPJ",
+                            keyboardType: TextInputType.number,
+                            validator: _vCnpj,
+                            inputFormatters: [_cnpjMask],
+                            prefixIcon: Icon(
+                              Icons.badge_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                          ),
+                          AppFormField(
+                            controller: telefone,
+                            label: "Telefone",
+                            keyboardType: TextInputType.phone,
+                            validator: _vTelefone,
+                            inputFormatters: [_phoneMask],
+                            prefixIcon: Icon(
+                              Icons.phone_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                          ),
+                          AppFormField(
+                            controller: responsavel,
+                            label: "Responsável",
+                            validator: _vResponsavel,
+                            prefixIcon: Icon(
+                              Icons.person_outline,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                          ),
+
+                          Divider(
+                            height: 24,
+                            color: theme.dividerColor.withOpacity(0.35),
+                          ),
+
+                          AppFormField(
+                            controller: cep,
+                            label: "CEP",
+                            keyboardType: TextInputType.number,
+                            validator: _vCep,
+                            inputFormatters: [_cepMask],
+                            prefixIcon: Icon(
+                              Icons.location_on_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                            suffixIcon: _cepLoading
+                                ? const Padding(
+                                    padding: EdgeInsets.all(12),
+                                    child: SizedBox(
+                                      height: 18,
+                                      width: 18,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                      ),
+                                    ),
+                                  )
+                                : IconButton(
+                                    tooltip: "Buscar CEP",
+                                    onPressed: () =>
+                                        _buscarCep(_cepMask.getUnmaskedText()),
+                                    icon: Icon(
+                                      Icons.search,
+                                      color: colorScheme.onSurface
+                                          .withOpacity(0.75),
+                                    ),
+                                  ),
+                            onChanged: (_) {
+                              final digits = _cepMask.getUnmaskedText();
+                              if (digits.length == 8) _buscarCep(digits);
+                            },
+                          ),
+                          AppFormField(
+                            controller: rua,
+                            label: "Rua",
+                            validator: _vRua,
+                            prefixIcon: Icon(
+                              Icons.signpost_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                          ),
+                          AppFormField(
+                            controller: numero,
+                            label: "Número",
+                            keyboardType: TextInputType.number,
+                            validator: _vNumero,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.digitsOnly
+                            ],
+                            prefixIcon: Icon(
+                              Icons.tag_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                            focusNode: _numeroFocus,
+                          ),
+                          AppFormField(
+                            controller: bairro,
+                            label: "Bairro",
+                            validator: _vBairro,
+                            prefixIcon: Icon(
+                              Icons.map_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                          ),
+                          AppFormField(
+                            controller: complemento,
+                            label: "Complemento (opcional)",
+                            validator: (_) => null,
+                            prefixIcon: Icon(
+                              Icons.add_location_alt_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                          ),
+                          AppFormField(
+                            controller: cidade,
+                            label: "Cidade",
+                            validator: _vCidade,
+                            prefixIcon: Icon(
+                              Icons.location_city_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                          ),
+                          AppFormField(
+                            controller: estado,
+                            label: "Estado (UF)",
+                            validator: _vEstado,
+                            inputFormatters: [
+                              FilteringTextInputFormatter.allow(
+                                RegExp(r"[A-Za-zÀ-ÿçÇ]"),
+                              ),
+                              LengthLimitingTextInputFormatter(2),
+                            ],
+                            prefixIcon: Icon(
+                              Icons.flag_outlined,
+                              color: colorScheme.onSurface.withOpacity(0.75),
+                            ),
+                            onChanged: (v) {
+                              final up = v.toUpperCase();
+                              if (up != v) {
+                                estado.value = estado.value.copyWith(
+                                  text: up,
+                                  selection: TextSelection.collapsed(
+                                    offset: up.length,
+                                  ),
+                                );
+                              }
+                            },
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          LogoUploadCard(
+                            logoFile: _logoFile,
+                            loading: _loading,
+                            onPickLogo: _pickLogo,
+                            onRemoveLogo: _removerLogo,
+                          ),
+
+                          const SizedBox(height: 8),
+
+                          ElevatedButton(
+                            onPressed: _loading ? null : _cadastrar,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFC29500),
+                              foregroundColor: Colors.black,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _loading
+                                ? const SizedBox(
+                                    height: 22,
+                                    width: 22,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                    ),
+                                  )
+                                : const Text(
+                                    "Cadastrar",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                          ),
+
+                          const SizedBox(height: 10),
+
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              TextButton(
+                                onPressed: _loading
+                                    ? null
+                                    : () => Navigator.pushNamed(
+                                          context,
+                                          '/login',
+                                        ),
+                                child: Text(
+                                  "Já possui conta? Faça login.",
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontStyle: FontStyle.italic,
+                                    color: colorScheme.onSurface,
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),
-              ),
               ],
+            ),
           ),
         ),
       ),
-    )
     );
   }
 }

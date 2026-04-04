@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../providers/auth_provider.dart';
+import '../../providers/theme_provider.dart';
 import './widgets/login_form_card.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -110,114 +111,124 @@ class _LoginScreenState extends State<LoginScreen> {
     final email = await showDialog<String>(
       context: context,
       barrierDismissible: false,
-      builder: (_) => AlertDialog(
-        backgroundColor: const Color(0xFFFDF7ED),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-          side: const BorderSide(
-            color: Color(0xFFC29500),
-            width: 1.2,
-          ),
-        ),
-        titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
-        contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+      builder: (_) {
+        final theme = Theme.of(context);
+        final isDark = theme.brightness == Brightness.dark;
+        final onSurface = theme.colorScheme.onSurface;
 
-        title: Row(
-          children: const [
-            Icon(
-              Icons.lock_reset,
+        return AlertDialog(
+          backgroundColor: theme.cardColor,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: const BorderSide(
               color: Color(0xFFC29500),
+              width: 1.2,
             ),
-            SizedBox(width: 10),
-            Text(
-              "Recuperar senha",
-              style: TextStyle(
-                fontWeight: FontWeight.w700,
+          ),
+          titlePadding: const EdgeInsets.fromLTRB(24, 24, 24, 8),
+          contentPadding: const EdgeInsets.fromLTRB(24, 8, 24, 20),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+          title: Row(
+            children: [
+              const Icon(
+                Icons.lock_reset,
+                color: Color(0xFFC29500),
+              ),
+              const SizedBox(width: 10),
+              Text(
+                "Recuperar senha",
+                style: TextStyle(
+                  fontWeight: FontWeight.w700,
+                  color: onSurface,
+                ),
+              ),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                "Informe o e-mail cadastrado para receber o link de recuperação.",
+                style: TextStyle(
+                  fontSize: 13,
+                  color: onSurface.withOpacity(0.80),
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: controller,
+                keyboardType: TextInputType.emailAddress,
+                style: TextStyle(color: onSurface),
+                decoration: InputDecoration(
+                  labelText: "E-mail",
+                  labelStyle: TextStyle(color: onSurface.withOpacity(0.65)),
+                  prefixIcon: Icon(
+                    Icons.email_outlined,
+                    color: onSurface.withOpacity(0.75),
+                  ),
+                  filled: true,
+                  fillColor: isDark
+                      ? Colors.white.withOpacity(0.05)
+                      : Colors.white,
+                  contentPadding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 14,
+                  ),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide(
+                      color: onSurface.withOpacity(0.15),
+                    ),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: const BorderSide(
+                      color: Color(0xFFC29500),
+                      width: 1.6,
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: onSurface,
+              ),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(fontWeight: FontWeight.w600),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, controller.text.trim()),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFC29500),
+                foregroundColor: Colors.black,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 12,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                side: const BorderSide(color: Colors.black, width: 1.2),
+                elevation: 2,
+              ),
+              child: const Text(
+                "Enviar link",
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
             ),
           ],
-        ),
-
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              "Informe o e-mail cadastrado para receber o link de recuperação.",
-              style: TextStyle(
-                fontSize: 13,
-                color: Colors.black87,
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            TextField(
-              controller: controller,
-              keyboardType: TextInputType.emailAddress,
-              decoration: InputDecoration(
-                labelText: "E-mail",
-                prefixIcon: const Icon(Icons.email_outlined),
-                filled: true,
-                fillColor: Colors.white,
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 14,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide.none,
-                ),
-                enabledBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: BorderSide(
-                    color: Colors.black.withOpacity(0.15),
-                  ),
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                  borderSide: const BorderSide(
-                    color: Color(0xFFC29500),
-                    width: 1.6,
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
-
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            style: TextButton.styleFrom(
-              foregroundColor: Colors.black87,
-            ),
-            child: const Text(
-              "Cancelar",
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, controller.text.trim()),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFC29500),
-              foregroundColor: Colors.black,
-              padding: const EdgeInsets.symmetric(
-                horizontal: 20,
-                vertical: 12,
-              ),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              side: const BorderSide(color: Colors.black, width: 1.2),
-              elevation: 2,
-            ),
-            child: const Text(
-              "Enviar link",
-              style: TextStyle(fontWeight: FontWeight.w600),
-            ),
-          ),
-        ],
-      ),
+        );
+      },
     );
 
 
@@ -280,12 +291,47 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = context.watch<ThemeProvider>().isDarkMode;
+
     return Scaffold(
-      backgroundColor: const Color(0xFFFDF7ED),
+      backgroundColor: theme.scaffoldBackgroundColor,
       appBar: AppBar(
-        title: const Text("Login", style: TextStyle(fontWeight: FontWeight.w600)),
-        backgroundColor: const Color(0xFFFDF7ED),
+        title: const Text(
+          "Login",
+          style: TextStyle(fontWeight: FontWeight.w600),
+        ),
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back),
+          onPressed: () {
+            Navigator.pushNamedAndRemoveUntil(
+              context,
+              '/',
+              (_) => false,
+            );
+          },
+        ),
+        backgroundColor: theme.scaffoldBackgroundColor,
         elevation: 0,
+        actions: [
+          IconButton(
+            tooltip: isDark ? "Modo claro" : "Modo escuro",
+            onPressed: () {
+              context.read<ThemeProvider>().toggleTheme();
+            },
+            icon: AnimatedSwitcher(
+              duration: const Duration(milliseconds: 250),
+              child: Icon(
+                isDark
+                    ? Icons.light_mode_outlined
+                    : Icons.dark_mode_outlined,
+                key: ValueKey(isDark),
+                color: theme.colorScheme.primary,
+              ),
+            ),
+          ),
+          const SizedBox(width: 4),
+        ],
       ),
       body: Center(
         child: SingleChildScrollView(
@@ -295,7 +341,7 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
               children: [
-                Image.asset('assets/logo3.png', height: 150),
+                Image.asset('assets/logo3-semfundo.png', height: 150),
                 const SizedBox(height: 16),
                 LoginFormCard(
                   formKey: _formKey,

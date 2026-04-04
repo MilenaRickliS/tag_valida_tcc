@@ -1,6 +1,18 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
+import '../../models/design_etiqueta_model.dart';
+import '../../providers/design_etiqueta_provider.dart';
+import '../../providers/tipos_etiqueta_local_provider.dart';
+import '../../providers/auth_provider.dart';
+import './widgets/tipo_selector.dart';
+import './widgets/empty_tipos_card.dart';
+import './widgets/config_panel.dart';
+import './widgets/top_header.dart';
+import './widgets/preview_panel.dart';
+import './widgets/loading_card.dart';
+
 
 class DesignEtiquetaScreen extends StatefulWidget {
   const DesignEtiquetaScreen({super.key});
@@ -12,16 +24,109 @@ class DesignEtiquetaScreen extends StatefulWidget {
 class _DesignEtiquetaScreenState extends State<DesignEtiquetaScreen> {
   static const _lightBg = Color(0xFFFDF7ED);
   static const _lightText = Color(0xFF2B2B2B);
-  static const _orange = Color(0xFFED7227);
-  static const _green = Color(0xFF88BE8E);
-
   static const _darkBg = Color(0xFF0F0F0F);
-  static const _darkCard = Color(0xFF1E1E1E);
+  static const _darkCard = Color(0xFF1A1A1A);
   static const _darkText = Colors.white;
   static const _gold = Color(0xFFD4AF37);
 
+  static const double _minLarguraMm = 20;
+  static const double _maxLarguraMm = 111;
+  static const double _minAlturaMm = 8;
+  static const double _maxAlturaMm = 2000;
+
   bool _isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
+  final _larguraController = TextEditingController();
+  final _alturaController = TextEditingController();
+
+  @override
+  void dispose() {
+    _larguraController.removeListener(_onMedidasChanged);
+    _alturaController.removeListener(_onMedidasChanged);
+    _larguraController.dispose();
+    _alturaController.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+
+    _larguraController.addListener(_onMedidasChanged);
+    _alturaController.addListener(_onMedidasChanged);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final designProvider = context.read<DesignEtiquetaProvider>();
+      final tiposProvider = context.read<TiposEtiquetaLocalProvider>();
+      final authProvider = context.read<AuthProvider>();
+
+      final uid = authProvider.user?.uid;
+      if (uid == null || uid.isEmpty) return;
+
+      if (tiposProvider.items.isEmpty) {
+        await tiposProvider.fetch(uid);
+      }
+
+      if (tiposProvider.items.isNotEmpty && designProvider.config == null) {
+        await designProvider.loadTipo(tiposProvider.items.first);
+      }
+
+      final config = designProvider.config;
+      if (config != null) {
+        _syncMedidasInputs(config);
+      }
+    });
+  }
+
+  void _syncMedidasInputs(DesignEtiquetaModel config) {
+    _larguraController.text = config.larguraMm.toStringAsFixed(0);
+    _alturaController.text = config.alturaMm.toStringAsFixed(0);
+  }
+
+    double _clampLargura(double value) {
+    return value.clamp(_minLarguraMm, _maxLarguraMm).toDouble();
+  }
+
+  double _clampAltura(double value) {
+    return value.clamp(_minAlturaMm, _maxAlturaMm).toDouble();
+  }
+
+  double? _parseMm(String text) {
+    return double.tryParse(text.replaceAll(',', '.'));
+  }
+
+  void _onMedidasChanged() {
+    final largura = _parseMm(_larguraController.text);
+    final altura = _parseMm(_alturaController.text);
+
+    if (largura == null || altura == null) return;
+
+    final larguraClamped = _clampLargura(largura);
+    final alturaClamped = _clampAltura(altura);
+
+    final provider = context.read<DesignEtiquetaProvider>();
+    provider.setLarguraMm(larguraClamped);
+    provider.setAlturaMm(alturaClamped);
+  }
+
+  String? validarLargura(String? value) {
+    final largura = _parseMm(value ?? '');
+    if (largura == null) return 'Informe uma largura válida';
+    if (largura < _minLarguraMm || largura > _maxLarguraMm) {
+      return 'Largura entre ${_minLarguraMm.toInt()} e ${_maxLarguraMm.toInt()} mm';
+    }
+    return null;
+  }
+
+  String? validarAltura(String? value) {
+    final altura = _parseMm(value ?? '');
+    if (altura == null) return 'Informe uma altura válida';
+    if (altura < _minAlturaMm || altura > _maxAlturaMm) {
+      return 'Altura entre ${_minAlturaMm.toInt()} e ${_maxAlturaMm.toInt()} mm';
+    }
+    return null;
+  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -29,215 +134,95 @@ class _DesignEtiquetaScreenState extends State<DesignEtiquetaScreen> {
     final bg = isDark ? _darkBg : _lightBg;
     final card = isDark ? _darkCard : Colors.white;
     final text = isDark ? _darkText : _lightText;
+    final muted = text.withOpacity(0.70);
     final border = isDark
         ? _gold.withOpacity(0.16)
         : Colors.black.withOpacity(0.08);
 
-    return Container(
-      color: bg,
-      child: Center(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 1180),
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 28),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Container(
-                  width: double.infinity,
-                  padding: const EdgeInsets.all(22),
-                  decoration: BoxDecoration(
-                    color: card,
-                    borderRadius: BorderRadius.circular(24),
-                    border: Border.all(color: border),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ],
+    final tiposProvider = context.watch<TiposEtiquetaLocalProvider>();
+    final designProvider = context.watch<DesignEtiquetaProvider>();
+
+    final tipos = tiposProvider.items;
+    final config = designProvider.config;
+
+    return Scaffold(
+      backgroundColor: bg,
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1450),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  buildTopHeader(
+                    card: card,
+                    text: text,
+                    muted: muted,
+                    border: border,
                   ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        'Design da etiqueta',
-                        style: TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.w900,
-                          color: text,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Aqui você pode organizar a aparência visual da etiqueta, pré-visualização, estilo, logo e disposição das informações.',
-                        style: TextStyle(
-                          fontSize: 14,
-                          height: 1.4,
-                          color: text.withOpacity(0.72),
-                        ),
-                      ),
-                      const SizedBox(height: 22),
+                  const SizedBox(height: 18),
+                   if (tipos.isNotEmpty) ...[
+                    TipoEtiquetaDesignSelector(
+                      tipos: tipos,
+                      selectedId: designProvider.tipoSelecionado?.id,
+                     onSelected: (tipo) async {
+                        await context.read<DesignEtiquetaProvider>().loadTipo(tipo);
 
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
-                        children: [
-                          _optionCard(
-                            title: 'Modelo',
-                            subtitle: 'Compacta 60x40',
-                            icon: Icons.local_offer_outlined,
-                            color: _orange,
-                            isDark: isDark,
-                          ),
-                          _optionCard(
-                            title: 'Logo',
-                            subtitle: 'TagValida',
-                            icon: Icons.image_outlined,
-                            color: _green,
-                            isDark: isDark,
-                          ),
-                          _optionCard(
-                            title: 'Cor principal',
-                            subtitle: 'Laranja da marca',
-                            icon: Icons.palette_outlined,
-                            color: _orange,
-                            isDark: isDark,
-                          ),
-                          _optionCard(
-                            title: 'QR Code',
-                            subtitle: 'Ativado',
-                            icon: Icons.qr_code_2_outlined,
-                            color: _green,
-                            isDark: isDark,
-                          ),
-                        ],
-                      ),
+                        final config = context.read<DesignEtiquetaProvider>().config;
+                        if (config != null) {
+                          _syncMedidasInputs(config);
+                        }
+                      },
+                      isDark: isDark,
+                    ),
+                    const SizedBox(height: 18),
+                  ],
 
-                      const SizedBox(height: 24),
-
-                      Text(
-                        'Pré-visualização',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                          color: text,
+                  if (tipos.isEmpty)
+                    buildEmptyTiposCard(
+                      card: card,
+                      text: text,
+                      muted: muted,
+                      border: border,
+                    )
+                  else if (designProvider.loading || config == null)
+                    buildLoadingCard(
+                      card: card,
+                      text: text,
+                      muted: muted,
+                      border: border,
+                    )
+                  else
+                    Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        buildPreviewPanel(
+                          isDark: isDark,
+                          card: card,
+                          text: text,
+                          muted: muted,
+                          border: border,
+                          config: config,
                         ),
-                      ),
-                      const SizedBox(height: 14),
-
-                      Center(
-                        child: Container(
-                          width: 500,
-                          height: 330,
-                          padding: const EdgeInsets.all(18),
-                          decoration: BoxDecoration(
-                            color: isDark
-                                ? const Color(0xFF181818)
-                                : const Color(0xFFFFFCF8),
-                            borderRadius: BorderRadius.circular(24),
-                            border: Border.all(color: border),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.06),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
-                          ),
-                          child: Column(
-                            children: [
-                              Row(
-                                children: [
-                                  Container(
-                                    width: 54,
-                                    height: 54,
-                                    decoration: BoxDecoration(
-                                      borderRadius: BorderRadius.circular(16),
-                                      gradient: const LinearGradient(
-                                        colors: [_orange, _green],
-                                      ),
-                                    ),
-                                    child: const Icon(
-                                      Icons.local_offer_rounded,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                  const SizedBox(width: 12),
-                                  Expanded(
-                                    child: Text(
-                                      'TagValida',
-                                      style: TextStyle(
-                                        fontSize: 24,
-                                        fontWeight: FontWeight.w900,
-                                        color: text,
-                                      ),
-                                    ),
-                                  ),
-                                ],
-                              ),
-                              const SizedBox(height: 18),
-                              Expanded(
-                                child: Container(
-                                  width: double.infinity,
-                                  padding: const EdgeInsets.all(18),
-                                  decoration: BoxDecoration(
-                                    color: isDark
-                                        ? const Color(0xFF222222)
-                                        : Colors.white,
-                                    borderRadius: BorderRadius.circular(18),
-                                    border: Border.all(color: border),
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        'Pão Francês',
-                                        style: TextStyle(
-                                          fontSize: 22,
-                                          fontWeight: FontWeight.w900,
-                                          color: text,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      _previewLine('Validade', '25/03/2026', text),
-                                      _previewLine('Lote', 'L202603250830', text),
-                                      _previewLine('Qtd', '32', text),
-                                      const Spacer(),
-                                      Align(
-                                        alignment: Alignment.bottomRight,
-                                        child: Container(
-                                          width: 90,
-                                          height: 90,
-                                          decoration: BoxDecoration(
-                                            color: Colors.white,
-                                            borderRadius:
-                                                BorderRadius.circular(12),
-                                            border: Border.all(
-                                              color: Colors.black.withOpacity(0.08),
-                                            ),
-                                          ),
-                                          child: const Icon(
-                                            Icons.qr_code_2,
-                                            size: 56,
-                                            color: Colors.black,
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 18),
+                        buildConfigPanel(
+                          context: context, 
+                          isDark: isDark,
+                          card: card,
+                          text: text,
+                          muted: muted,
+                          border: border,
+                          config: config,
+                          designProvider: designProvider,
+                          larguraController: _larguraController,
+                          alturaController: _alturaController,
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                      ],
+                    ),
+                ],
+              ),
             ),
           ),
         ),
@@ -245,85 +230,143 @@ class _DesignEtiquetaScreenState extends State<DesignEtiquetaScreen> {
     );
   }
 
-  Widget _optionCard({
-    required String title,
-    required String subtitle,
-    required IconData icon,
-    required Color color,
-    required bool isDark,
-  }) {
-    return Container(
-      width: 240,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF181818) : const Color(0xFFFFFBF5),
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: isDark
-              ? _gold.withOpacity(0.12)
-              : Colors.black.withOpacity(0.06),
-        ),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: color.withOpacity(0.14),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    color: isDark ? Colors.white : _lightText,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    color: (isDark ? Colors.white : _lightText).withOpacity(0.68),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _previewLine(String label, String value, Color text) {
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 8),
-      child: RichText(
-        text: TextSpan(
-          style: TextStyle(
-            fontSize: 14,
-            color: text,
-          ),
-          children: [
-            TextSpan(
-              text: '$label: ',
-              style: const TextStyle(fontWeight: FontWeight.w700),
-            ),
-            TextSpan(
-              text: value,
-              style: const TextStyle(fontWeight: FontWeight.w900),
-            ),
-          ],
-        ),
-      ),
-    );
+  String exampleValue(String id, String nome) {
+  switch (id) {
+    case 'empresa':
+      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90\nRua Exemplo, 123';
+    case 'produto':
+      return 'Pão Francês';
+    case 'fabricacao':
+      return '12/02/2025';
+    case 'validade':
+      return '12/02/2025';
+    case 'categoria':
+      return 'Pães';
+    case 'setor':
+      return 'Produção';
+    case 'quantidade':
+      return '20';
+    case 'lote':
+      return 'A2D3FD20';
+    case 'observacao':
+      return 'feito por alice';
+    case 'preco':
+      return '20,00';
+    case 'ingredientes':
+      return 'farinha de trigo, amido, creme, sal';
+    case 'alergenicos':
+      return 'farinha de trigo, creme de leite';
+    case 'contem_gluten':
+      return 'Sim';
+    case 'contem_lactose':
+      return 'Sim';
+    case 'tabela_nutricional':
+      return 'Tabela nutricional';
+    case 'texto':
+      return 'sdsad';
+    case 'numero':
+      return '12';
+    case 'data':
+      return '12/02/2025';
+    default:
+      return nome;
   }
 }
+
+String getValorExemplo(CampoDesignEtiquetaModel campo) {
+  switch (campo.id) {
+    case 'empresa':
+      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90\nRua Exemplo, 123';
+    case 'produto':
+      return 'Pão Francês';
+    case 'fabricacao':
+      return '12/02/2025';
+    case 'validade':
+      return '12/02/2025';
+    case 'categoria':
+      return 'Pães';
+    case 'setor':
+      return 'Produção';
+    case 'quantidade':
+      return '20';
+    case 'lote':
+      return 'A2D3FD20';
+    case 'observacao':
+      return 'feito por alice';
+    case 'preco':
+      return '20,00';
+    case 'ingredientes':
+      return 'farinha de trigo, amido, creme, sal, fds, sdkasl, saskdjsak';
+    case 'alergenicos':
+      return 'farinha de trigo, amido, creme de leite';
+    case 'contem_gluten':
+      return 'Sim';
+    case 'contem_lactose':
+      return 'Sim';
+    case 'texto':
+      return 'sdsad';
+    case 'numero':
+      return '12';
+    case 'data':
+      return '12/02/2025';
+    case 'tabela_nutricional':
+      return 'Tabela nutricional';
+    default:
+      if (campo.tipo == CampoDesignTipo.imagem) {
+        return 'Imagem do produto';
+      }
+      return campo.nome;
+  }
+}
+  
+
+double maxFontForCampo(
+  CampoDesignEtiquetaModel campo,
+  DesignEtiquetaModel config,
+) {
+  final visibleCount = config.campos.where((c) => c.visivel).length;
+  final area = config.larguraMm * config.alturaMm;
+
+  double max = 28;
+
+  if (area <= 2400) {
+    max = visibleCount <= 4 ? 18 : 14;
+  } else if (area <= 5000) {
+    max = visibleCount <= 6 ? 22 : 18;
+  } else {
+    max = visibleCount <= 8 ? 26 : 22;
+  }
+
+  if (campo.id == 'produto') {
+    return max;
+  }
+
+  return max.clamp(10, 22);
+}
+
+  Alignment toAlignment(TextAlign align) {
+    switch (align) {
+      case TextAlign.center:
+        return Alignment.center;
+      case TextAlign.right:
+        return Alignment.centerRight;
+      case TextAlign.left:
+      default:
+        return Alignment.centerLeft;
+    }
+  }
+
+  CrossAxisAlignment toCrossAxis(TextAlign align) {
+    switch (align) {
+      case TextAlign.center:
+        return CrossAxisAlignment.center;
+      case TextAlign.right:
+        return CrossAxisAlignment.end;
+      case TextAlign.left:
+      default:
+        return CrossAxisAlignment.start;
+    }
+  }
+
+}
+

@@ -32,13 +32,13 @@ String campoTipoToString(CampoTipo t) {
     case CampoTipo.image:
       return "image";
     case CampoTipo.text:
-    return "text";
+      return "text";
   }
 }
 
 class CampoCustomModel {
-  final String key; 
-  final String label; 
+  final String key;
+  final String label;
   final CampoTipo tipo;
   final bool obrigatorio;
 
@@ -60,7 +60,7 @@ class CampoCustomModel {
         key: (m["key"] ?? "").toString(),
         label: (m["label"] ?? "").toString(),
         tipo: campoTipoFromString((m["tipo"] ?? "text").toString()),
-        obrigatorio: m["obrigatorio"] ?? false,
+        obrigatorio: m["obrigatorio"] == true,
       );
 }
 
@@ -72,6 +72,8 @@ class TipoEtiquetaModel {
   final List<CampoCustomModel> camposCustom;
   final bool controlaLote;
   final bool permiteTabelaNutricional;
+  final double larguraMm;
+  final double alturaMm;
 
   TipoEtiquetaModel({
     required this.id,
@@ -81,7 +83,35 @@ class TipoEtiquetaModel {
     required this.controlaLote,
     required this.camposCustom,
     required this.permiteTabelaNutricional,
+    this.larguraMm = 60,
+    this.alturaMm = 40,
   });
+
+  TipoEtiquetaModel copyWith({
+    String? id,
+    String? nome,
+    String? descricao,
+    bool? usarRegraValidadeCategoria,
+    List<CampoCustomModel>? camposCustom,
+    bool? controlaLote,
+    bool? permiteTabelaNutricional,
+    double? larguraMm,
+    double? alturaMm,
+  }) {
+    return TipoEtiquetaModel(
+      id: id ?? this.id,
+      nome: nome ?? this.nome,
+      descricao: descricao ?? this.descricao,
+      usarRegraValidadeCategoria:
+          usarRegraValidadeCategoria ?? this.usarRegraValidadeCategoria,
+      controlaLote: controlaLote ?? this.controlaLote,
+      camposCustom: camposCustom ?? this.camposCustom,
+      permiteTabelaNutricional:
+          permiteTabelaNutricional ?? this.permiteTabelaNutricional,
+      larguraMm: larguraMm ?? this.larguraMm,
+      alturaMm: alturaMm ?? this.alturaMm,
+    );
+  }
 
   Map<String, dynamic> toMap() => {
         "nome": nome,
@@ -89,6 +119,8 @@ class TipoEtiquetaModel {
         "usarRegraValidadeCategoria": usarRegraValidadeCategoria,
         "controlaLote": controlaLote,
         "permiteTabelaNutricional": permiteTabelaNutricional,
+        "larguraMm": larguraMm,
+        "alturaMm": alturaMm,
         "camposCustom": camposCustom.map((c) => c.toMap()).toList(),
         "updatedAt": FieldValue.serverTimestamp(),
         "createdAt": FieldValue.serverTimestamp(),
@@ -104,10 +136,15 @@ class TipoEtiquetaModel {
       id: doc.id,
       nome: (data["nome"] ?? "").toString(),
       descricao: data["descricao"]?.toString(),
-      usarRegraValidadeCategoria: data["usarRegraValidadeCategoria"] ?? true,
+      usarRegraValidadeCategoria:
+          data["usarRegraValidadeCategoria"] == null
+              ? true
+              : data["usarRegraValidadeCategoria"] == true,
       camposCustom: list,
-      controlaLote: data["controlaLote"] ?? false,
-       permiteTabelaNutricional: data["permiteTabelaNutricional"] ?? false,
+      controlaLote: data["controlaLote"] == true,
+      permiteTabelaNutricional: data["permiteTabelaNutricional"] == true,
+      larguraMm: (data["larguraMm"] as num?)?.toDouble() ?? 60,
+      alturaMm: (data["alturaMm"] as num?)?.toDouble() ?? 40,
     );
   }
 }

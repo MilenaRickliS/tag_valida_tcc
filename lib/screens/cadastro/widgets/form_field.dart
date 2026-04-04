@@ -33,6 +33,10 @@ class AppFormField extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final onSurface = theme.colorScheme.onSurface;
+
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: TextFormField(
@@ -43,15 +47,20 @@ class AppFormField extends StatelessWidget {
         inputFormatters: inputFormatters,
         focusNode: focusNode,
         onChanged: onChanged,
+        style: TextStyle(color: onSurface),
         decoration: InputDecoration(
           labelText: label,
-          labelStyle: const TextStyle(color: Colors.black54),
+          labelStyle: TextStyle(
+            color: onSurface.withOpacity(0.65),
+          ),
           floatingLabelStyle: const TextStyle(
             color: Color(0xFFC29500),
             fontWeight: FontWeight.w600,
           ),
           filled: true,
-          fillColor: Colors.white.withOpacity(0.85),
+          fillColor: isDark
+              ? Colors.white.withOpacity(0.05)
+              : Colors.white.withOpacity(0.85),
           prefixIcon: prefixIcon,
           suffixIcon: suffixIcon,
           contentPadding:
@@ -62,13 +71,16 @@ class AppFormField extends StatelessWidget {
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                BorderSide(color: Colors.black.withOpacity(0.15)),
+            borderSide: BorderSide(
+              color: onSurface.withOpacity(0.15),
+            ),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: Color(0xFFC29500), width: 1.8),
+            borderSide: const BorderSide(
+              color: Color(0xFFC29500),
+              width: 1.8,
+            ),
           ),
           errorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
@@ -76,8 +88,10 @@ class AppFormField extends StatelessWidget {
           ),
           focusedErrorBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(12),
-            borderSide:
-                const BorderSide(color: Colors.red, width: 1.5),
+            borderSide: const BorderSide(
+              color: Colors.red,
+              width: 1.5,
+            ),
           ),
         ),
         validator: validator,
