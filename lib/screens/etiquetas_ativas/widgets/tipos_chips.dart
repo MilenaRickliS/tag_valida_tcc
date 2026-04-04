@@ -57,10 +57,12 @@ class TiposChips extends StatelessWidget {
               label: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(
-                    Icons.check_circle,
+                  Icon(
+                    Icons.sell_outlined,
                     size: 18,
-                    color: Colors.black,
+                    color: selected
+                        ? (isDark ? Colors.black54 : Colors.white)
+                        : (isDark ? Colors.white70 : Colors.black54),
                   ),
                   const SizedBox(width: 6),
                   Text(t.nome),
