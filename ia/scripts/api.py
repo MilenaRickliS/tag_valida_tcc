@@ -5,7 +5,7 @@ from typing import Any, Dict
 from uuid import uuid4
 import shutil
 import traceback
-from fastapi import FastAPI, File, HTTPException, UploadFile
+from fastapi import FastAPI, File, HTTPException, Request, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from scripts.ia_pipeline import TagValidaPipeline
 from fastapi.staticfiles import StaticFiles
