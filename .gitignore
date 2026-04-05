@@ -59,7 +59,9 @@ lib/firebase_options.dart
 /ia/dataset_reforco_classificacao/
 
 # Treinamento YOLO
-runs/
+runs/classify/train
+runs/classify/train2
+runs/detect/train
 
 # Uploads
 uploads/

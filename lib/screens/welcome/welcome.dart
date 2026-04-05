@@ -158,34 +158,9 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                             )
                           : Column(
                               children: [
-                                FadeTransition(
-                                  opacity: _logoFade,
-                                  child: SlideTransition(
-                                    position: _logoSlide,
-                                    child: Image.asset(
-                                      'assets/logo3.png',
-                                      height: 180,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(height: 20),
-                                Text(
-                                  'TagVálida',
-                                  textAlign: TextAlign.center,
-                                  style:
-                                      theme.textTheme.headlineMedium?.copyWith(
-                                    fontWeight: FontWeight.bold,
-                                    color: textColor,
-                                  ),
-                                ),
-                                const SizedBox(height: 12),
-                                Text(
-                                  'Mais que etiquetas. Gestão, rastreabilidade e tecnologia.',
-                                  textAlign: TextAlign.center,
-                                  style: theme.textTheme.titleMedium?.copyWith(
-                                    color: mutedText,
-                                  ),
-                                ),
+                               
+                               
+                              
                                 const SizedBox(height: 28),
                                 FadeTransition(
                                   opacity: _cardFade,
