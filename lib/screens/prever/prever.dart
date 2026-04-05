@@ -19,6 +19,7 @@ import './widgets/tip_card.dart';
 
 class PreverValidadeScreen extends StatefulWidget {
   const PreverValidadeScreen({super.key});
+  
 
   @override
   State<PreverValidadeScreen> createState() => _PreverValidadeScreenState();
@@ -26,16 +27,19 @@ class PreverValidadeScreen extends StatefulWidget {
 
 class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
   final ImagePicker _picker = ImagePicker();
+  
 
   bool _loading = false;
+  
 
   Future<void> enviarParaApi(File file) async {
     setState(() => _loading = true);
+    const baseUrl = 'https://tag-valida-tcc.onrender.com';
 
     try {
       final request = http.MultipartRequest(
         'POST',
-        Uri.parse('http://192.168.0.5:8000/analisar'),
+        Uri.parse('$baseUrl/analisar'),
       );
 
       request.files.add(

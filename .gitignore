@@ -68,5 +68,5 @@ uploads/
 results/
 
 # Modelos grandes
-*.pt
+
 *.onnx
