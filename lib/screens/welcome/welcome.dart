@@ -22,8 +22,8 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     with SingleTickerProviderStateMixin {
   late final AnimationController _controller;
 
-  late final Animation<Offset> _logoSlide;
-  late final Animation<double> _logoFade;
+  late final Animation<Offset> logoSlide;
+  late final Animation<double> logoFade;
 
   late final Animation<Offset> _cardSlide;
   late final Animation<double> _cardFade;
@@ -47,12 +47,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
       curve: const Interval(0.0, 0.5, curve: Curves.easeOutCubic),
     );
 
-    _logoSlide = Tween<Offset>(
+    logoSlide = Tween<Offset>(
       begin: const Offset(0, 0.25),
       end: Offset.zero,
     ).animate(logoCurve);
 
-    _logoFade = Tween<double>(
+    logoFade = Tween<double>(
       begin: 0,
       end: 1,
     ).animate(logoCurve);
@@ -106,7 +106,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
   Widget build(BuildContext context) {
     final isWide = MediaQuery.of(context).size.width > 900;
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = context.watch<ThemeProvider>().isDarkMode;
 
     const brandGreen = Color(0xFF54A73B);
@@ -117,8 +116,6 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     final sectionAlt = isDark
         ? Colors.white.withOpacity(0.04)
         : Colors.white.withOpacity(0.55);
-    final textColor = colorScheme.onSurface;
-    final mutedText = colorScheme.onSurface.withOpacity(0.78);
     final footerColor = isDark ? const Color(0xFF111111) : const Color(0xFF2B2B2B);
 
     return Scaffold(

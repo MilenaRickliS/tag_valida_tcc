@@ -7,8 +7,8 @@ import shutil
 import traceback
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
-
 from scripts.ia_pipeline import TagValidaPipeline
+from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(
     title="TagValida IA API",
@@ -30,6 +30,8 @@ RESULTS_DIR = BASE_DIR / "results" / "api"
 
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+
+app.mount("/results", StaticFiles(directory=RESULTS_DIR), name="results")
 
 DETECTION_MODEL_PATH = BASE_DIR / "runs" / "detect" / "train2" / "weights" / "best.pt"
 CLASSIFICATION_MODEL_PATH = BASE_DIR / "runs" / "classify" / "train3" / "weights" / "best.pt"
@@ -90,7 +92,7 @@ async def teste_upload(file: UploadFile = File(...)) -> Dict[str, Any]:
     }
 
 @app.post("/analisar")
-async def analisar_imagem(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def analisar_imagem(request: Request, file: UploadFile = File(...)) -> Dict[str, Any]:
     try:
         print("1. Iniciando análise")
 
@@ -122,6 +124,12 @@ async def analisar_imagem(file: UploadFile = File(...)) -> Dict[str, Any]:
             output_dir=str(RESULTS_DIR),
             salvar_crops=True,
             salvar_json=True,
+        )
+
+        imagem_resultado_path = Path(resultado["imagem_resultado"])
+        imagem_resultado_name = imagem_resultado_path.name
+        resultado["imagem_resultado_url"] = (
+            str(request.base_url).rstrip("/") + f"/results/{imagem_resultado_name}"
         )
 
         print("6. Análise concluída com sucesso")
