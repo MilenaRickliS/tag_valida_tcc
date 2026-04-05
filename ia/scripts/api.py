@@ -71,12 +71,24 @@ def root() -> Dict[str, Any]:
 def health() -> Dict[str, Any]:
     return {
         "status": "ok",
+        "base_dir": str(BASE_DIR),
+        "upload_dir": str(UPLOAD_DIR),
+        "results_dir": str(RESULTS_DIR),
+        "detection_model_path": str(DETECTION_MODEL_PATH),
+        "classification_model_path": str(CLASSIFICATION_MODEL_PATH),
         "detection_model_exists": DETECTION_MODEL_PATH.exists(),
         "classification_model_exists": CLASSIFICATION_MODEL_PATH.exists(),
+        "pipeline_loaded": pipeline is not None,
     }
 
+@app.post("/teste-upload")
+async def teste_upload(file: UploadFile = File(...)) -> Dict[str, Any]:
+    return {
+        "filename": file.filename,
+        "content_type": file.content_type,
+        "ok": True,
+    }
 
-@app.post("/analisar")
 @app.post("/analisar")
 async def analisar_imagem(file: UploadFile = File(...)) -> Dict[str, Any]:
     try:
