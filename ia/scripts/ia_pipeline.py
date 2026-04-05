@@ -191,35 +191,104 @@ class TagValidaPipeline:
             }
             items.append(item)
 
-            texto = (
-                f"{produto} | {det_confidence * 100:.1f}% | "
-                f"{estado} | {estado_confidence * 100:.1f}%"
-            )
+            texto = f"{produto} • {estado}".upper()
 
-            cv2.rectangle(image_draw, (x1, y1), (x2, y2), cor, 2)
+            overlay = image_draw.copy()
 
-            text_y = y1 - 10 if y1 - 10 > 20 else y1 + 25
-
-            
-            (text_w, text_h), _ = cv2.getTextSize(
-                texto, cv2.FONT_HERSHEY_SIMPLEX, 0.55, 2
-            )
+         
             cv2.rectangle(
-                image_draw,
-                (x1, text_y - text_h - 8),
-                (x1 + text_w + 8, text_y + 4),
+                overlay,
+                (x1, y1),
+                (x2, y2),
                 cor,
                 -1,
             )
 
+            alpha = 0.12
+            image_draw = cv2.addWeighted(overlay, alpha, image_draw, 1 - alpha, 0)
+
+         
+            cv2.rectangle(
+                image_draw,
+                (x1, y1),
+                (x2, y2),
+                cor,
+                3,
+                cv2.LINE_AA,
+            )
+
+          
+            cv2.rectangle(
+                image_draw,
+                (x1 + 1, y1 + 1),
+                (x2 - 1, y2 - 1),
+                (255, 255, 255),
+                1,
+                cv2.LINE_AA,
+            )
+
+            # texto mais limpo
+            font = cv2.FONT_HERSHEY_SIMPLEX
+            font_scale = 0.58
+            font_thickness = 2
+
+            (text_w, text_h), baseline = cv2.getTextSize(
+                texto,
+                font,
+                font_scale,
+                font_thickness,
+            )
+
+            label_pad_x = 10
+            label_pad_y = 8
+            label_h = text_h + baseline + (label_pad_y * 2)
+            label_w = text_w + (label_pad_x * 2)
+
+            label_x1 = x1
+            label_y2 = y1 - 8
+
+        
+            if label_y2 - label_h < 0:
+                label_y2 = y1 + label_h + 8
+
+            label_y1 = label_y2 - label_h
+            label_x2 = label_x1 + label_w
+
+        
+            cv2.rectangle(
+                image_draw,
+                (label_x1 + 2, label_y1 + 2),
+                (label_x2 + 2, label_y2 + 2),
+                (0, 0, 0),
+                -1,
+            )
+
+            cv2.rectangle(
+                image_draw,
+                (label_x1, label_y1),
+                (label_x2, label_y2),
+                cor,
+                -1,
+            )
+
+           
+            cv2.rectangle(
+                image_draw,
+                (label_x1, label_y1),
+                (label_x2, label_y2),
+                (255, 255, 255),
+                1,
+            )
+
+       
             cv2.putText(
                 image_draw,
                 texto,
-                (x1 + 4, text_y - 4),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                0.55,
-                (0, 0, 0),
-                2,
+                (label_x1 + label_pad_x, label_y2 - label_pad_y),
+                font,
+                font_scale,
+                (255, 255, 255),
+                font_thickness,
                 cv2.LINE_AA,
             )
 

@@ -20,7 +20,23 @@ class ResultadoPrevisaoScreen extends StatefulWidget {
 }
 
 class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
- 
+    String _formatarNomeProduto(String nome) {
+      switch (nome.toLowerCase().trim()) {
+        case 'pao_frances':
+          return 'Pão francês';
+        case 'pao_forma':
+          return 'Pão de forma';
+        case 'queijo_mussarela':
+          return 'Queijo mussarela';
+        default:
+          return nome
+              .replaceAll('_', ' ')
+              .split(' ')
+              .map((e) =>
+                  e.isEmpty ? e : e[0].toUpperCase() + e.substring(1))
+              .join(' ');
+      }
+    }
 
   @override
   Widget build(BuildContext context) {
@@ -46,9 +62,7 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
     final quantidadeDetectada = (data['quantidade_detectada'] as num?)?.toInt() ?? 0;
     final items = (data['items'] as List?) ?? [];
 
-   final imagemResultado =
-    (data['imagem_resultado'] ?? '').toString();
-
+ 
     final imagemResultadoUrl =
         (data['imagem_resultado_url'] ?? '').toString();
 
@@ -144,7 +158,8 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
               const SizedBox(height: 14),
               ...items.map((item) {
                 final map = Map<String, dynamic>.from(item as Map);
-                final produto = (map['produto'] ?? 'Produto').toString();
+                final produtoRaw = (map['produto'] ?? 'Produto').toString();
+                final produto = _formatarNomeProduto(produtoRaw);
                 final estado = (map['estado'] ?? 'desconhecido').toString();
                 final produtoConf = _toDouble(map['produto_conf']);
                 final estadoConf = _toDouble(map['estado_conf']);
@@ -213,18 +228,18 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
               text: text,
               muted: muted,
             ),
-
-            if (kDebugMode) ...[
-              const SizedBox(height: 20),
-              _buildSecaoTecnica(
-                card: card,
-                border: border,
-                text: text,
-                muted: muted,
-                imagemResultado: imagemResultado,
-                raw: widget.resultado.toString(),
-              ),
-            ],
+            const SizedBox(height: 30),
+            // if (kDebugMode) ...[
+            //   const SizedBox(height: 20),
+            //   _buildSecaoTecnica(
+            //     card: card,
+            //     border: border,
+            //     text: text,
+            //     muted: muted,
+            //     imagemResultado: imagemResultado,
+            //     raw: widget.resultado.toString(),
+            //   ),
+            // ],
           ],
         ),
       ),
@@ -376,6 +391,22 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
 }) {
   final fallbackFile = File(fallbackPath);
 
+  Widget buildZoomableImage(Widget child) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(22),
+      child: InteractiveViewer(
+        minScale: 1,
+        maxScale: 5,
+        panEnabled: true,
+        scaleEnabled: true,
+        boundaryMargin: const EdgeInsets.all(24),
+        child: SizedBox.expand(
+          child: child,
+        ),
+      ),
+    );
+  }
+
   return Container(
     width: double.infinity,
     height: 340,
@@ -392,15 +423,14 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
         ),
       ],
     ),
-    child: ClipRRect(
-      borderRadius: BorderRadius.circular(22),
-      child: Stack(
-        children: [
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.03),
-              child: imageUrl.isNotEmpty
-                  ? Image.network(
+    child: Stack(
+      children: [
+        Positioned.fill(
+          child: Container(
+            color: Colors.black.withOpacity(0.03),
+            child: imageUrl.isNotEmpty
+                ? buildZoomableImage(
+                    Image.network(
                       imageUrl,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) {
@@ -414,8 +444,10 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
                           },
                         );
                       },
-                    )
-                  : Image.file(
+                    ),
+                  )
+                : buildZoomableImage(
+                    Image.file(
                       fallbackFile,
                       fit: BoxFit.contain,
                       errorBuilder: (_, __, ___) {
@@ -424,32 +456,32 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
                         );
                       },
                     ),
+                  ),
+          ),
+        ),
+        Positioned(
+          top: 12,
+          left: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.45),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: const Text(
+              'Use dois dedos para dar zoom',
+              style: TextStyle(
+                color: Colors.white,
+                fontWeight: FontWeight.w700,
+                fontSize: 12,
+              ),
             ),
           ),
-          Positioned(
-            top: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 12,
-                vertical: 8,
-              ),
-              decoration: BoxDecoration(
-                color: Colors.black.withOpacity(0.45),
-                borderRadius: BorderRadius.circular(999),
-              ),
-              child: const Text(
-                'Visualização da análise',
-                style: TextStyle(
-                  color: Colors.white,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12,
-                ),
-              ),
-            ),
-          ),
-        ],
-      ),
+        ),
+      ],
     ),
   );
 }
@@ -772,7 +804,8 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
   String _produtoPrincipal(List items) {
     if (items.isEmpty) return '';
     final map = Map<String, dynamic>.from(items.first as Map);
-    return (map['produto'] ?? '').toString();
+    final raw = (map['produto'] ?? '').toString();
+    return _formatarNomeProduto(raw);
   }
 
   double _confiancaMedia(List items) {

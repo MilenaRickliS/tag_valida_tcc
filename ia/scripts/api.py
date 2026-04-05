@@ -1,4 +1,5 @@
 #uvicorn scripts.api:app --host 0.0.0.0 --port 8000
+#https://tag-valida-tcc.onrender.com/
 
 from pathlib import Path
 from typing import Any, Dict
