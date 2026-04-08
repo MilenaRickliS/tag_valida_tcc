@@ -361,7 +361,7 @@ class TabelaNutricionalSection extends StatelessWidget {
                       Expanded(
                         child: _numericField(
                             controller: gerar.fibraAlimentarCtrl,
-                            label: "Fibra alimentar",
+                            label: "Fibras alimentares",
                             suffix: "g",
                           ),
                       ),

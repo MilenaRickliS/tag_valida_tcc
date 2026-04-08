@@ -5,9 +5,11 @@ import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:printing/printing.dart';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../data/local/repos/etiquetas_local_repo.dart';
+import '../../data/local/repos/design_etiqueta_local_repo.dart';
 import '../../models/etiqueta_model.dart';
+import '../../models/user_model.dart';
 import '../../providers/estoque_mov_local_provider.dart';
 import '../../providers/printer_config_provider.dart';
 import '../../services/etiqueta_pdf_service.dart';
@@ -37,6 +39,8 @@ class EtiquetaPreviewScreen extends StatelessWidget {
   static const _darkText = Colors.white;
   static const _darkMuted = Color(0xFFD6D6D6);
   static const _gold = Color(0xFFD4AF37);
+  
+
 
   bool _isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
@@ -335,11 +339,9 @@ class EtiquetaPreviewScreen extends StatelessWidget {
   Future<void> _imprimirComConfigSalva(
     BuildContext context, {
     required String uid,
-    required String produtoNome,
-    required DateTime validade,
+    required EtiquetaModel etiqueta,
+     required UserModel usuario,
     required String qrData,
-    required String lote,
-    required String quantidade,
   }) async {
     try {
       final copias = await _abrirModalQuantidadeEtiquetas(context);
@@ -365,14 +367,14 @@ class EtiquetaPreviewScreen extends StatelessWidget {
         throw Exception('A impressão disponível no momento é apenas via rede.');
       }
 
-      final appService = PrinterAppService();
+      final appService = PrinterAppService(
+        designRepo: DesignEtiquetaLocalRepo(),
+      );
 
-      await appService.imprimirEtiquetaCompacta(
+      await appService.imprimirEtiquetaComDesign(
         printer: printer,
-        produto: produtoNome,
-        validade: DateFormat('dd/MM/yyyy').format(validade),
-        lote: lote,
-        quantidade: quantidade,
+        etiqueta: etiqueta,
+        usuario: usuario,
         qrData: qrData,
         copias: copias,
       );
@@ -635,8 +637,11 @@ class EtiquetaPreviewScreen extends StatelessWidget {
           ),
         ),
       ),
-      body: FutureBuilder<EtiquetaModel?>(
-        future: repo.getById(uid: uid, id: etiquetaId),
+      body: FutureBuilder<List<dynamic>>(
+        future: Future.wait([
+          repo.getById(uid: uid, id: etiquetaId),
+          FirebaseFirestore.instance.collection('usuarios').doc(uid).get(),
+        ]),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
             return Center(
@@ -646,9 +651,16 @@ class EtiquetaPreviewScreen extends StatelessWidget {
             );
           }
 
-          final e = snap.data;
+          if (!snap.hasData) {
+            return const Center(
+              child: Text("Erro ao carregar dados."),
+            );
+          }
 
-          if (e == null) {
+          final etiqueta = snap.data![0] as EtiquetaModel?;
+          final userDoc = snap.data![1] as DocumentSnapshot<Map<String, dynamic>>;
+
+          if (etiqueta == null) {
             return Center(
               child: Text(
                 "Etiqueta não encontrada.",
@@ -657,23 +669,36 @@ class EtiquetaPreviewScreen extends StatelessWidget {
             );
           }
 
-          final qrData = buildEtiquetaQrPayload(uid: uid, etiquetaId: e.id);
+          if (!userDoc.exists || userDoc.data() == null) {
+            return const Center(
+              child: Text("Usuário não encontrado."),
+            );
+          }
 
-          final produtoNome = e.produtoNome;
-          final categoriaNome = e.categoriaNome;
-          final setorNome = e.setorNome;
-          final tipoNome = e.tipoNome;
-          final fabricacao = e.dataFabricacao;
-          final validade = e.dataValidade;
-          final qtd = e.quantidade;
-          final rest = e.quantidadeRestante;
-          final status = e.statusEstoque.trim().isEmpty ? "ativo" : e.statusEstoque.trim();
+          final usuario = UserModel.fromMap(userDoc.data()!);
+
+          final qrData = buildEtiquetaQrPayload(
+            uid: uid,
+            etiquetaId: etiqueta.id,
+          );
+
+          final produtoNome = etiqueta.produtoNome;
+          final categoriaNome = etiqueta.categoriaNome;
+          final setorNome = etiqueta.setorNome;
+          final tipoNome = etiqueta.tipoNome;
+          final fabricacao = etiqueta.dataFabricacao;
+          final validade = etiqueta.dataValidade;
+          final qtd = etiqueta.quantidade;
+          final rest = etiqueta.quantidadeRestante;
+          final status = etiqueta.statusEstoque.trim().isEmpty
+              ? "ativo"
+              : etiqueta.statusEstoque.trim();
 
           final num saidas =
               status == "cancelado" ? qtd : ((qtd - rest) < 0 ? 0 : (qtd - rest));
           final num restanteView = status == "cancelado" ? 0 : rest;
 
-          final custom = Map<String, dynamic>.from(e.camposCustomValores);
+          final custom = Map<String, dynamic>.from(etiqueta.camposCustomValores);
 
           String? loteValue;
           String loteLabel = "Lote";
@@ -722,13 +747,16 @@ class EtiquetaPreviewScreen extends StatelessWidget {
                         elevation: 6,
                         onSelected: (v) async {
                           if (v == "edit") {
-                            _openEdit(context, e);
+                            _openEdit(context, etiqueta);
                           } else if (v == "delete") {
-                            final ok = await _confirmDelete(context, e.produtoNome);
+                            final ok = await _confirmDelete(
+                              context,
+                              etiqueta.produtoNome,
+                            );
                             if (!ok) return;
 
                             final mov = context.read<EstoqueMovLocalProvider>();
-                            final before = await repo.getById(uid: uid, id: e.id);
+                            final before = await repo.getById(uid: uid, id: etiqueta.id);
                             if (before == null) return;
 
                             final st = before.statusEstoque.trim().isEmpty
@@ -837,8 +865,8 @@ class EtiquetaPreviewScreen extends StatelessWidget {
                       saidas: _fmtNum(saidas),
                       restante: _fmtNum(restanteView),
                       customSemLote: customSemLote,
-                      incluirTabelaNutricional: e.incluirTabelaNutricional,
-                      tabelaNutricional: e.tabelaNutricional,
+                      incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,
+                      tabelaNutricional: etiqueta.tabelaNutricional,
                       formatCustomDate: (ms) =>
                           _fmtDate(DateTime.fromMillisecondsSinceEpoch(ms)),
                     ),
@@ -860,7 +888,7 @@ class EtiquetaPreviewScreen extends StatelessWidget {
                       darkCard: _darkCard,
                       onSalvarPdf: () => _salvarPdf(
                         context,
-                        e: e,
+                        e: etiqueta,
                         qrData: qrData,
                       ),
                       onPreview: () => _abrirPreviewImpressao(
@@ -874,11 +902,9 @@ class EtiquetaPreviewScreen extends StatelessWidget {
                       onImprimir: () => _imprimirComConfigSalva(
                         context,
                         uid: uid,
-                        produtoNome: produtoNome,
-                        validade: validade,
+                        etiqueta: etiqueta,
+                        usuario: usuario,
                         qrData: qrData,
-                        lote: lotePrefixo ?? loteFormatado ?? '-',
-                        quantidade: _fmtNum(restanteView),
                       ),
                     ),
                     const SizedBox(height: 10),

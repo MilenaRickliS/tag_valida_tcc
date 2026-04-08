@@ -7,7 +7,7 @@ class AppDb {
   static final AppDb instance = AppDb._();
 
   static const _dbName = 'tag_valida.db';
-  static const _dbVersion = 16;
+  static const _dbVersion = 17;
 
   Database? _db;
 
@@ -237,8 +237,7 @@ class AppDb {
         larguraMm REAL NOT NULL DEFAULT 60,
         alturaMm REAL NOT NULL DEFAULT 40,
 
-        mostrarLogo INTEGER NOT NULL DEFAULT 1,
-        mostrarBordaInterna INTEGER NOT NULL DEFAULT 1,
+        mostrarMarcaTagValida INTEGER NOT NULL DEFAULT 1,
         destacarValidade INTEGER NOT NULL DEFAULT 1,
 
         camposJson TEXT NOT NULL,
@@ -541,8 +540,6 @@ class AppDb {
           larguraMm REAL NOT NULL DEFAULT 60,
           alturaMm REAL NOT NULL DEFAULT 40,
 
-          mostrarLogo INTEGER NOT NULL DEFAULT 1,
-          mostrarBordaInterna INTEGER NOT NULL DEFAULT 1,
           destacarValidade INTEGER NOT NULL DEFAULT 1,
 
           camposJson TEXT NOT NULL,
@@ -576,6 +573,17 @@ class AppDb {
       if (!hasTipoCol("alturaMm")) {
         await db.execute(
           "ALTER TABLE tipos_etiqueta ADD COLUMN alturaMm REAL NOT NULL DEFAULT 40;"
+        );
+      }
+    }
+    if (oldVersion < 17) {
+      final cols = await db.rawQuery("PRAGMA table_info(design_etiqueta_configs)");
+      bool hasCol(String name) =>
+          cols.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasCol("mostrarMarcaTagValida")) {
+        await db.execute(
+          "ALTER TABLE design_etiqueta_configs ADD COLUMN mostrarMarcaTagValida INTEGER NOT NULL DEFAULT 1;"
         );
       }
     }

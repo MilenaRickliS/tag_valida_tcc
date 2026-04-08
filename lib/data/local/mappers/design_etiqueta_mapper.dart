@@ -31,8 +31,7 @@ class DesignEtiquetaMapper {
       tipoEtiquetaNome: map['tipoEtiquetaNome'] ?? '',
       larguraMm: (map['larguraMm'] ?? 60).toDouble(),
       alturaMm: (map['alturaMm'] ?? 40).toDouble(),
-      mostrarLogo: map['mostrarLogo'] ?? true,
-      mostrarBordaInterna: map['mostrarBordaInterna'] ?? true,
+      mostrarMarcaTagValida: map['mostrarMarcaTagValida'] ?? true,
       destacarValidade: map['destacarValidade'] ?? true,
       campos: camposMap,
     );
@@ -44,8 +43,7 @@ class DesignEtiquetaMapper {
       'tipoEtiquetaNome': model.tipoEtiquetaNome,
       'larguraMm': model.larguraMm,
       'alturaMm': model.alturaMm,
-      'mostrarLogo': model.mostrarLogo,
-      'mostrarBordaInterna': model.mostrarBordaInterna,
+      'mostrarMarcaTagValida': model.mostrarMarcaTagValida,
       'destacarValidade': model.destacarValidade,
       'campos': model.campos
           .asMap()

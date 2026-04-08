@@ -6,7 +6,6 @@ class DesignEtiquetaLimiter {
   static const double verticalPaddingMm = 2.0;
   static const double blocoGapMm = 0.6;
   static const double linhaGapMm = 0.3;
-  static const double bordaInternaExtraMm = 0.5;
 
   static DesignValidationResult validate(DesignEtiquetaModel config) {
     final campos = [...config.campos]
@@ -41,10 +40,7 @@ class DesignEtiquetaLimiter {
         lineHeightFactor: 1.0,
       );
 
-      final empresaLogoHeight = config.mostrarLogo ? 8.0 : 0.0;
-      topBlockHeight = empresaTextHeight > empresaLogoHeight
-          ? empresaTextHeight
-          : empresaLogoHeight;
+      topBlockHeight = empresaTextHeight;
     }
 
     if (produtoCampo != null) {
@@ -109,10 +105,6 @@ class DesignEtiquetaLimiter {
 
     if (bottomBlockHeight > 0) {
       usedHeight += bottomBlockHeight;
-    }
-
-    if (config.mostrarBordaInterna) {
-      usedHeight += bordaInternaExtraMm;
     }
 
     final maxInfoCampos = _maxInfoCamposForSize(

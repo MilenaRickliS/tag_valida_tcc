@@ -234,21 +234,13 @@ Widget buildConfigPanel({
               isDark: isDark,
               child: Column(
                 children: [
-                  switchTile(
+                 switchTile(
                     isDark: isDark,
-                    value: config.mostrarLogo,
-                    title: 'Mostrar logo',
+                    value: config.mostrarMarcaTagValida,
+                    title: 'Mostrar "TagVálida"',
                     onChanged: (v) => context
                         .read<DesignEtiquetaProvider>()
-                        .setMostrarLogo(v),
-                  ),
-                  switchTile(
-                    isDark: isDark,
-                    value: config.mostrarBordaInterna,
-                    title: 'Mostrar borda interna',
-                    onChanged: (v) => context
-                        .read<DesignEtiquetaProvider>()
-                        .setMostrarBordaInterna(v),
+                        .setMostrarMarcaTagValida(v),
                   ),
                   switchTile(
                     isDark: isDark,
@@ -350,14 +342,34 @@ Widget buildConfigPanel({
           buildDefaultDragHandles: false,
           physics: const NeverScrollableScrollPhysics(),
           itemCount: config.campos.length,
-          onReorder: (oldIndex, newIndex) {
-            context.read<DesignEtiquetaProvider>().reorderCampos(
-                  oldIndex,
-                  newIndex,
-                );
-          },
+         onReorder: (oldIndex, newIndex) {
+          final campo = config.campos[oldIndex];
+          final isEmpresa = campo.id == 'empresa';
+          final isProduto = campo.id == 'produto';
+          final isQrCode = campo.tipo == CampoDesignTipo.qrcode || campo.id == 'qrcode';
+          final posicaoFixa = isEmpresa || isProduto || isQrCode;
+
+         
+          if (posicaoFixa) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('Esse campo tem posição fixa na etiqueta'),
+              ),
+            );
+            return; 
+          }
+
+          context.read<DesignEtiquetaProvider>().reorderCampos(
+                oldIndex,
+                newIndex,
+              );
+        },
           itemBuilder: (context, index) {
             final campo = config.campos[index];
+            final isEmpresa = campo.id == 'empresa';
+            final isProduto = campo.id == 'produto';
+            final isQrCode = campo.tipo == CampoDesignTipo.qrcode || campo.id == 'qrcode';
+            final posicaoFixa = isEmpresa || isProduto || isQrCode;
 
             return Padding(
               key: ValueKey(campo.id),
@@ -367,9 +379,13 @@ Widget buildConfigPanel({
                 campo: campo,
                 config: config,
                 isDark: isDark,
-                dragHandle: ReorderableDragStartListener(
-                  index: index,
-                  child: Container(
+                bloqueado: posicaoFixa, 
+                ocultarControlesTexto: isQrCode,
+                dragHandle: posicaoFixa
+                  ? const SizedBox(width: 42)
+                  : ReorderableDragStartListener(
+                      index: index,
+                      child:  Container(
                     width: 42,
                     height: 42,
                     decoration: BoxDecoration(
@@ -389,32 +405,30 @@ Widget buildConfigPanel({
                     ),
                   ),
                 ),
-                onToggle: campo.obrigatorio
-                    ? null
-                    : (v) {
-                        context.read<DesignEtiquetaProvider>().toggleCampo(
-                              campo.id,
-                              v ?? false,
-                            );
-                      },
-                onFontChanged: (value) {
-                  context
-                      .read<DesignEtiquetaProvider>()
-                      .setFontSize(campo.id, value);
-                },
-                onBoldChanged: (value) {
-                  context.read<DesignEtiquetaProvider>().setBold(
-                        campo.id,
-                        value,
-                      );
-                },
-                onAlignChanged: (value) {
-                  if (value == null) return;
-                  context.read<DesignEtiquetaProvider>().setAlign(
-                        campo.id,
-                        value,
-                      );
-                },
+              onToggle: campo.obrigatorio
+                ? null
+                : (v) {
+                    context.read<DesignEtiquetaProvider>().toggleCampo(
+                          campo.id,
+                          v ?? false,
+                        );
+                  },
+             onFontChanged: isQrCode
+                ? null
+                : (value) {
+                    context.read<DesignEtiquetaProvider>().setFontSize(campo.id, value);
+                  },
+            onBoldChanged: isQrCode
+                ? null
+                : (value) {
+                    context.read<DesignEtiquetaProvider>().setBold(campo.id, value);
+                  },
+            onAlignChanged: isQrCode
+                ? null
+                : (value) {
+                    if (value == null) return;
+                    context.read<DesignEtiquetaProvider>().setAlign(campo.id, value);
+                  },
               ),
             );
           },

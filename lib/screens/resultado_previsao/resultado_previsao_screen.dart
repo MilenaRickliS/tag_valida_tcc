@@ -1,7 +1,6 @@
 // ignore_for_file: deprecated_member_use
 
 import 'dart:io';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 class ResultadoPrevisaoScreen extends StatefulWidget {
@@ -720,70 +719,70 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
     );
   }
 
-  Widget _buildSecaoTecnica({
-    required Color card,
-    required Color border,
-    required Color text,
-    required Color muted,
-    required String imagemResultado,
-    required String raw,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(18),
-      decoration: BoxDecoration(
-        color: card,
-        borderRadius: BorderRadius.circular(24),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Detalhes técnicos (debug)',
-            style: TextStyle(
-              fontSize: 17,
-              fontWeight: FontWeight.w800,
-              color: text,
-            ),
-          ),
-          const SizedBox(height: 12),
-          Text(
-            'Imagem processada',
-            style: TextStyle(
-              fontSize: 13,
-              color: muted,
-            ),
-          ),
-          const SizedBox(height: 6),
-          SelectableText(
-            imagemResultado,
-            style: TextStyle(
-              fontSize: 14,
-              color: text,
-            ),
-          ),
-          const SizedBox(height: 14),
-          Text(
-            'Payload bruto',
-            style: TextStyle(
-              fontSize: 13,
-              color: muted,
-            ),
-          ),
-          const SizedBox(height: 6),
-          SelectableText(
-            raw,
-            style: TextStyle(
-              fontSize: 12.5,
-              color: muted,
-              height: 1.4,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+  // Widget _buildSecaoTecnica({
+  //   required Color card,
+  //   required Color border,
+  //   required Color text,
+  //   required Color muted,
+  //   required String imagemResultado,
+  //   required String raw,
+  // }) {
+  //   return Container(
+  //     width: double.infinity,
+  //     padding: const EdgeInsets.all(18),
+  //     decoration: BoxDecoration(
+  //       color: card,
+  //       borderRadius: BorderRadius.circular(24),
+  //       border: Border.all(color: border),
+  //     ),
+  //     child: Column(
+  //       crossAxisAlignment: CrossAxisAlignment.start,
+  //       children: [
+  //         Text(
+  //           'Detalhes técnicos (debug)',
+  //           style: TextStyle(
+  //             fontSize: 17,
+  //             fontWeight: FontWeight.w800,
+  //             color: text,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 12),
+  //         Text(
+  //           'Imagem processada',
+  //           style: TextStyle(
+  //             fontSize: 13,
+  //             color: muted,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 6),
+  //         SelectableText(
+  //           imagemResultado,
+  //           style: TextStyle(
+  //             fontSize: 14,
+  //             color: text,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 14),
+  //         Text(
+  //           'Payload bruto',
+  //           style: TextStyle(
+  //             fontSize: 13,
+  //             color: muted,
+  //           ),
+  //         ),
+  //         const SizedBox(height: 6),
+  //         SelectableText(
+  //           raw,
+  //           style: TextStyle(
+  //             fontSize: 12.5,
+  //             color: muted,
+  //             height: 1.4,
+  //           ),
+  //         ),
+  //       ],
+  //     ),
+  //   );
+  // }
 
   String _estadoDominante(List items) {
     if (items.isEmpty) return 'desconhecido';

@@ -295,7 +295,7 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
                       indentado: true,
                     ),
                     _dataRow(
-                      label: 'Fibra alimentar (g)',
+                      label: 'Fibras alimentares (g)',
                       valorPorcao: tabela.fibraAlimentar,
                       vdReferencia: 25,
                     ),

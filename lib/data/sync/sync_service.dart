@@ -202,24 +202,16 @@ class SyncService {
           }
 
           if (entity == "design_etiqueta_configs") {
-            if (map.containsKey("mostrarLogo")) {
-              final v = map["mostrarLogo"];
-              if (v is int) map["mostrarLogo"] = v == 1;
-              if (v is num) map["mostrarLogo"] = v.toInt() == 1;
+            if (map.containsKey("mostrarMarcaTagValida")) {
+              final v = map["mostrarMarcaTagValida"];
+              if (v is int) map["mostrarMarcaTagValida"] = v == 1;
+              if (v is num) map["mostrarMarcaTagValida"] = v.toInt() == 1;
               if (v is String) {
-                map["mostrarLogo"] = (v.toLowerCase().trim() == "true" || v == "1");
-              }
-            }
-
-            if (map.containsKey("mostrarBordaInterna")) {
-              final v = map["mostrarBordaInterna"];
-              if (v is int) map["mostrarBordaInterna"] = v == 1;
-              if (v is num) map["mostrarBordaInterna"] = v.toInt() == 1;
-              if (v is String) {
-                map["mostrarBordaInterna"] =
+                map["mostrarMarcaTagValida"] =
                     (v.toLowerCase().trim() == "true" || v == "1");
               }
             }
+
 
             if (map.containsKey("destacarValidade")) {
               final v = map["destacarValidade"];
@@ -489,11 +481,8 @@ class SyncService {
           "tipoEtiquetaNome": (d["tipoEtiquetaNome"] ?? "").toString(),
           "larguraMm": (d["larguraMm"] as num?)?.toDouble() ?? 60,
           "alturaMm": (d["alturaMm"] as num?)?.toDouble() ?? 40,
-          "mostrarLogo": toBool(d["mostrarLogo"], defaultValue: true) ? 1 : 0,
-          "mostrarBordaInterna":
-              toBool(d["mostrarBordaInterna"], defaultValue: true) ? 1 : 0,
-          "destacarValidade":
-              toBool(d["destacarValidade"], defaultValue: true) ? 1 : 0,
+          "mostrarMarcaTagValida":toBool(d["mostrarMarcaTagValida"], defaultValue: true) ? 1 : 0,
+          "destacarValidade":toBool(d["destacarValidade"], defaultValue: true) ? 1 : 0,
           "camposJson": jsonEncode(d["campos"] ?? []),
           "createdAt": ms(d["createdAt"]) ?? ms(d["createdAtMs"]),
           "updatedAt": ms(d["updatedAt"]) ?? ms(d["updatedAtMs"]),

@@ -48,7 +48,7 @@ Alignment toAlignment(TextAlign align) {
    String exampleValue(String id, String nome) {
   switch (id) {
     case 'empresa':
-      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90\nRua Exemplo, 123';
+      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90';
     case 'produto':
       return 'Pão Francês';
     case 'fabricacao':

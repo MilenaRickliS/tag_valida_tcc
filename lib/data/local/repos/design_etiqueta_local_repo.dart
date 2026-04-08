@@ -28,6 +28,21 @@ class DesignEtiquetaLocalRepo {
     }
   }
 
+  Future<DesignEtiquetaModel?> loadSavedByTipoId(String tipoId) async {
+    final prefs = await SharedPreferences.getInstance();
+    final raw = prefs.getString(_key(tipoId));
+
+    if (raw == null || raw.trim().isEmpty) {
+      return null;
+    }
+
+    try {
+      return DesignEtiquetaMapper.fromJson(raw);
+    } catch (_) {
+      return null;
+    }
+  }
+
   DesignEtiquetaModel _mergeWithDefault(
     DesignEtiquetaModel saved,
     DesignEtiquetaModel defaultModel,
@@ -55,8 +70,7 @@ class DesignEtiquetaLocalRepo {
       tipoEtiquetaNome: defaultModel.tipoEtiquetaNome,
       larguraMm: saved.larguraMm,
       alturaMm: saved.alturaMm,
-      mostrarLogo: saved.mostrarLogo,
-      mostrarBordaInterna: saved.mostrarBordaInterna,
+      mostrarMarcaTagValida: saved.mostrarMarcaTagValida,
       destacarValidade: saved.destacarValidade,
       campos: mergedCampos,
     );

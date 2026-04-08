@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import '../../../models/user.dart';
+import '../../../models/user_model.dart';
 import 'pill.dart';
 import 'header_button.dart';
 import 'initials_avatar.dart';

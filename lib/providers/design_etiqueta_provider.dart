@@ -107,28 +107,10 @@ class DesignEtiquetaProvider extends ChangeNotifier {
     notifyListeners();
   }
 
-  void setMostrarLogo(bool value) {
+  void setMostrarMarcaTagValida(bool value) {
     if (_config == null) return;
 
-    final tentativa = _config!.copyWith(mostrarLogo: value);
-    final resultado = DesignEtiquetaLimiter.validate(tentativa);
-
-   
-    if (value && !resultado.ok) {
-      _validation = resultado;
-      notifyListeners();
-      return;
-    }
-
-    _config = tentativa;
-    _validation = resultado;
-    notifyListeners();
-  }
-
-  void setMostrarBordaInterna(bool value) {
-    if (_config == null) return;
-
-    _config = _config!.copyWith(mostrarBordaInterna: value);
+    _config = _config!.copyWith(mostrarMarcaTagValida: value);
     _revalidateInternal();
     notifyListeners();
   }
@@ -236,19 +218,51 @@ class DesignEtiquetaProvider extends ChangeNotifier {
     if (_config == null) return;
 
     final atual = [..._config!.campos];
+
+    final item = atual[oldIndex];
+
+    final isEmpresa = item.id == 'empresa';
+    final isProduto = item.id == 'produto';
+    final isQr = item.tipo == CampoDesignTipo.qrcode || item.id == 'qrcode';
+
+    final posicaoFixa = isEmpresa || isProduto || isQr;
+
+    
+    if (posicaoFixa) {
+      return;
+    }
+
     if (newIndex > oldIndex) newIndex -= 1;
 
-    final item = atual.removeAt(oldIndex);
+    atual.removeAt(oldIndex);
     atual.insert(newIndex, item);
 
-    final ajustados = atual.asMap().entries.map((e) {
+    
+    final empresa = atual.where((c) => c.id == 'empresa');
+    final produto = atual.where((c) => c.id == 'produto');
+    final qr = atual.where((c) =>
+        c.tipo == CampoDesignTipo.qrcode || c.id == 'qrcode');
+
+    final outros = atual.where((c) =>
+        c.id != 'empresa' &&
+        c.id != 'produto' &&
+        c.tipo != CampoDesignTipo.qrcode &&
+        c.id != 'qrcode');
+
+    final finalList = [
+      ...empresa,
+      ...produto,
+      ...qr,
+      ...outros,
+    ];
+
+    final ajustados = finalList.asMap().entries.map((e) {
       return e.value.copyWith(ordem: e.key);
     }).toList();
 
     final tentativa = _config!.copyWith(campos: ajustados);
     final resultado = DesignEtiquetaLimiter.validate(tentativa);
 
-    
     _config = tentativa;
     _validation = resultado;
     notifyListeners();

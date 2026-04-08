@@ -26,6 +26,7 @@ Widget buildPreviewPanel({
   required DesignEtiquetaModel config,
 }) {
   final shell = isDark ? const Color(0xFF121212) : const Color(0xFFFFFBF6);
+  final etiquetaBg = Colors.white;
 
   final larguraMm = clampLargura(
     config.larguraMm <= 0 ? 60 : config.larguraMm,
@@ -84,7 +85,7 @@ Widget buildPreviewPanel({
         const SizedBox(height: 18),
         Center(
           child: Container(
-            padding: const EdgeInsets.all(18),
+            padding: const EdgeInsets.all(22),
             decoration: BoxDecoration(
               color: shell,
               borderRadius: BorderRadius.circular(22),
@@ -93,7 +94,23 @@ Widget buildPreviewPanel({
             child: SizedBox(
               width: previewWidth,
               height: previewHeight,
-              child: buildEtiquetaPreview(config),
+              child: DecoratedBox(
+                decoration: BoxDecoration(
+                  color: etiquetaBg,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
+                      blurRadius: 18,
+                      offset: const Offset(0, 6),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: buildEtiquetaPreview(config),
+                ),
+              ),
             ),
           ),
         ),

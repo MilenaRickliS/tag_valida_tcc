@@ -1,14 +1,23 @@
 import 'dart:async';
+
+import '../data/local/repos/design_etiqueta_local_repo.dart';
+import '../models/etiqueta_model.dart';
 import '../models/printer_config_model.dart';
-import 'elgin_l42_network_service.dart';
+import '../models/user_model.dart';
+import '../services/elgin_l42_network_service.dart';
+import '../models/design_limite_model.dart';
 
 class PrinterAppService {
-  Future<void> imprimirEtiquetaCompacta({
+  final DesignEtiquetaLocalRepo designRepo;
+
+  PrinterAppService({
+    required this.designRepo,
+  });
+
+  Future<void> imprimirEtiquetaComDesign({
     required PrinterConfigModel printer,
-    required String produto,
-    required String validade,
-    required String lote,
-    required String quantidade,
+    required EtiquetaModel etiqueta,
+    required UserModel usuario,
     required String qrData,
     int copias = 1,
   }) async {
@@ -24,12 +33,23 @@ class PrinterAppService {
       throw Exception('Modelo de impressora não suportado ainda.');
     }
 
-    if (printer.tamanhoEtiqueta != '60x40') {
-      throw Exception('Tamanho de etiqueta não suportado ainda.');
-    }
-
     if (copias <= 0) {
       throw Exception('A quantidade de etiquetas deve ser maior que zero.');
+    }
+
+    final design = await designRepo.loadSavedByTipoId(etiqueta.tipoId);
+
+    if (design == null) {
+      throw Exception(
+        'Nenhum design salvo foi encontrado para o tipo "${etiqueta.tipoNome}".',
+      );
+    }
+
+    final validacao = DesignEtiquetaLimiter.validate(design);
+    if (!validacao.ok) {
+      throw Exception(
+        validacao.message ?? 'O design salvo é inválido para impressão.',
+      );
     }
 
     final service = ElginL42NetworkService(
@@ -44,11 +64,10 @@ class PrinterAppService {
       );
     }
 
-    await service.printEtiqueta60x40Compacta(
-      produto: produto,
-      validade: validade,
-      lote: lote,
-      quantidade: quantidade,
+    await service.printEtiquetaComDesign(
+      design: design,
+      etiqueta: etiqueta,
+      usuario: usuario,
       qrData: qrData,
       copias: copias,
     );

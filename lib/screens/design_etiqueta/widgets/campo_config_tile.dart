@@ -14,11 +14,13 @@ Widget campoConfigTile({
     required CampoDesignEtiquetaModel campo,
     required DesignEtiquetaModel config,
     required bool isDark,
+    required bool bloqueado, 
     required Widget dragHandle,
     required ValueChanged<bool?>? onToggle,
-    required ValueChanged<double> onFontChanged,
-    required ValueChanged<bool> onBoldChanged,
-    required ValueChanged<TextAlign?> onAlignChanged,
+    ValueChanged<double>? onFontChanged,
+    ValueChanged<bool>? onBoldChanged,
+    ValueChanged<TextAlign?>? onAlignChanged,
+    bool ocultarControlesTexto = false, 
   }) {
     final border = isDark
         ? _gold.withOpacity(0.12)
@@ -28,6 +30,7 @@ Widget campoConfigTile({
     final text = isDark ? Colors.white : _lightText;
     final muted = text.withOpacity(0.65);
     final maxFont = maxFontForCampo(campo, config);
+
 
     return Container(
       padding: const EdgeInsets.all(14),
@@ -85,12 +88,29 @@ Widget campoConfigTile({
                               ),
                             ),
                           ),
+                        if (bloqueado)
+                          Container(
+                            margin: const EdgeInsets.only(left: 6),
+                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: _orange.withOpacity(0.10),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: const Text(
+                              'Fixo',
+                              style: TextStyle(
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                                color: _orange,
+                              ),
+                            ),
+                          ), 
                       ],
                     ),
                     const SizedBox(height: 4),
                     Text(
                       campo.tipo == CampoDesignTipo.qrcode
-                          ? 'Mostrar QR Code no rodapé da etiqueta'
+                          ? 'Mostrar QR Code na etiqueta'
                           : getValorExemplo(campo).replaceAll('\n', ' • '),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
@@ -105,6 +125,7 @@ Widget campoConfigTile({
             ],
           ),
           const SizedBox(height: 12),
+          if (!ocultarControlesTexto)
           Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -128,7 +149,9 @@ Widget campoConfigTile({
                           divisions: ((maxFont - 6).round()).clamp(1, 100),
                           value: campo.fontSize.clamp(6, maxFont),
                           label: campo.fontSize.clamp(6, maxFont).toStringAsFixed(0),
-                          onChanged: campo.visivel ? onFontChanged : null,
+                          onChanged: (campo.visivel && onFontChanged != null)
+                            ? onFontChanged
+                            : null,
                         ),
                       ),
                       Text(
@@ -270,7 +293,7 @@ Widget campoConfigTile({
  String exampleValue(String id, String nome) {
   switch (id) {
     case 'empresa':
-      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90\nRua Exemplo, 123';
+      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90';
     case 'produto':
       return 'Pão Francês';
     case 'fabricacao':
@@ -313,7 +336,7 @@ Widget campoConfigTile({
 String getValorExemplo(CampoDesignEtiquetaModel campo) {
   switch (campo.id) {
     case 'empresa':
-      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90\nRua Exemplo, 123';
+      return 'Panificadora TagValida\nCNPJ: 12.123.456/0001-90';
     case 'produto':
       return 'Pão Francês';
     case 'fabricacao':

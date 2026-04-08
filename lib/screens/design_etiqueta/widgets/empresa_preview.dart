@@ -3,82 +3,70 @@
 import 'package:flutter/material.dart';
 import '../../../models/design_etiqueta_model.dart';
 
-  const _orange = Color(0xFFED7227);
-  const _green = Color(0xFF88BE8E);
-
 Widget buildEmpresaPreviewNovo(
-    CampoDesignEtiquetaModel campo,
-    DesignEtiquetaModel config,
-  ) {
-    final textWidget = Align(
-      alignment: toAlignment(campo.align),
-      child: Text(
-        'Panificadora TagValida\nCNPJ: 12.123.456/0001-90\nRua Exemplo, 123',
-        textAlign: campo.align,
-        maxLines: 3,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontSize: campo.fontSize.clamp(8, 13),
-          height: 1.2,
-          color: Colors.black54,
-          fontWeight: campo.isBold ? FontWeight.w700 : FontWeight.w600,
-        ),
-      ),
-    );
+  CampoDesignEtiquetaModel campo,
+  DesignEtiquetaModel config,
+) {
+  final fontSize = campo.fontSize.clamp(8.0, 12.0).toDouble();
 
-  if (!config.mostrarLogo) return textWidget;
-
-  return Row(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(12),
-          color: Colors.white,
-        ),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(12),
-          child: Image.asset(
-            'assets/logo6.png',
-            fit: BoxFit.contain,
-            errorBuilder: (_, __, ___) => Container(
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(12),
-                gradient: const LinearGradient(colors: [_orange, _green]),
-              ),
-              child: const Icon(Icons.local_offer_rounded, color: Colors.white),
-            ),
+  return Align(
+    alignment: toAlignment(campo.align),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'RAZAO SOCIAL',
+          textAlign: campo.align,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: fontSize,
+            height: 1.05,
+            color: Colors.black.withOpacity(0.82),
+            fontWeight: campo.isBold ? FontWeight.w800 : FontWeight.w700,
+            letterSpacing: 0.2,
           ),
         ),
-      ),
-      const SizedBox(width: 10),
-      Expanded(child: textWidget),
-    ],
+        const SizedBox(height: 2),
+        Text(
+          'CNPJ: 12.123.456/0001-00',
+          textAlign: campo.align,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontSize: (fontSize - 0.6).clamp(7.5, 11.0),
+            height: 1.0,
+            color: Colors.black.withOpacity(0.72),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0.15,
+          ),
+        ),
+      ],
+    ),
   );
 }
 
 Alignment toAlignment(TextAlign align) {
-    switch (align) {
-      case TextAlign.center:
-        return Alignment.center;
-      case TextAlign.right:
-        return Alignment.centerRight;
-      case TextAlign.left:
-      default:
-        return Alignment.centerLeft;
-    }
+  switch (align) {
+    case TextAlign.center:
+      return Alignment.center;
+    case TextAlign.right:
+      return Alignment.centerRight;
+    case TextAlign.left:
+    default:
+      return Alignment.centerLeft;
   }
+}
 
-  CrossAxisAlignment toCrossAxis(TextAlign align) {
-    switch (align) {
-      case TextAlign.center:
-        return CrossAxisAlignment.center;
-      case TextAlign.right:
-        return CrossAxisAlignment.end;
-      case TextAlign.left:
-      default:
-        return CrossAxisAlignment.start;
-    }
+CrossAxisAlignment toCrossAxis(TextAlign align) {
+  switch (align) {
+    case TextAlign.center:
+      return CrossAxisAlignment.center;
+    case TextAlign.right:
+      return CrossAxisAlignment.end;
+    case TextAlign.left:
+    default:
+      return CrossAxisAlignment.start;
   }
+}

@@ -118,8 +118,7 @@ class DesignEtiquetaModel {
   final double larguraMm;
   final double alturaMm;
 
-  final bool mostrarLogo;
-  final bool mostrarBordaInterna;
+  final bool mostrarMarcaTagValida;
   final bool destacarValidade;
 
   final List<CampoDesignEtiquetaModel> campos;
@@ -129,8 +128,7 @@ class DesignEtiquetaModel {
     required this.tipoEtiquetaNome,
     required this.larguraMm,
     required this.alturaMm,
-    required this.mostrarLogo,
-    required this.mostrarBordaInterna,
+    required this.mostrarMarcaTagValida,
     required this.destacarValidade,
     required this.campos,
   });
@@ -268,8 +266,7 @@ class DesignEtiquetaModel {
       tipoEtiquetaNome: tipoEtiquetaNome,
       larguraMm: 60,
       alturaMm: 40,
-      mostrarLogo: true,
-      mostrarBordaInterna: true,
+      mostrarMarcaTagValida: true,
       destacarValidade: true,
       campos: campos,
     );
@@ -286,8 +283,7 @@ class DesignEtiquetaModel {
       tipoEtiquetaNome: map['tipoEtiquetaNome'] ?? '',
       larguraMm: (map['larguraMm'] ?? 60).toDouble(),
       alturaMm: (map['alturaMm'] ?? 40).toDouble(),
-      mostrarLogo: map['mostrarLogo'] ?? true,
-      mostrarBordaInterna: map['mostrarBordaInterna'] ?? true,
+      mostrarMarcaTagValida: map['mostrarMarcaTagValida'] ?? true,
       destacarValidade: map['destacarValidade'] ?? true,
       campos: camposMap,
     );
@@ -299,8 +295,7 @@ class DesignEtiquetaModel {
       'tipoEtiquetaNome': tipoEtiquetaNome,
       'larguraMm': larguraMm,
       'alturaMm': alturaMm,
-      'mostrarLogo': mostrarLogo,
-      'mostrarBordaInterna': mostrarBordaInterna,
+      'mostrarMarcaTagValida': mostrarMarcaTagValida,
       'destacarValidade': destacarValidade,
       'campos': campos
           .asMap()
@@ -321,8 +316,7 @@ class DesignEtiquetaModel {
     String? tipoEtiquetaNome,
     double? larguraMm,
     double? alturaMm,
-    bool? mostrarLogo,
-    bool? mostrarBordaInterna,
+    bool? mostrarMarcaTagValida,
     bool? destacarValidade,
     List<CampoDesignEtiquetaModel>? campos,
   }) {
@@ -331,8 +325,7 @@ class DesignEtiquetaModel {
       tipoEtiquetaNome: tipoEtiquetaNome ?? this.tipoEtiquetaNome,
       larguraMm: larguraMm ?? this.larguraMm,
       alturaMm: alturaMm ?? this.alturaMm,
-      mostrarLogo: mostrarLogo ?? this.mostrarLogo,
-      mostrarBordaInterna: mostrarBordaInterna ?? this.mostrarBordaInterna,
+      mostrarMarcaTagValida: mostrarMarcaTagValida ?? this.mostrarMarcaTagValida,
       destacarValidade: destacarValidade ?? this.destacarValidade,
       campos: campos ?? this.campos,
     );

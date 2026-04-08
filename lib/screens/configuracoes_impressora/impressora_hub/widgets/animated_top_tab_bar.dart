@@ -28,7 +28,7 @@ class AnimatedTopTabBar extends StatelessWidget {
         : Colors.black.withOpacity(0.08);
 
     return Container(
-      height: 60,
+      height: 68,
       padding: const EdgeInsets.all(6),
       decoration: BoxDecoration(
         color: cardColor,
@@ -51,6 +51,7 @@ class AnimatedTopTabBar extends StatelessWidget {
                 ? [gold.withOpacity(0.95), const Color(0xFFF4D58D)]
                 : [accent, accent2],
           ),
+          
           boxShadow: [
             BoxShadow(
               color: (isDark ? gold : accent).withOpacity(0.28),

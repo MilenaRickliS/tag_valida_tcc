@@ -218,6 +218,7 @@ class _DesignEtiquetaScreenState extends State<DesignEtiquetaScreen> {
                           designProvider: designProvider,
                           larguraController: _larguraController,
                           alturaController: _alturaController,
+                          
                         ),
                       ],
                     ),
@@ -327,21 +328,45 @@ double maxFontForCampo(
   final visibleCount = config.campos.where((c) => c.visivel).length;
   final area = config.larguraMm * config.alturaMm;
 
-  double max = 28;
+  double baseMax;
+  double minFont = 8;
 
   if (area <= 2400) {
-    max = visibleCount <= 4 ? 18 : 14;
+    baseMax = visibleCount <= 4 ? 18 : 14;
   } else if (area <= 5000) {
-    max = visibleCount <= 6 ? 22 : 18;
+    baseMax = visibleCount <= 6 ? 22 : 18;
   } else {
-    max = visibleCount <= 8 ? 26 : 22;
+    baseMax = visibleCount <= 8 ? 26 : 22;
   }
+
 
   if (campo.id == 'produto') {
-    return max;
+    return baseMax.clamp(12, 28).toDouble();
   }
 
-  return max.clamp(10, 22);
+ 
+  if (campo.id == 'empresa') {
+    return (baseMax - 4).clamp(7, 14).toDouble();
+  }
+
+ 
+  if (campo.id == 'validade') {
+    return (baseMax - 1).clamp(10, 20).toDouble();
+  }
+
+ 
+  if (campo.id == 'ingredientes' ||
+      campo.id == 'alergenicos' ||
+      campo.id == 'observacao') {
+    return (baseMax - 4).clamp(8, 14).toDouble();
+  }
+
+
+  if (campo.tipo == CampoDesignTipo.qrcode) {
+    return 0;
+  }
+
+  return (baseMax - 2).clamp(minFont, 18).toDouble();
 }
 
   Alignment toAlignment(TextAlign align) {
