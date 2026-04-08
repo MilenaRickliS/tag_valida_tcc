@@ -17,7 +17,7 @@ Widget buildLinhaInfo(CampoDesignEtiquetaModel campo, {required bool destacarVal
         // StatusValidadePreview.alerta
         // StatusValidadePreview.vencido
         status: StatusValidadePreview.vencido,
-        fontSize: campo.fontSize.clamp(10, 18).toDouble(),
+        fontSize: campo.fontSize.clamp(9, 11).toDouble(),
         align: campo.align,
         isBold: campo.isBold,
       ),
@@ -30,10 +30,11 @@ Widget buildLinhaInfo(CampoDesignEtiquetaModel campo, {required bool destacarVal
       textAlign: campo.align,
       text: TextSpan(
         style: TextStyle(
-          fontSize: campo.fontSize.clamp(10, 18).toDouble(),
-          color: Colors.black87,
-          height: 1.25,
-          fontWeight: campo.isBold ? FontWeight.w700 : FontWeight.w400,
+          fontFamily: 'RobotoMono',
+          fontSize: campo.fontSize.clamp(9, 11).toDouble(),
+          color: Colors.black,
+          height: 1.05,
+          fontWeight: campo.isBold ? FontWeight.w600 : FontWeight.w400,
         ),
         children: [
           TextSpan(
@@ -51,7 +52,7 @@ Widget buildLinhaInfo(CampoDesignEtiquetaModel campo, {required bool destacarVal
         ],
       ),
       maxLines:
-          campo.id == 'ingredientes' || campo.id == 'alergenicos' ? 3 : 1,
+          campo.id == 'ingredientes' || campo.id == 'alergenicos' ? 2 : 1,
       overflow: TextOverflow.ellipsis,
     ),
   );

@@ -7,12 +7,12 @@ Widget buildEmpresaPreviewNovo(
   CampoDesignEtiquetaModel campo,
   DesignEtiquetaModel config,
 ) {
-  final fontSize = campo.fontSize.clamp(8.0, 12.0).toDouble();
+  final fontSize = campo.fontSize.clamp(8.0, 10.0).toDouble();
 
   return Align(
     alignment: toAlignment(campo.align),
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: toCrossAxis(campo.align),
       mainAxisSize: MainAxisSize.min,
       children: [
         Text(
@@ -20,12 +20,13 @@ Widget buildEmpresaPreviewNovo(
           textAlign: campo.align,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: TextStyle(
+         style: TextStyle(
+            fontFamily: 'RobotoMono',
             fontSize: fontSize,
-            height: 1.05,
-            color: Colors.black.withOpacity(0.82),
-            fontWeight: campo.isBold ? FontWeight.w800 : FontWeight.w700,
-            letterSpacing: 0.2,
+            height: 1.0,
+            color: Colors.black.withOpacity(0.85),
+            fontWeight: FontWeight.w600,
+            letterSpacing: 0,
           ),
         ),
         const SizedBox(height: 2),
@@ -35,11 +36,12 @@ Widget buildEmpresaPreviewNovo(
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
           style: TextStyle(
-            fontSize: (fontSize - 0.6).clamp(7.5, 11.0),
+            fontFamily: 'RobotoMono',
+            fontSize: fontSize,
             height: 1.0,
-            color: Colors.black.withOpacity(0.72),
+            color: Colors.black.withOpacity(0.85),
             fontWeight: FontWeight.w600,
-            letterSpacing: 0.15,
+            letterSpacing: 0,
           ),
         ),
       ],

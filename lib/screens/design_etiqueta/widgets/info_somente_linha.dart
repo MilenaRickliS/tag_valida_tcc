@@ -11,7 +11,7 @@ Widget buildInfosSomenteLinhas(List<CampoDesignEtiquetaModel> infoCampos, { requ
     ),
     children: infoCampos.map((campo) {
       return Padding(
-        padding: const EdgeInsets.only(bottom: 8),
+        padding: const EdgeInsets.only(bottom: 2),
         child: buildLinhaInfo(campo,destacarValidade: config.destacarValidade),
       );
     }).toList(),

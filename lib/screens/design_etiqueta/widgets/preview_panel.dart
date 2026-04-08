@@ -35,17 +35,6 @@ Widget buildPreviewPanel({
     config.alturaMm <= 0 ? 40 : config.alturaMm,
   );
 
-  const double maxPreviewWidth = 560;
-  const double maxPreviewHeight = 420;
-
-  double previewWidth = maxPreviewWidth;
-  double previewHeight = previewWidth * (alturaMm / larguraMm);
-
-  if (previewHeight > maxPreviewHeight) {
-    previewHeight = maxPreviewHeight;
-    previewWidth = previewHeight * (larguraMm / alturaMm);
-  }
-
   return Container(
     width: double.infinity,
     padding: const EdgeInsets.all(20),
@@ -83,36 +72,61 @@ Widget buildPreviewPanel({
           ),
         ),
         const SizedBox(height: 18),
-        Center(
-          child: Container(
-            padding: const EdgeInsets.all(22),
-            decoration: BoxDecoration(
-              color: shell,
-              borderRadius: BorderRadius.circular(22),
-              border: Border.all(color: border),
-            ),
-            child: SizedBox(
-              width: previewWidth,
-              height: previewHeight,
-              child: DecoratedBox(
+
+        LayoutBuilder(
+          builder: (context, constraints) {
+            const double shellPadding = 22;
+            const double pixelsPorMm = 3.2;
+            const double maxPreviewHeight = 300;
+
+            final larguraBase = larguraMm * pixelsPorMm;
+            final alturaBase = alturaMm * pixelsPorMm;
+
+            final larguraDisponivel =
+                (constraints.maxWidth - (shellPadding * 2)).clamp(120.0, 520.0);
+
+            double escala = larguraDisponivel / larguraBase;
+
+            final alturaEscalada = alturaBase * escala;
+            if (alturaEscalada > maxPreviewHeight) {
+              escala = maxPreviewHeight / alturaBase;
+            }
+
+            final previewWidth = larguraBase * escala;
+            final previewHeight = alturaBase * escala;
+
+            return Center(
+              child: Container(
+                padding: const EdgeInsets.all(shellPadding),
                 decoration: BoxDecoration(
-                  color: etiquetaBg,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
-                      blurRadius: 18,
-                      offset: const Offset(0, 6),
-                    ),
-                  ],
+                  color: shell,
+                  borderRadius: BorderRadius.circular(22),
+                  border: Border.all(color: border),
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: buildEtiquetaPreview(config),
+                child: SizedBox(
+                  width: previewWidth,
+                  height: previewHeight,
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(
+                      color: etiquetaBg,
+                      borderRadius: BorderRadius.circular(18),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
+                          blurRadius: 18,
+                          offset: const Offset(0, 6),
+                        ),
+                      ],
+                    ),
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(18),
+                      child: buildEtiquetaPreview(config),
+                    ),
+                  ),
                 ),
               ),
-            ),
-          ),
+            );
+          },
         ),
       ],
     ),

@@ -12,9 +12,10 @@ Widget buildProdutoPreviewNovo(CampoDesignEtiquetaModel campo) {
       maxLines: 2,
       overflow: TextOverflow.ellipsis,
       style: TextStyle(
-        fontSize: campo.fontSize.clamp(16, 28),
+        fontFamily: 'RobotoMono',
+        fontSize: campo.fontSize.clamp(16, 20),
         height: 1.0,
-        fontWeight: campo.isBold ? FontWeight.w900 : FontWeight.w800,
+        fontWeight: campo.isBold ? FontWeight.w700 : FontWeight.w600,
         color: Colors.black,
       ),
     ),

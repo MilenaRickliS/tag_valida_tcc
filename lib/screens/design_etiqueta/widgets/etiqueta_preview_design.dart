@@ -11,6 +11,7 @@ import './imagem_design.dart';
 import './info_somente_linha.dart';
 
 Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
+  
   final camposVisiveis = [...config.campos]
     ..sort((a, b) => a.ordem.compareTo(b.ordem));
 
@@ -36,8 +37,15 @@ Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
     return true;
   }).toList();
 
-  return Container(
-    padding: const EdgeInsets.fromLTRB(14, 12, 14, 10),
+  return DefaultTextStyle(
+    style: const TextStyle(
+      fontFamily: 'RobotoMono',
+      fontSize: 10,
+      height: 1.05, 
+      letterSpacing: -0.2,
+    ),
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
     decoration: BoxDecoration(
       color: Colors.white,
       borderRadius: BorderRadius.circular(18),
@@ -66,7 +74,7 @@ Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
                     if (empresaCampo != null)
                       buildEmpresaPreviewNovo(empresaCampo, config),
 
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 2),
 
                     if (produtoCampo != null)
                       buildProdutoPreviewNovo(produtoCampo),
@@ -77,7 +85,8 @@ Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
             if (qrCampo) ...[
               const SizedBox(width: 10),
               SizedBox(
-                width: 84,
+                width: 72,
+                height: 72,
                 child: Align(
                   alignment: Alignment.topRight,
                   child: buildQrPreviewNovo(config),
@@ -87,12 +96,12 @@ Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
           ],
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 2),
 
         
         LayoutBuilder(
           builder: (context, constraints) {
-            const qrReserva = 96.0;
+            const qrReserva = 82.0;
             final larguraLinha = qrCampo
                 ? (constraints.maxWidth - qrReserva).clamp(80.0, double.infinity)
                 : constraints.maxWidth;
@@ -101,14 +110,14 @@ Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
               alignment: Alignment.centerLeft,
               child: Container(
                 width: larguraLinha,
-                height: 1,
-                color: Colors.black.withOpacity(0.28),
+                height: 0.8,
+                color: Colors.black.withOpacity(0.6),
               ),
             );
           },
         ),
 
-        const SizedBox(height: 10),
+        const SizedBox(height: 2),
 
         Expanded(
           child: Row(
@@ -133,10 +142,10 @@ Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
           ),
         ),
 
-        const SizedBox(height: 8),
+        const SizedBox(height: 2),
 
         if (config.mostrarMarcaTagValida) ...[
-          const SizedBox(height: 8),
+          const SizedBox(height: 4),
           Align(
             alignment: Alignment.centerLeft,
             child: Text(
@@ -152,6 +161,7 @@ Widget buildEtiquetaPreview(DesignEtiquetaModel config) {
         ]
       ],
     ),
+  ),
   );
 }
 
