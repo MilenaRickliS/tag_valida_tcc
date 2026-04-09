@@ -4,6 +4,7 @@ import '../../../models/tabela_nutricional_model.dart';
 class TabelaNutricionalPreviewCard extends StatelessWidget {
   final TabelaNutricionalModel tabela;
   final bool compacta;
+  
 
   const TabelaNutricionalPreviewCard({
     super.key,
@@ -149,6 +150,7 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final porcaoLabel = '${tabela.porcao} g';
+    final medidaCaseiraCompleta ='${tabela.quantidadeMedida} ${tabela.medidaCaseira}'.trim();
 
     return Container(
       width: double.infinity,
@@ -198,7 +200,7 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Porção: $porcaoLabel (${tabela.medidaCaseira})',
+                        'Porção: $porcaoLabel ($medidaCaseiraCompleta)',
                         style: _infoStyle(),
                       ),
                     ],

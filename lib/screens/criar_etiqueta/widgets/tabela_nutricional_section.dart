@@ -57,6 +57,74 @@ class TabelaNutricionalSection extends StatelessWidget {
   });
 
 
+  Widget _quantidadeMedidaField() {
+    const sugestoes = <String>[
+      '1',
+      '1/2',
+      '1/3',
+      '1/4',
+      '2',
+      '3',
+      '4',
+      '5',
+      '6',
+      '12',
+      'Outro...',
+    ];
+
+    final atual = gerar.quantidadeMedidaCtrl.text.trim();
+    final safeValue = sugestoes.contains(atual) ? atual : null;
+
+    return DropdownButtonFormField<String>(
+      value: safeValue,
+      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+      style: TextStyle(color: text),
+      decoration: inputDecoration("Qtd. medida"),
+      items: sugestoes
+          .map(
+            (q) => DropdownMenuItem<String>(
+              value: q,
+              child: Text(q, style: TextStyle(color: text)),
+            ),
+          )
+          .toList(),
+      onChanged: (value) {
+        if (value == null) return;
+
+        if (value == 'Outro...') {
+          gerar.setQuantidadeMedida('');
+        } else {
+          gerar.setQuantidadeMedida(value);
+        }
+      },
+      validator: (_) {
+        if (!gerar.incluirTabelaNutricional) return null;
+        if (gerar.quantidadeMedidaCtrl.text.trim().isEmpty) {
+          return "Campo obrigatório.";
+        }
+        return null;
+      },
+    );
+  }
+
+  bool get _mostrarQtdMedidaManual {
+    const sugestoesFixas = <String>[
+      '1',
+      '1/2',
+      '1/3',
+      '1/4',
+      '2',
+      '3',
+      '4',
+      '6',
+      '12',
+    ];
+
+    final atual = gerar.quantidadeMedidaCtrl.text.trim();
+    return atual.isEmpty || !sugestoesFixas.contains(atual);
+  }
+
+
   Widget _numericField({
     required TextEditingController controller,
     required String label,
@@ -267,8 +335,33 @@ class TabelaNutricionalSection extends StatelessWidget {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 12),
-                  _medidaCaseiraField(),
+                 const SizedBox(height: 12),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _quantidadeMedidaField(),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: _medidaCaseiraField(),
+                      ),
+                    ],
+                  ),
+                  if (_mostrarQtdMedidaManual) ...[
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: gerar.quantidadeMedidaCtrl,
+                      style: TextStyle(color: text),
+                      decoration: inputDecoration("Digite a quantidade").copyWith(
+                        hintText: "Ex: 7, 1/8, 2,5",
+                      ),
+                      validator: (v) {
+                        if (!gerar.incluirTabelaNutricional) return null;
+                        if ((v ?? '').trim().isEmpty) return "Campo obrigatório.";
+                        return null;
+                      },
+                    ),
+                  ],
             
                   const SizedBox(height: 12),
 

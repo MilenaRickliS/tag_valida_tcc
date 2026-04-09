@@ -44,6 +44,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
   final porcoesPorEmbalagemCtrl = TextEditingController();
   final porcaoCtrl = TextEditingController();
+  final quantidadeMedidaCtrl = TextEditingController();
   final medidaCaseiraCtrl = TextEditingController();
   final valorEnergeticoCtrl = TextEditingController();
   final carboidratosCtrl = TextEditingController();
@@ -128,6 +129,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     return TabelaNutricionalModel(
       porcoesPorEmbalagem: toInt(porcoesPorEmbalagemCtrl),
       porcao: porcaoCtrl.text.trim(),
+      quantidadeMedida: quantidadeMedidaCtrl.text.trim(),
       medidaCaseira: medidaCaseiraCtrl.text.trim(),
       valorEnergetico: _toDouble(valorEnergeticoCtrl),
       carboidratos: _toDouble(carboidratosCtrl),
@@ -168,6 +170,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     incluirTabelaNutricional = false;
     porcoesPorEmbalagemCtrl.clear();
     porcaoCtrl.clear();
+    quantidadeMedidaCtrl.clear();
     medidaCaseiraCtrl.clear();
     valorEnergeticoCtrl.clear();
     carboidratosCtrl.clear();
@@ -228,6 +231,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     if (e.tabelaNutricional != null) {
       porcoesPorEmbalagemCtrl.text = e.tabelaNutricional!.porcoesPorEmbalagem.toString();
       porcaoCtrl.text = e.tabelaNutricional!.porcao;
+       quantidadeMedidaCtrl.text = e.tabelaNutricional!.quantidadeMedida;
       medidaCaseiraCtrl.text = e.tabelaNutricional!.medidaCaseira;
       valorEnergeticoCtrl.text = e.tabelaNutricional!.valorEnergetico.toString();
       carboidratosCtrl.text = e.tabelaNutricional!.carboidratos.toString();
@@ -294,6 +298,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       incluirTabelaNutricional = false;
       porcoesPorEmbalagemCtrl.clear();
       porcaoCtrl.clear();
+      quantidadeMedidaCtrl.clear();
       medidaCaseiraCtrl.clear();
       valorEnergeticoCtrl.clear();
       carboidratosCtrl.clear();
@@ -409,6 +414,9 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       }
       if (porcaoCtrl.text.trim().isEmpty) {
         return "Informe a porção da tabela nutricional.";
+      }
+      if (quantidadeMedidaCtrl.text.trim().isEmpty) {
+        return "Informe a quantidade da medida caseira da tabela nutricional.";
       }
       if (medidaCaseiraCtrl.text.trim().isEmpty) {
         return "Informe a medida caseira da tabela nutricional.";
@@ -751,6 +759,22 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
   void dispose() {
     produtoCtrl.dispose();
     quantidadeCtrl.dispose();
+
+    porcoesPorEmbalagemCtrl.dispose();
+    porcaoCtrl.dispose();
+    quantidadeMedidaCtrl.dispose();
+    medidaCaseiraCtrl.dispose();
+    valorEnergeticoCtrl.dispose();
+    carboidratosCtrl.dispose();
+    acucaresTotaisCtrl.dispose();
+    acucaresAdicionadosCtrl.dispose();
+    proteinasCtrl.dispose();
+    gordurasTotaisCtrl.dispose();
+    gordurasSaturadasCtrl.dispose();
+    gordurasTransCtrl.dispose();
+    fibraAlimentarCtrl.dispose();
+    sodioCtrl.dispose();
+
     for (final c in customCtrls.values) {
       c.dispose();
     }
@@ -768,6 +792,11 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       quantidadeRestante: quantidadeRestante,
     );
 
+    notifyListeners();
+  }
+
+  void setQuantidadeMedida(String value) {
+    quantidadeMedidaCtrl.text = value;
     notifyListeners();
   }
 }

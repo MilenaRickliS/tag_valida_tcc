@@ -1,6 +1,7 @@
 class TabelaNutricionalModel {
   final int porcoesPorEmbalagem;
   final String porcao;
+  final String quantidadeMedida; 
   final String medidaCaseira;
   final double valorEnergetico;
   final double carboidratos;
@@ -16,6 +17,7 @@ class TabelaNutricionalModel {
   const TabelaNutricionalModel({
     required this.porcoesPorEmbalagem,
     required this.porcao,
+    required this.quantidadeMedida,
     required this.medidaCaseira,
     required this.valorEnergetico,
     required this.carboidratos,
@@ -32,6 +34,7 @@ class TabelaNutricionalModel {
   Map<String, dynamic> toMap() => {
         "porcoesPorEmbalagem": porcoesPorEmbalagem,
         "porcao": porcao,
+        "quantidadeMedida": quantidadeMedida,
         "medidaCaseira": medidaCaseira,
         "valorEnergetico": valorEnergetico,
         "carboidratos": carboidratos,
@@ -57,6 +60,7 @@ class TabelaNutricionalModel {
       ? m["porcoesPorEmbalagem"]
       : int.tryParse(m["porcoesPorEmbalagem"].toString()) ?? 1,
       porcao: (m["porcao"] ?? "").toString(),
+      quantidadeMedida: (m["quantidadeMedida"] ?? "1").toString(),
       medidaCaseira: (m["medidaCaseira"] ?? "").toString(),
       valorEnergetico: asDouble(m["valorEnergetico"]),
       carboidratos: asDouble(m["carboidratos"]),
