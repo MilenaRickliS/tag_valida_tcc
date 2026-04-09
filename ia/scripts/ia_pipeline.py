@@ -4,6 +4,7 @@ import json
 
 import cv2
 from ultralytics import YOLO
+import unicodedata
 
 
 class TagValidaPipeline:
@@ -42,6 +43,7 @@ class TagValidaPipeline:
             return (0, 0, 255)  # vermelho
 
         return (255, 255, 255)  # branco
+
 
     def analisar_imagem(
         self,
@@ -191,7 +193,13 @@ class TagValidaPipeline:
             }
             items.append(item)
 
-            texto = f"{produto} • {estado}".upper()
+            def remover_acentos(texto: str) -> str:
+                return ''.join(
+                    c for c in unicodedata.normalize('NFD', texto)
+                    if unicodedata.category(c) != 'Mn'
+                )
+
+            texto = remover_acentos(f"{produto} • {estado}".upper())
 
             overlay = image_draw.copy()
 
