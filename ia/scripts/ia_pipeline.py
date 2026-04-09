@@ -199,7 +199,7 @@ class TagValidaPipeline:
                     if unicodedata.category(c) != 'Mn'
                 )
 
-            texto = remover_acentos(f"{produto} • {estado}".upper())
+            texto = remover_acentos(f"{produto} - {estado}".upper())
 
             overlay = image_draw.copy()
 
