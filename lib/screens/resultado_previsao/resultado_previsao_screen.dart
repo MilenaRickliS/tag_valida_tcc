@@ -1,7 +1,11 @@
-// ignore_for_file: deprecated_member_use
+// ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'dart:typed_data';
+import 'package:http/http.dart' as http;
+import 'package:path_provider/path_provider.dart';
+import '../../services/resultado_previsao_pdf_service.dart';
 
 class ResultadoPrevisaoScreen extends StatefulWidget {
   final String imagemPath;
@@ -34,6 +38,23 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
               .map((e) =>
                   e.isEmpty ? e : e[0].toUpperCase() + e.substring(1))
               .join(' ');
+      }
+    }
+
+    Future<String?> _baixarImagemComBoundingBox(String imageUrl) async {
+      try {
+        if (imageUrl.isEmpty) return null;
+
+        final response = await http.get(Uri.parse(imageUrl));
+        if (response.statusCode != 200) return null;
+
+        final dir = await getTemporaryDirectory();
+        final file = File('${dir.path}/imagem_resultado_box.jpg');
+        await file.writeAsBytes(response.bodyBytes, flush: true);
+
+        return file.path;
+      } catch (_) {
+        return null;
       }
     }
 
@@ -81,6 +102,93 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
           'Resultado da análise',
           style: TextStyle(fontWeight: FontWeight.w800),
         ),
+       actions: [
+        Padding(
+          padding: const EdgeInsets.only(right: 12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+           onTap: () async {
+              try {
+                final root = widget.resultado;
+                final data = ((root['data'] is Map<String, dynamic>)
+                    ? root['data'] as Map<String, dynamic>
+                    : root);
+
+                final imagemResultadoUrl =
+                    (data['imagem_resultado_url'] ?? '').toString();
+
+                String imagemParaPdf = widget.imagemPath;
+
+                final imagemBaixada =
+                    await _baixarImagemComBoundingBox(imagemResultadoUrl);
+
+                if (imagemBaixada != null && imagemBaixada.isNotEmpty) {
+                  imagemParaPdf = imagemBaixada;
+                }
+
+                await ResultadoPrevisaoPdfService.salvarPdf(
+                  imagemPath: imagemParaPdf,
+                  resultado: widget.resultado,
+                );
+
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('PDF gerado com sucesso.'),
+                  ),
+                );
+              } catch (e) {
+                if (!mounted) return;
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text('Erro ao gerar PDF: $e'),
+                  ),
+                );
+              }
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFFE53935),
+                    Color(0xFFED7227),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: const Color(0xFFE53935).withOpacity(0.28),
+                    blurRadius: 16,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: const [
+                  Icon(
+                    Icons.picture_as_pdf_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  SizedBox(width: 8),
+                  Text(
+                    'Gerar PDF',
+                    style: TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 13.5,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ],
       ),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 28),
@@ -1182,53 +1290,51 @@ class _ItemDetectadoCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(18),
               border: Border.all(color: color.withOpacity(0.14)),
             ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.center,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 48,
-                  height: 48,
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Icon(icon, color: color),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    produto,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      color: text,
+                Row(
+                  children: [
+                    Container(
+                      width: 42,
+                      height: 42,
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(14),
+                      ),
+                      child: Icon(icon, color: color, size: 22),
                     ),
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                  decoration: BoxDecoration(
-                    color: color.withOpacity(0.10),
-                    borderRadius: BorderRadius.circular(999),
-                    border: Border.all(color: color.withOpacity(0.20)),
-                  ),
-                  child: Text(
-                    estado.toUpperCase(),
-                    style: TextStyle(
-                      color: color,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 12.5,
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        tituloAcao,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: color,
+                        ),
+                      ),
                     ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+                Text(
+                  descricaoAcao,
+                  style: TextStyle(
+                    fontSize: 14,
+                    height: 1.45,
+                    color: text,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ],
-            )
+            ),
           ),
         ],
       ),
     );
   }
+
 
   double _mediaConfianca(double a, double b) {
     if (a <= 0 && b <= 0) return 0;
