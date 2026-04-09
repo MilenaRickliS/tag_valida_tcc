@@ -1,18 +1,40 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
-enum CampoTipo { text, number, multiline, date, boolType, image }
+enum CampoTipo {
+  text,
+  integer,
+  decimal,
+  currency,
+  priceMode,
+  multiline,
+  date,
+  boolType,
+  image,
+}
+
+enum CampoPosicaoSimbolo {
+  none,
+  prefix,
+  suffix,
+}
 
 CampoTipo campoTipoFromString(String s) {
   switch (s) {
-    case "number":
-      return CampoTipo.number;
-    case "multiline":
+    case 'integer':
+      return CampoTipo.integer;
+    case 'decimal':
+      return CampoTipo.decimal;
+    case 'currency':
+      return CampoTipo.currency;
+    case 'priceMode':
+      return CampoTipo.priceMode;
+    case 'multiline':
       return CampoTipo.multiline;
-    case "date":
+    case 'date':
       return CampoTipo.date;
-    case "bool":
+    case 'bool':
       return CampoTipo.boolType;
-    case "image":
+    case 'image':
       return CampoTipo.image;
     default:
       return CampoTipo.text;
@@ -21,18 +43,46 @@ CampoTipo campoTipoFromString(String s) {
 
 String campoTipoToString(CampoTipo t) {
   switch (t) {
-    case CampoTipo.number:
-      return "number";
+    case CampoTipo.integer:
+      return 'integer';
+    case CampoTipo.decimal:
+      return 'decimal';
+    case CampoTipo.currency:
+      return 'currency';
+    case CampoTipo.priceMode:
+      return 'priceMode';
     case CampoTipo.multiline:
-      return "multiline";
+      return 'multiline';
     case CampoTipo.date:
-      return "date";
+      return 'date';
     case CampoTipo.boolType:
-      return "bool";
+      return 'bool';
     case CampoTipo.image:
-      return "image";
+      return 'image';
     case CampoTipo.text:
-      return "text";
+      return 'text';
+  }
+}
+
+CampoPosicaoSimbolo campoPosicaoFromString(String s) {
+  switch (s) {
+    case 'prefix':
+      return CampoPosicaoSimbolo.prefix;
+    case 'suffix':
+      return CampoPosicaoSimbolo.suffix;
+    default:
+      return CampoPosicaoSimbolo.none;
+  }
+}
+
+String campoPosicaoToString(CampoPosicaoSimbolo p) {
+  switch (p) {
+    case CampoPosicaoSimbolo.prefix:
+      return 'prefix';
+    case CampoPosicaoSimbolo.suffix:
+      return 'suffix';
+    case CampoPosicaoSimbolo.none:
+      return 'none';
   }
 }
 
@@ -42,26 +92,113 @@ class CampoCustomModel {
   final CampoTipo tipo;
   final bool obrigatorio;
 
-  CampoCustomModel({
+
+  final String? prefixo; 
+  final String? sufixo; 
+  final String? unidadePadrao; 
+  final List<String> opcoesUnidade; 
+  final bool permitirUnidadeCustom;
+  final CampoPosicaoSimbolo posicaoSimbolo;
+  final int casasDecimais;
+
+ 
+  final bool habilitarModoPreco;
+  final List<String> opcoesModoPreco; 
+  final String? modoPrecoPadrao;
+
+  const CampoCustomModel({
     required this.key,
     required this.label,
     required this.tipo,
     required this.obrigatorio,
+    this.prefixo,
+    this.sufixo,
+    this.unidadePadrao,
+    this.opcoesUnidade = const [],
+    this.permitirUnidadeCustom = false,
+    this.posicaoSimbolo = CampoPosicaoSimbolo.none,
+    this.casasDecimais = 2,
+    this.habilitarModoPreco = false,
+    this.opcoesModoPreco = const [],
+    this.modoPrecoPadrao,
   });
 
+  CampoCustomModel copyWith({
+    String? key,
+    String? label,
+    CampoTipo? tipo,
+    bool? obrigatorio,
+    String? prefixo,
+    String? sufixo,
+    String? unidadePadrao,
+    List<String>? opcoesUnidade,
+    bool? permitirUnidadeCustom,
+    CampoPosicaoSimbolo? posicaoSimbolo,
+    int? casasDecimais,
+    bool? habilitarModoPreco,
+    List<String>? opcoesModoPreco,
+    String? modoPrecoPadrao,
+  }) {
+    return CampoCustomModel(
+      key: key ?? this.key,
+      label: label ?? this.label,
+      tipo: tipo ?? this.tipo,
+      obrigatorio: obrigatorio ?? this.obrigatorio,
+      prefixo: prefixo ?? this.prefixo,
+      sufixo: sufixo ?? this.sufixo,
+      unidadePadrao: unidadePadrao ?? this.unidadePadrao,
+      opcoesUnidade: opcoesUnidade ?? this.opcoesUnidade,
+      permitirUnidadeCustom:
+          permitirUnidadeCustom ?? this.permitirUnidadeCustom,
+      posicaoSimbolo: posicaoSimbolo ?? this.posicaoSimbolo,
+      casasDecimais: casasDecimais ?? this.casasDecimais,
+      habilitarModoPreco: habilitarModoPreco ?? this.habilitarModoPreco,
+      opcoesModoPreco: opcoesModoPreco ?? this.opcoesModoPreco,
+      modoPrecoPadrao: modoPrecoPadrao ?? this.modoPrecoPadrao,
+    );
+  }
+
   Map<String, dynamic> toMap() => {
-        "key": key,
-        "label": label,
-        "tipo": campoTipoToString(tipo),
-        "obrigatorio": obrigatorio,
+        'key': key,
+        'label': label,
+        'tipo': campoTipoToString(tipo),
+        'obrigatorio': obrigatorio,
+        'prefixo': prefixo,
+        'sufixo': sufixo,
+        'unidadePadrao': unidadePadrao,
+        'opcoesUnidade': opcoesUnidade,
+        'permitirUnidadeCustom': permitirUnidadeCustom,
+        'posicaoSimbolo': campoPosicaoToString(posicaoSimbolo),
+        'casasDecimais': casasDecimais,
+        'habilitarModoPreco': habilitarModoPreco,
+        'opcoesModoPreco': opcoesModoPreco,
+        'modoPrecoPadrao': modoPrecoPadrao,
       };
 
-  factory CampoCustomModel.fromMap(Map<String, dynamic> m) => CampoCustomModel(
-        key: (m["key"] ?? "").toString(),
-        label: (m["label"] ?? "").toString(),
-        tipo: campoTipoFromString((m["tipo"] ?? "text").toString()),
-        obrigatorio: m["obrigatorio"] == true,
-      );
+  factory CampoCustomModel.fromMap(Map<String, dynamic> m) {
+    return CampoCustomModel(
+      key: (m['key'] ?? '').toString(),
+      label: (m['label'] ?? '').toString(),
+      tipo: campoTipoFromString((m['tipo'] ?? 'text').toString()),
+      obrigatorio: m['obrigatorio'] == true,
+      prefixo: m['prefixo']?.toString(),
+      sufixo: m['sufixo']?.toString(),
+      unidadePadrao: m['unidadePadrao']?.toString(),
+      opcoesUnidade: ((m['opcoesUnidade'] as List?) ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      permitirUnidadeCustom: m['permitirUnidadeCustom'] == true,
+      posicaoSimbolo: campoPosicaoFromString(
+        (m['posicaoSimbolo'] ?? 'none').toString(),
+      ),
+      casasDecimais: (m['casasDecimais'] as num?)?.toInt() ?? 2,
+      habilitarModoPreco: m['habilitarModoPreco'] == true,
+      opcoesModoPreco: ((m['opcoesModoPreco'] as List?) ?? const [])
+          .map((e) => e.toString())
+          .toList(),
+      modoPrecoPadrao: m['modoPrecoPadrao']?.toString(),
+    );
+  }
 }
 
 class TipoEtiquetaModel {
@@ -114,37 +251,37 @@ class TipoEtiquetaModel {
   }
 
   Map<String, dynamic> toMap() => {
-        "nome": nome,
-        "descricao": descricao,
-        "usarRegraValidadeCategoria": usarRegraValidadeCategoria,
-        "controlaLote": controlaLote,
-        "permiteTabelaNutricional": permiteTabelaNutricional,
-        "larguraMm": larguraMm,
-        "alturaMm": alturaMm,
-        "camposCustom": camposCustom.map((c) => c.toMap()).toList(),
-        "updatedAt": FieldValue.serverTimestamp(),
-        "createdAt": FieldValue.serverTimestamp(),
+        'nome': nome,
+        'descricao': descricao,
+        'usarRegraValidadeCategoria': usarRegraValidadeCategoria,
+        'controlaLote': controlaLote,
+        'permiteTabelaNutricional': permiteTabelaNutricional,
+        'larguraMm': larguraMm,
+        'alturaMm': alturaMm,
+        'camposCustom': camposCustom.map((c) => c.toMap()).toList(),
+        'updatedAt': FieldValue.serverTimestamp(),
+        'createdAt': FieldValue.serverTimestamp(),
       };
 
   factory TipoEtiquetaModel.fromDoc(DocumentSnapshot doc) {
     final data = doc.data() as Map<String, dynamic>;
-    final list = (data["camposCustom"] as List? ?? [])
+    final list = (data['camposCustom'] as List? ?? [])
         .map((e) => CampoCustomModel.fromMap(Map<String, dynamic>.from(e)))
         .toList();
 
     return TipoEtiquetaModel(
       id: doc.id,
-      nome: (data["nome"] ?? "").toString(),
-      descricao: data["descricao"]?.toString(),
+      nome: (data['nome'] ?? '').toString(),
+      descricao: data['descricao']?.toString(),
       usarRegraValidadeCategoria:
-          data["usarRegraValidadeCategoria"] == null
+          data['usarRegraValidadeCategoria'] == null
               ? true
-              : data["usarRegraValidadeCategoria"] == true,
+              : data['usarRegraValidadeCategoria'] == true,
       camposCustom: list,
-      controlaLote: data["controlaLote"] == true,
-      permiteTabelaNutricional: data["permiteTabelaNutricional"] == true,
-      larguraMm: (data["larguraMm"] as num?)?.toDouble() ?? 60,
-      alturaMm: (data["alturaMm"] as num?)?.toDouble() ?? 40,
+      controlaLote: data['controlaLote'] == true,
+      permiteTabelaNutricional: data['permiteTabelaNutricional'] == true,
+      larguraMm: (data['larguraMm'] as num?)?.toDouble() ?? 60,
+      alturaMm: (data['alturaMm'] as num?)?.toDouble() ?? 40,
     );
   }
 }

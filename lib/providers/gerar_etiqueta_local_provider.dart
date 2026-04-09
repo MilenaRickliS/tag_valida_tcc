@@ -59,7 +59,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
   final Map<String, TextEditingController> customCtrls = {};
 
- Map<String, Map<String, dynamic>> _sanitizeCamposValores(
+  Map<String, Map<String, dynamic>> _sanitizeCamposValores(
     Map<String, Map<String, dynamic>> input,
   ) {
     dynamic fix(dynamic v) {
@@ -75,8 +75,11 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
       return MapEntry(k, {
         "label": (map["label"] ?? "").toString(),
-        "tipo": (map["tipo"] ?? "text").toString(), 
+        "tipo": (map["tipo"] ?? "text").toString(),
         "value": fix(map["value"]),
+        "prefixo": map["prefixo"]?.toString(),
+        "sufixo": map["sufixo"]?.toString(),
+        "casasDecimais": (map["casasDecimais"] as num?)?.toInt() ?? 2,
       });
     });
   }
@@ -247,15 +250,33 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
         final v = camposValores[c.key]?["value"];
         if (c.tipo == CampoTipo.text || c.tipo == CampoTipo.multiline) {
           _setCtrlText(c.key, (v ?? "").toString());
-        } else if (c.tipo == CampoTipo.number) {
-          _setCtrlText(c.key, v == null ? "" : v.toString());
+        } else if (
+          c.tipo == CampoTipo.integer ||
+          c.tipo == CampoTipo.decimal ||
+          c.tipo == CampoTipo.currency ||
+          c.tipo == CampoTipo.priceMode
+        ) {
+          _setCtrlText(c.key, v == null ? "" : _extractValor(v));
         }
       }
     }
 
     _recalcularValidadeSePossivel(tipoAtual);
-    notifyListeners();
-  }
+        notifyListeners();
+      }
+
+      String _extractValor(dynamic v) {
+      if (v == null) return "";
+
+      if (v is Map) {
+        
+        final valor = v['valor'];
+        if (valor == null) return "";
+        return valor.toString();
+      }
+
+      return v.toString();
+    }
 
  void setTipoId(String? id, {TipoEtiquetaModel? tipoAtual}) {
     tipoId = id;
@@ -317,11 +338,17 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     required String label,
     required dynamic value,
     required CampoTipo tipo,
+    String? prefixo,
+    String? sufixo,
+    int? casasDecimais,
   }) {
     camposValores[key] = {
       "label": label,
-      "tipo": campoTipoToString(tipo), 
+      "tipo": campoTipoToString(tipo),
       "value": value,
+      "prefixo": prefixo,
+      "sufixo": sufixo,
+      "casasDecimais": casasDecimais,
     };
     notifyListeners();
   }
@@ -332,10 +359,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       validade = fabricacao!.add(Duration(days: categoria!.diasVencimento));
     }
   }
-   
-
   
-
   String _gerarLotePadrao() {
    
     final nowBr = DateTime.now().toUtc().subtract(const Duration(hours: 3));

@@ -694,201 +694,432 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
     return s;
   }
 
-  Future<CampoCustomModel?> _openCampoDialog(BuildContext context, {CampoCustomModel? campo}) async {
-    final isEdit = campo != null;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+ Future<CampoCustomModel?> _openCampoDialog(
+  BuildContext context, {
+  CampoCustomModel? campo,
+}) async {
+  final isEdit = campo != null;
+  final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    final dialogBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final fieldBg = isDark ? const Color(0xFF141414) : const Color(0xFFFAF7F1);
-    final text = isDark ? Colors.white : const Color(0xFF2B2B2B);
-    final muted = isDark ? const Color(0xFFD6D6D6) : Colors.black.withOpacity(0.60);
-    final border = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.16)
-        : Colors.black.withOpacity(0.08);
-    final brand = isDark ? const Color(0xFFD4AF37) : const Color(0xFF428E2E);
-    final onBrand = isDark ? Colors.black : Colors.white;
+  final dialogBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
+  final fieldBg = isDark ? const Color(0xFF141414) : const Color(0xFFFAF7F1);
+  final text = isDark ? Colors.white : const Color(0xFF2B2B2B);
+  final muted =
+      isDark ? const Color(0xFFD6D6D6) : Colors.black.withOpacity(0.60);
+  final border = isDark
+      ? const Color(0xFFD4AF37).withOpacity(0.16)
+      : Colors.black.withOpacity(0.08);
+  final brand = isDark ? const Color(0xFFD4AF37) : const Color(0xFF428E2E);
+  final onBrand = isDark ? Colors.black : Colors.white;
 
-    final labelCtrl = TextEditingController(text: campo?.label ?? "");
-    final keyCtrl = TextEditingController(text: campo?.key ?? "");
+  final labelCtrl = TextEditingController(text: campo?.label ?? "");
+  final keyCtrl = TextEditingController(text: campo?.key ?? "");
 
-    CampoTipo tipo = campo?.tipo ?? CampoTipo.text;
-    bool obrigatorio = campo?.obrigatorio ?? false;
+  CampoTipo tipo = campo?.tipo ?? CampoTipo.text;
+  bool obrigatorio = campo?.obrigatorio ?? false;
 
-    String? erro;
-    CampoCustomModel? result;
+  String unidadeSelecionada = campo?.unidadePadrao ?? '';
+  String outroSimbolo = '';
+  String? prefixo = campo?.prefixo;
+  String? sufixo = campo?.sufixo;
+  CampoPosicaoSimbolo posicaoSimbolo =
+      campo?.posicaoSimbolo ?? CampoPosicaoSimbolo.none;
+  int casasDecimais = campo?.casasDecimais ?? 2;
 
-    final bool keyLocked = isEdit;
-    bool userEditedKey = isEdit;
+  final List<String> modosDisponiveisBase = ['kg', 'un', 'cx', 'pct'];
+  List<String> opcoesModoPreco = [...(campo?.opcoesModoPreco ?? const [])];
+  String modoPrecoPadrao = campo?.modoPrecoPadrao ?? 'kg';
 
-    void syncKeyFromLabel() {
-      if (keyLocked) return;
-      if (userEditedKey) return;
+  const unidadesBase = [
+    '',
+    'R\$',
+    'kg',
+    'g',
+    'mg',
+    'l',
+    'ml',
+    'mm',
+    'cm',
+    'm',
+    'un',
+    'pct',
+    'cx',
+    '__outro__',
+  ];
 
-      final generated = _makeKeyFromLabel(labelCtrl.text);
-      if (keyCtrl.text != generated) {
-        keyCtrl.text = generated;
-      }
+  String? erro;
+  CampoCustomModel? result;
+
+  final bool keyLocked = isEdit;
+  bool userEditedKey = isEdit;
+
+  void syncKeyFromLabel() {
+    if (keyLocked) return;
+    if (userEditedKey) return;
+
+    final generated = _makeKeyFromLabel(labelCtrl.text);
+    if (keyCtrl.text != generated) {
+      keyCtrl.text = generated;
+    }
+  }
+
+  void aplicarSimboloConfig() {
+    final simbolo = unidadeSelecionada == '__outro__'
+        ? outroSimbolo.trim()
+        : unidadeSelecionada.trim();
+
+    if (tipo == CampoTipo.priceMode) {
+      prefixo = 'R\$ ';
+      sufixo = null;
+      return;
     }
 
-    void labelListener() => syncKeyFromLabel();
-    labelCtrl.addListener(labelListener);
+    if (tipo == CampoTipo.currency) {
+      if (posicaoSimbolo == CampoPosicaoSimbolo.prefix) {
+        prefixo = simbolo.isEmpty ? 'R\$ ' : '$simbolo ';
+        sufixo = null;
+      } else if (posicaoSimbolo == CampoPosicaoSimbolo.suffix) {
+        prefixo = null;
+        sufixo = simbolo.isEmpty ? null : ' $simbolo';
+      } else {
+        prefixo = 'R\$ ';
+        sufixo = null;
+      }
+      return;
+    }
 
-    await showDialog(
-      context: context,
-      barrierColor: Colors.black.withOpacity(0.35),
-      builder: (_) => StatefulBuilder(
-        builder: (context, setLocal) {
-          final previewKey = _makeKeyFromLabel(labelCtrl.text);
+    if (tipo == CampoTipo.integer || tipo == CampoTipo.decimal) {
+      if (posicaoSimbolo == CampoPosicaoSimbolo.prefix) {
+        prefixo = simbolo.isEmpty ? null : '$simbolo ';
+        sufixo = null;
+      } else if (posicaoSimbolo == CampoPosicaoSimbolo.suffix) {
+        prefixo = null;
+        sufixo = simbolo.isEmpty ? null : ' $simbolo';
+      } else {
+        prefixo = null;
+        sufixo = null;
+      }
+      return;
+    }
 
-          return AlertDialog(
-            backgroundColor: dialogBg,
-            surfaceTintColor: Colors.transparent,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-            insetPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
-            titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
-            contentPadding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
-            actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-            title: Row(
-              children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: brand.withOpacity(0.12),
-                    borderRadius: BorderRadius.circular(14),
-                    border: Border.all(color: border),
-                  ),
-                  child: Icon(Icons.tune, color: brand),
+    prefixo = null;
+    sufixo = null;
+  }
+
+  String formatarExemploNumero() {
+    switch (casasDecimais) {
+      case 0:
+        return '20';
+      case 1:
+        return '20,0';
+      case 2:
+        return '20,00';
+      case 3:
+        return '20,000';
+      default:
+        return '20,00';
+    }
+  }
+
+  String buildPreview() {
+    final exemploNumero = formatarExemploNumero();
+
+    if (tipo == CampoTipo.priceMode) {
+      final modo = opcoesModoPreco.isNotEmpty ? modoPrecoPadrao : 'kg';
+      return 'R\$ $exemploNumero/$modo';
+    }
+
+    if (tipo == CampoTipo.currency ||
+        tipo == CampoTipo.integer ||
+        tipo == CampoTipo.decimal) {
+      final p = prefixo ?? '';
+      final s = sufixo ?? '';
+      return '$p$exemploNumero$s'.trim();
+    }
+
+    switch (tipo) {
+      case CampoTipo.text:
+        return 'Ex: Lote Especial';
+      case CampoTipo.multiline:
+        return 'Ex: Observação do produto';
+      case CampoTipo.date:
+        return 'Ex: 08/04/2026';
+      case CampoTipo.boolType:
+        return 'Ex: Sim';
+      case CampoTipo.image:
+        return 'Ex: Imagem do produto';
+      default:
+        return 'Pré-visualização';
+    }
+  }
+
+  void labelListener() => syncKeyFromLabel();
+  labelCtrl.addListener(labelListener);
+
+  await showDialog(
+    context: context,
+    barrierColor: Colors.black.withOpacity(0.35),
+    builder: (_) => StatefulBuilder(
+      builder: (context, setLocal) {
+        final previewKey = _makeKeyFromLabel(labelCtrl.text);
+
+        return AlertDialog(
+          backgroundColor: dialogBg,
+          surfaceTintColor: Colors.transparent,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          insetPadding:
+              const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+          titlePadding: const EdgeInsets.fromLTRB(20, 18, 20, 0),
+          contentPadding: const EdgeInsets.fromLTRB(20, 14, 20, 6),
+          actionsPadding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+          title: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: brand.withOpacity(0.12),
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: border),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    isEdit ? "Editar campo" : "Adicionar campo",
-                    style: TextStyle(
-                      fontWeight: FontWeight.w900,
-                      color: text,
-                    ),
+                child: Icon(Icons.tune, color: brand),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isEdit ? "Editar campo" : "Adicionar campo",
+                  style: TextStyle(
+                    fontWeight: FontWeight.w900,
+                    color: text,
                   ),
                 ),
-              ],
-            ),
-            content: SizedBox(
-              width: 520,
-              child: SingleChildScrollView(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    if (erro != null) ...[
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.red.withOpacity(0.08),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(color: Colors.red.withOpacity(0.2)),
-                        ),
-                        child: Text(
-                          erro!,
-                          style: const TextStyle(
-                            color: Colors.red,
-                            fontWeight: FontWeight.w700,
-                          ),
-                        ),
+              ),
+            ],
+          ),
+          content: SizedBox(
+            width: 560,
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (erro != null) ...[
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: Colors.red.withOpacity(0.08),
+                        borderRadius: BorderRadius.circular(12),
+                        border:
+                            Border.all(color: Colors.red.withOpacity(0.2)),
                       ),
-                      const SizedBox(height: 12),
-                    ],
-                    TextField(
-                      controller: labelCtrl,
-                      style: TextStyle(color: text),
-                      textCapitalization: TextCapitalization.none,
-                      inputFormatters: const [
-                        TitleCaseEachWordFormatter(),
-                      ],
-                      decoration: _inputDecoration(
-                        isDark: isDark,
-                        text: text,
-                        border: border,
-                        fill: fieldBg,
-                        brand: brand,
-                        labelText: "Nome do campo (Label)",
-                        hintText: "Ex: Lote",
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Align(
-                      alignment: Alignment.centerLeft,
                       child: Text(
-                        "Label é o nome que aparece na etiqueta.",
-                        style: TextStyle(color: muted, fontSize: 12.5),
+                        erro!,
+                        style: const TextStyle(
+                          color: Colors.red,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 12),
-                    TextField(
-                      controller: keyCtrl,
-                      style: TextStyle(color: text),
-                      readOnly: keyLocked,
-                      inputFormatters: keyLocked ? null : [_keyDeny],
-                      onChanged: (_) {
-                        if (!keyLocked && !userEditedKey) {
-                          setLocal(() => userEditedKey = true);
-                        }
-                      },
-                      decoration: _inputDecoration(
-                        isDark: isDark,
-                        text: text,
-                        border: border,
-                        fill: fieldBg,
-                        brand: brand,
-                        labelText: "Chave (Key) — sem espaços",
-                        hintText: "Ex: lote",
-                        helperText: keyLocked
-                            ? "A key não pode ser alterada depois de criada."
-                            : (userEditedKey
-                                ? "Editada manualmente."
-                                : "Gerada automaticamente pelo Label."),
-                        prefixIcon: Icon(
-                          keyLocked ? Icons.lock_outline : Icons.key_outlined,
-                          color: keyLocked ? muted : brand,
-                        ),
-                        suffixIcon: (!keyLocked && userEditedKey)
-                            ? IconButton(
-                                tooltip: "Voltar a gerar automaticamente",
-                                onPressed: () {
-                                  setLocal(() {
-                                    userEditedKey = false;
-                                    syncKeyFromLabel();
-                                  });
-                                },
-                                icon: Icon(Icons.auto_fix_high, color: brand),
-                              )
-                            : IconButton(
-                                tooltip: "Copiar key",
-                                onPressed: () async {
-                                  await Clipboard.setData(ClipboardData(text: keyCtrl.text.trim()));
-                                  if (context.mounted) {
-                                    ScaffoldMessenger.of(context).showSnackBar(
-                                      const SnackBar(content: Text("Key copiada.")),
-                                    );
-                                  }
-                                },
-                                icon: Icon(
-                                  Icons.copy_outlined,
-                                  color: isDark ? brand : null,
-                                ),
+                  ],
+
+                  TextField(
+                    controller: labelCtrl,
+                    style: TextStyle(color: text),
+                    textCapitalization: TextCapitalization.none,
+                    inputFormatters: const [
+                      TitleCaseEachWordFormatter(),
+                    ],
+                    decoration: _inputDecoration(
+                      isDark: isDark,
+                      text: text,
+                      border: border,
+                      fill: fieldBg,
+                      brand: brand,
+                      labelText: "Nome do campo (Label)",
+                      hintText: "Ex: Preço de venda",
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Label é o nome que aparece na etiqueta.",
+                      style: TextStyle(color: muted, fontSize: 12.5),
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  TextField(
+                    controller: keyCtrl,
+                    style: TextStyle(color: text),
+                    readOnly: keyLocked,
+                    inputFormatters: keyLocked ? null : [_keyDeny],
+                    onChanged: (_) {
+                      if (!keyLocked && !userEditedKey) {
+                        setLocal(() => userEditedKey = true);
+                      }
+                    },
+                    decoration: _inputDecoration(
+                      isDark: isDark,
+                      text: text,
+                      border: border,
+                      fill: fieldBg,
+                      brand: brand,
+                      labelText: "Chave (Key) — sem espaços",
+                      hintText: "Ex: preco_venda",
+                      helperText: keyLocked
+                          ? "A key não pode ser alterada depois de criada."
+                          : (userEditedKey
+                              ? "Editada manualmente."
+                              : "Gerada automaticamente pelo Label."),
+                      prefixIcon: Icon(
+                        keyLocked ? Icons.lock_outline : Icons.key_outlined,
+                        color: keyLocked ? muted : brand,
+                      ),
+                      suffixIcon: (!keyLocked && userEditedKey)
+                          ? IconButton(
+                              tooltip: "Voltar a gerar automaticamente",
+                              onPressed: () {
+                                setLocal(() {
+                                  userEditedKey = false;
+                                  syncKeyFromLabel();
+                                });
+                              },
+                              icon:
+                                  Icon(Icons.auto_fix_high, color: brand),
+                            )
+                          : IconButton(
+                              tooltip: "Copiar key",
+                              onPressed: () async {
+                                await Clipboard.setData(
+                                  ClipboardData(text: keyCtrl.text.trim()),
+                                );
+                                if (context.mounted) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Key copiada."),
+                                    ),
+                                  );
+                                }
+                              },
+                              icon: Icon(
+                                Icons.copy_outlined,
+                                color: isDark ? brand : null,
                               ),
-                      ),
+                            ),
                     ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Preview da key: $previewKey",
-                        style: TextStyle(color: muted, fontSize: 12.5),
-                      ),
+                  ),
+
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Preview da key: $previewKey",
+                      style: TextStyle(color: muted, fontSize: 12.5),
                     ),
-                    const SizedBox(height: 14),
-                    DropdownButtonFormField<CampoTipo>(
-                      value: tipo,
+                  ),
+
+                  const SizedBox(height: 14),
+
+                  DropdownButtonFormField<CampoTipo>(
+                    value: tipo,
+                    dropdownColor: dialogBg,
+                    style: TextStyle(color: text),
+                    decoration: _inputDecoration(
+                      isDark: isDark,
+                      text: text,
+                      border: border,
+                      fill: fieldBg,
+                      brand: brand,
+                      labelText: "Tipo do campo",
+                    ),
+                    items: [
+                      DropdownMenuItem(
+                        value: CampoTipo.text,
+                        child: Text("Texto", style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.integer,
+                        child: Text("Número inteiro",
+                            style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.decimal,
+                        child: Text("Número decimal",
+                            style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.currency,
+                        child: Text("Moeda", style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.priceMode,
+                        child: Text("Preço por modo",
+                            style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.multiline,
+                        child: Text("Texto grande",
+                            style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.date,
+                        child: Text("Data", style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.boolType,
+                        child: Text("Sim/Não", style: TextStyle(color: text)),
+                      ),
+                      DropdownMenuItem(
+                        value: CampoTipo.image,
+                        child: Text("Imagem", style: TextStyle(color: text)),
+                      ),
+                    ],
+                    onChanged: (v) {
+                      setLocal(() {
+                        tipo = v ?? CampoTipo.text;
+
+                        if (tipo == CampoTipo.currency) {
+                          unidadeSelecionada =
+                              unidadeSelecionada.isEmpty ? 'R\$' : unidadeSelecionada;
+                          posicaoSimbolo = CampoPosicaoSimbolo.prefix;
+                        }
+
+                        if (tipo == CampoTipo.priceMode) {
+                          if (opcoesModoPreco.isEmpty) {
+                            opcoesModoPreco = ['kg', 'un'];
+                          }
+                          if (!opcoesModoPreco.contains(modoPrecoPadrao)) {
+                            modoPrecoPadrao = opcoesModoPreco.first;
+                          }
+                        }
+
+                        aplicarSimboloConfig();
+                      });
+                    },
+                  ),
+
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      "Como será preenchido: ${_campoTipoHint(tipo)}",
+                      style: TextStyle(color: muted, fontSize: 12.5),
+                    ),
+                  ),
+
+                  if (tipo == CampoTipo.integer ||
+                      tipo == CampoTipo.decimal ||
+                      tipo == CampoTipo.currency) ...[
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: unidadesBase.contains(unidadeSelecionada)
+                          ? unidadeSelecionada
+                          : '__outro__',
                       dropdownColor: dialogBg,
                       style: TextStyle(color: text),
                       decoration: _inputDecoration(
@@ -897,195 +1128,527 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                         border: border,
                         fill: fieldBg,
                         brand: brand,
-                        labelText: "Tipo do campo",
+                        labelText: "Unidade / símbolo",
                       ),
                       items: [
                         DropdownMenuItem(
-                          value: CampoTipo.text,
-                          child: Text("Texto", style: TextStyle(color: text)),
-                        ),
+                            value: '',
+                            child: Text('Nenhum',
+                                style: TextStyle(color: text))),
                         DropdownMenuItem(
-                          value: CampoTipo.number,
-                          child: Text("Número", style: TextStyle(color: text)),
-                        ),
+                            value: 'R\$',
+                            child:
+                                Text('R\$', style: TextStyle(color: text))),
                         DropdownMenuItem(
-                          value: CampoTipo.multiline,
-                          child: Text("Texto grande", style: TextStyle(color: text)),
-                        ),
+                            value: 'kg',
+                            child: Text('kg', style: TextStyle(color: text))),
                         DropdownMenuItem(
-                          value: CampoTipo.date,
-                          child: Text("Data", style: TextStyle(color: text)),
-                        ),
+                            value: 'g',
+                            child: Text('g', style: TextStyle(color: text))),
                         DropdownMenuItem(
-                          value: CampoTipo.boolType,
-                          child: Text("Sim/Não", style: TextStyle(color: text)),
-                        ),
+                            value: 'mg',
+                            child: Text('mg', style: TextStyle(color: text))),
                         DropdownMenuItem(
-                          value: CampoTipo.image,
-                          child: Text("Imagem", style: TextStyle(color: text)),
-                        ),
-                        ],
-                      onChanged: (v) => setLocal(() => tipo = v ?? CampoTipo.text),
+                            value: 'l',
+                            child: Text('l', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: 'ml',
+                            child: Text('ml', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: 'mm',
+                            child: Text('mm', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: 'cm',
+                            child: Text('cm', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: 'm',
+                            child: Text('m', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: 'un',
+                            child: Text('un', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: 'pct',
+                            child:
+                                Text('pct', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: 'cx',
+                            child: Text('cx', style: TextStyle(color: text))),
+                        DropdownMenuItem(
+                            value: '__outro__',
+                            child: Text('Outro',
+                                style: TextStyle(color: text))),
+                      ],
+                      onChanged: (v) {
+                        setLocal(() {
+                          unidadeSelecionada = v ?? '';
+                          if (unidadeSelecionada != '__outro__') {
+                            outroSimbolo = '';
+                          }
+                          aplicarSimboloConfig();
+                        });
+                      },
                     ),
-                    const SizedBox(height: 8),
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: Text(
-                        "Como será preenchido: ${_campoTipoHint(tipo)}",
-                        style: TextStyle(color: muted, fontSize: 12.5),
+
+                    if (unidadeSelecionada == '__outro__') ...[
+                      const SizedBox(height: 12),
+                      TextField(
+                        style: TextStyle(color: text),
+                        controller:
+                            TextEditingController(text: outroSimbolo)
+                              ..selection = TextSelection.fromPosition(
+                                TextPosition(offset: outroSimbolo.length),
+                              ),
+                        onChanged: (v) {
+                          setLocal(() {
+                            outroSimbolo = v;
+                            aplicarSimboloConfig();
+                          });
+                        },
+                        decoration: _inputDecoration(
+                          isDark: isDark,
+                          text: text,
+                          border: border,
+                          fill: fieldBg,
+                          brand: brand,
+                          labelText: "Outro símbolo",
+                          hintText: "Ex: /kg, caixa, pacote",
+                        ),
                       ),
+                    ],
+
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<CampoPosicaoSimbolo>(
+                      value: posicaoSimbolo,
+                      dropdownColor: dialogBg,
+                      style: TextStyle(color: text),
+                      decoration: _inputDecoration(
+                        isDark: isDark,
+                        text: text,
+                        border: border,
+                        fill: fieldBg,
+                        brand: brand,
+                        labelText: "Posição",
+                      ),
+                      items: [
+                        DropdownMenuItem(
+                          value: CampoPosicaoSimbolo.none,
+                          child: Text("Sem símbolo",
+                              style: TextStyle(color: text)),
+                        ),
+                        DropdownMenuItem(
+                          value: CampoPosicaoSimbolo.prefix,
+                          child:
+                              Text("Antes", style: TextStyle(color: text)),
+                        ),
+                        DropdownMenuItem(
+                          value: CampoPosicaoSimbolo.suffix,
+                          child:
+                              Text("Depois", style: TextStyle(color: text)),
+                        ),
+                      ],
+                      onChanged: (v) {
+                        setLocal(() {
+                          posicaoSimbolo =
+                              v ?? CampoPosicaoSimbolo.none;
+                          aplicarSimboloConfig();
+                        });
+                      },
                     ),
+
+                    if (tipo == CampoTipo.decimal ||
+                        tipo == CampoTipo.currency) ...[
+                      const SizedBox(height: 12),
+                      DropdownButtonFormField<int>(
+                        value: casasDecimais,
+                        dropdownColor: dialogBg,
+                        style: TextStyle(color: text),
+                        decoration: _inputDecoration(
+                          isDark: isDark,
+                          text: text,
+                          border: border,
+                          fill: fieldBg,
+                          brand: brand,
+                          labelText: "Casas decimais",
+                        ),
+                        items: [0, 1, 2, 3]
+                            .map(
+                              (n) => DropdownMenuItem(
+                                value: n,
+                                child:
+                                    Text("$n", style: TextStyle(color: text)),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (v) {
+                          setLocal(() {
+                            casasDecimais = v ?? 2;
+                          });
+                        },
+                      ),
+                    ],
+                  ],
+
+                  if (tipo == CampoTipo.priceMode) ...[
                     const SizedBox(height: 12),
                     Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        border: Border.all(
-                          color: obrigatorio ? brand.withOpacity(0.22) : border,
-                        ),
+                        color: fieldBg,
                         borderRadius: BorderRadius.circular(14),
-                        color: obrigatorio ? brand.withOpacity(0.10) : fieldBg,
+                        border: Border.all(color: border),
                       ),
-                      child: SwitchTheme(
-                        data: SwitchThemeData(
-                          thumbColor: WidgetStateProperty.resolveWith((states) {
-                            if (states.contains(WidgetState.selected)) return brand;
-                            return null;
-                          }),
-                          trackColor: WidgetStateProperty.resolveWith((states) {
-                            if (states.contains(WidgetState.selected)) {
-                              return brand.withOpacity(0.35);
-                            }
-                            return null;
-                          }),
-                        ),
-                        child: SwitchListTile(
-                          title: Text(
-                            "Campo obrigatório",
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            "Modos permitidos",
                             style: TextStyle(
-                              fontWeight: FontWeight.w800,
                               color: text,
+                              fontWeight: FontWeight.w800,
                             ),
                           ),
-                          subtitle: Text(
-                            "Se ativo, a etiqueta só salva se este campo estiver preenchido.",
-                            style: TextStyle(
-                              color: muted,
-                              fontSize: 12,
-                            ),
+                          const SizedBox(height: 8),
+                          Wrap(
+                            spacing: 8,
+                            runSpacing: 8,
+                            children: modosDisponiveisBase.map((modo) {
+                              final selected =
+                                  opcoesModoPreco.contains(modo);
+                              return FilterChip(
+                                label: Text(modo),
+                                selected: selected,
+                                onSelected: (value) {
+                                  setLocal(() {
+                                    if (value) {
+                                      if (!opcoesModoPreco.contains(modo)) {
+                                        opcoesModoPreco.add(modo);
+                                      }
+                                    } else {
+                                      opcoesModoPreco.remove(modo);
+                                    }
+
+                                    if (opcoesModoPreco.isEmpty) {
+                                      modoPrecoPadrao = 'kg';
+                                    } else if (!opcoesModoPreco
+                                        .contains(modoPrecoPadrao)) {
+                                      modoPrecoPadrao =
+                                          opcoesModoPreco.first;
+                                    }
+                                  });
+                                },
+                              );
+                            }).toList(),
                           ),
-                          value: obrigatorio,
-                          onChanged: (v) => setLocal(() => obrigatorio = v),
-                        ),
+                        ],
                       ),
                     ),
+
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<String>(
+                      value: opcoesModoPreco.contains(modoPrecoPadrao)
+                          ? modoPrecoPadrao
+                          : (opcoesModoPreco.isNotEmpty
+                              ? opcoesModoPreco.first
+                              : 'kg'),
+                      dropdownColor: dialogBg,
+                      style: TextStyle(color: text),
+                      decoration: _inputDecoration(
+                        isDark: isDark,
+                        text: text,
+                        border: border,
+                        fill: fieldBg,
+                        brand: brand,
+                        labelText: "Modo padrão",
+                      ),
+                      items: (opcoesModoPreco.isEmpty
+                              ? ['kg']
+                              : opcoesModoPreco)
+                          .map(
+                            (modo) => DropdownMenuItem(
+                              value: modo,
+                              child: Text(modo,
+                                  style: TextStyle(color: text)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        setLocal(() {
+                          modoPrecoPadrao = v ?? 'kg';
+                        });
+                      },
+                    ),
+
+                    const SizedBox(height: 12),
+
+                    DropdownButtonFormField<int>(
+                      value: casasDecimais,
+                      dropdownColor: dialogBg,
+                      style: TextStyle(color: text),
+                      decoration: _inputDecoration(
+                        isDark: isDark,
+                        text: text,
+                        border: border,
+                        fill: fieldBg,
+                        brand: brand,
+                        labelText: "Casas decimais",
+                      ),
+                      items: [0, 1, 2, 3]
+                          .map(
+                            (n) => DropdownMenuItem(
+                              value: n,
+                              child:
+                                  Text("$n", style: TextStyle(color: text)),
+                            ),
+                          )
+                          .toList(),
+                      onChanged: (v) {
+                        setLocal(() {
+                          casasDecimais = v ?? 2;
+                        });
+                      },
+                    ),
                   ],
-                ),
+
+                  const SizedBox(height: 12),
+
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: brand.withOpacity(0.08),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: brand.withOpacity(0.18)),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          "Pré-visualização",
+                          style: TextStyle(
+                            color: text,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        const SizedBox(height: 6),
+                        Text(
+                          buildPreview(),
+                          style: TextStyle(
+                            color: brand,
+                            fontWeight: FontWeight.w900,
+                            fontSize: 16,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 12),
+
+                  Container(
+                    decoration: BoxDecoration(
+                      border: Border.all(
+                        color: obrigatorio
+                            ? brand.withOpacity(0.22)
+                            : border,
+                      ),
+                      borderRadius: BorderRadius.circular(14),
+                      color: obrigatorio
+                          ? brand.withOpacity(0.10)
+                          : fieldBg,
+                    ),
+                    child: SwitchTheme(
+                      data: SwitchThemeData(
+                        thumbColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return brand;
+                          }
+                          return null;
+                        }),
+                        trackColor:
+                            WidgetStateProperty.resolveWith((states) {
+                          if (states.contains(WidgetState.selected)) {
+                            return brand.withOpacity(0.35);
+                          }
+                          return null;
+                        }),
+                      ),
+                      child: SwitchListTile(
+                        title: Text(
+                          "Campo obrigatório",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: text,
+                          ),
+                        ),
+                        subtitle: Text(
+                          "Se ativo, a etiqueta só salva se este campo estiver preenchido.",
+                          style: TextStyle(
+                            color: muted,
+                            fontSize: 12,
+                          ),
+                        ),
+                        value: obrigatorio,
+                        onChanged: (v) => setLocal(() => obrigatorio = v),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            actions: [
-              TextButton(
-                onPressed: () => Navigator.pop(context),
-                style: TextButton.styleFrom(
-                  foregroundColor: isDark ? brand : const Color(0xFF2B2B2B),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                child: const Text(
-                  "Cancelar",
-                  style: TextStyle(fontWeight: FontWeight.w700),
-                ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              style: TextButton.styleFrom(
+                foregroundColor: isDark ? brand : const Color(0xFF2B2B2B),
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
               ),
-              ElevatedButton(
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: brand,
-                  foregroundColor: onBrand,
-                  elevation: 0,
-                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                ),
-                onPressed: () {
-                  final label = labelCtrl.text.trim();
-
-                  if (!keyLocked && !userEditedKey) {
-                    final generated = _makeKeyFromLabel(label);
-                    keyCtrl.text = generated;
-                  }
-
-                  final key = keyCtrl.text.trim();
-                  final keyOk = RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(key);
-
-                  if (label.isEmpty) {
-                    setLocal(() => erro = "Informe o nome do campo (label).");
-                    return;
-                  }
-                  if (key.isEmpty) {
-                    setLocal(() => erro = "A key ficou vazia. Ajuste o label ou edite a key.");
-                    return;
-                  }
-                  if (!keyOk) {
-                    setLocal(() => erro = "A key deve conter apenas letras, números e _ (sem espaços/acentos).");
-                    return;
-                  }
-
-                  result = CampoCustomModel(
-                    key: key,
-                    label: label,
-                    tipo: tipo,
-                    obrigatorio: obrigatorio,
-                  );
-
-                  Navigator.pop(context);
-                },
-                child: Text(
-                  isEdit ? "Salvar" : "Adicionar",
-                  style: const TextStyle(fontWeight: FontWeight.w900),
-                ),
+              child: const Text(
+                "Cancelar",
+                style: TextStyle(fontWeight: FontWeight.w700),
               ),
-            ],
-          );
-        },
-      ),
-    );
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: brand,
+                foregroundColor: onBrand,
+                elevation: 0,
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 18, vertical: 14),
+                shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14)),
+              ),
+              onPressed: () {
+                final label = labelCtrl.text.trim();
 
-    labelCtrl.removeListener(labelListener);
-    labelCtrl.dispose();
-    keyCtrl.dispose();
+                if (!keyLocked && !userEditedKey) {
+                  final generated = _makeKeyFromLabel(label);
+                  keyCtrl.text = generated;
+                }
 
-    return result;
+                final key = keyCtrl.text.trim();
+                final keyOk = RegExp(r'^[a-zA-Z0-9_]+$').hasMatch(key);
+
+                if (label.isEmpty) {
+                  setLocal(() => erro = "Informe o nome do campo (label).");
+                  return;
+                }
+                if (key.isEmpty) {
+                  setLocal(() =>
+                      erro = "A key ficou vazia. Ajuste o label ou edite a key.");
+                  return;
+                }
+                if (!keyOk) {
+                  setLocal(() => erro =
+                      "A key deve conter apenas letras, números e _ (sem espaços/acentos).");
+                  return;
+                }
+
+                if (tipo == CampoTipo.priceMode && opcoesModoPreco.isEmpty) {
+                  setLocal(() => erro =
+                      "Selecione pelo menos um modo de preço.");
+                  return;
+                }
+
+                final unidadeFinal = unidadeSelecionada == '__outro__'
+                    ? outroSimbolo.trim()
+                    : unidadeSelecionada.trim();
+
+                result = CampoCustomModel(
+                  key: key,
+                  label: label,
+                  tipo: tipo,
+                  obrigatorio: obrigatorio,
+                  prefixo: prefixo,
+                  sufixo: sufixo,
+                  unidadePadrao:
+                      unidadeFinal.isEmpty ? null : unidadeFinal,
+                  opcoesUnidade: unidadeFinal.isEmpty
+                      ? const []
+                      : [unidadeFinal],
+                  permitirUnidadeCustom:
+                      unidadeSelecionada == '__outro__',
+                  posicaoSimbolo: posicaoSimbolo,
+                  casasDecimais: casasDecimais,
+                  habilitarModoPreco: tipo == CampoTipo.priceMode,
+                  opcoesModoPreco:
+                      tipo == CampoTipo.priceMode ? opcoesModoPreco : const [],
+                  modoPrecoPadrao:
+                      tipo == CampoTipo.priceMode ? modoPrecoPadrao : null,
+                );
+
+                Navigator.pop(context);
+              },
+              child: Text(
+                isEdit ? "Salvar" : "Adicionar",
+                style: const TextStyle(fontWeight: FontWeight.w900),
+              ),
+            ),
+          ],
+        );
+      },
+    ),
+  );
+
+  labelCtrl.removeListener(labelListener);
+  labelCtrl.dispose();
+  keyCtrl.dispose();
+
+  return result;
+}
+
+ String _campoTipoLabel(CampoTipo t) {
+  switch (t) {
+    case CampoTipo.text:
+      return "Texto";
+    case CampoTipo.integer:
+      return "Número inteiro";
+    case CampoTipo.decimal:
+      return "Número decimal";
+    case CampoTipo.currency:
+      return "Moeda";
+    case CampoTipo.priceMode:
+      return "Preço por modo";
+    case CampoTipo.multiline:
+      return "Texto grande";
+    case CampoTipo.date:
+      return "Data";
+    case CampoTipo.boolType:
+      return "Sim/Não";
+    case CampoTipo.image:
+      return "Imagem";
   }
+}
 
-  String _campoTipoLabel(CampoTipo t) {
-    switch (t) {
-      case CampoTipo.text:
-        return "Texto";
-      case CampoTipo.number:
-        return "Número";
-      case CampoTipo.multiline:
-        return "Texto grande";
-      case CampoTipo.date:
-        return "Data";
-      case CampoTipo.boolType:
-        return "Sim/Não";
-      case CampoTipo.image:
-        return "Imagem";
-    }
+String _campoTipoHint(CampoTipo t) {
+  switch (t) {
+    case CampoTipo.text:
+      return "Campo simples (ex: Lote, Marca)";
+    case CampoTipo.integer:
+      return "Somente números inteiros (ex: Quantidade, Unidades)";
+    case CampoTipo.decimal:
+      return "Números com casas decimais (ex: Peso, Volume)";
+    case CampoTipo.currency:
+      return "Valor em dinheiro (ex: R\$ 20,00)";
+    case CampoTipo.priceMode:
+      return "Preço com modo selecionável (ex: R\$ 20,00/kg ou R\$ 20,00/un)";
+    case CampoTipo.multiline:
+      return "Texto com mais linhas (ex: Observações)";
+    case CampoTipo.date:
+      return "Selecionador de data";
+    case CampoTipo.boolType:
+      return "Alternância Sim/Não";
+    case CampoTipo.image:
+      return "Permite enviar uma imagem.";
   }
-
-  String _campoTipoHint(CampoTipo t) {
-    switch (t) {
-      case CampoTipo.text:
-        return "Campo simples (ex: Lote, Marca)";
-      case CampoTipo.number:
-        return "Somente números (ex: Peso, Quantidade)";
-      case CampoTipo.multiline:
-        return "Texto com mais linhas (ex: Observações)";
-      case CampoTipo.date:
-        return "Selecionador de data (ex: Fabricação)";
-      case CampoTipo.boolType:
-        return "Alternância Sim/Não (ex: Conferido?)";
-      case CampoTipo.image:
-        return "Permite enviar uma imagem para o banco de dados.";
-    }
-  }
+}
 
   InputDecoration _inputDecoration({
     required bool isDark,

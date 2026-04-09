@@ -75,6 +75,82 @@ class EtiquetaDetailsCard extends StatelessWidget {
     required this.tabelaNutricional,
   });
 
+  String _formatNum(dynamic val, {int casasDecimais = 2}) {
+    if (val == null) return "";
+
+    num? n;
+    if (val is num) {
+      n = val;
+    } else {
+      n = num.tryParse(val.toString().replaceAll(",", "."));
+    }
+
+    if (n == null) return val.toString();
+
+    if (casasDecimais <= 0) {
+      return n.toInt().toString();
+    }
+
+    return n.toStringAsFixed(casasDecimais).replaceAll(".", ",");
+  }
+
+  String _formatCustomValue({
+    required String tipo,
+    required dynamic val,
+    required String? prefixo,
+    required String? sufixo,
+    required int casasDecimais,
+  }) {
+    switch (tipo) {
+      case "date":
+        if (val is int) return formatCustomDate(val);
+        return val?.toString() ?? "";
+
+      case "bool":
+      case "boolType":
+        if (val is bool) return val ? "Sim" : "Não";
+        final s = (val ?? "").toString().toLowerCase().trim();
+        const verdadeiros = ["true", "1", "sim", "yes"];
+        const falsos = ["false", "0", "não", "nao", "no"];
+        if (verdadeiros.contains(s)) return "Sim";
+        if (falsos.contains(s)) return "Não";
+        return "Não";
+
+      case "integer":
+        final base = _formatNum(val, casasDecimais: 0);
+        return "${prefixo ?? ""}$base${sufixo ?? ""}".trim();
+
+      case "decimal":
+        final base = _formatNum(val, casasDecimais: casasDecimais);
+        return "${prefixo ?? ""}$base${sufixo ?? ""}".trim();
+
+      case "currency":
+        final base = _formatNum(val, casasDecimais: casasDecimais);
+        return "${prefixo ?? ""}$base${sufixo ?? ""}".trim();
+
+      case "priceMode":
+        if (val is Map) {
+          final map = Map<String, dynamic>.from(val);
+          final valor = _formatNum(
+            map["valor"],
+            casasDecimais: casasDecimais,
+          );
+          final modo = (map["modo"] ?? "").toString().trim();
+          final base = "${prefixo ?? ""}$valor${sufixo ?? ""}".trim();
+          return modo.isEmpty ? base : "$base/$modo";
+        }
+        return "${prefixo ?? ""}${val?.toString() ?? ""}${sufixo ?? ""}".trim();
+
+      case "number":
+        
+        final base = _formatNum(val, casasDecimais: casasDecimais);
+        return "${prefixo ?? ""}$base${sufixo ?? ""}".trim();
+
+      default:
+        return val?.toString() ?? "";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -214,63 +290,28 @@ class EtiquetaDetailsCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             ...customSemLote.entries.map((entry) {
-              
-              final obj = Map<String, dynamic>.from(entry.value as Map);
-              final label = (obj["label"] ?? entry.key).toString();
-              final val = obj["value"];
-              final tipo = (obj["tipo"] ?? "text").toString();
+                final obj = Map<String, dynamic>.from(entry.value as Map);
+                final label = (obj["label"] ?? entry.key).toString();
+                final val = obj["value"];
+                final tipo = (obj["tipo"] ?? "text").toString();
+                final prefixo = obj["prefixo"]?.toString();
+                final sufixo = obj["sufixo"]?.toString();
+                final casasDecimais = (obj["casasDecimais"] as num?)?.toInt() ?? 2;
 
-              if (_isImageValue(val)) {
-                return _linhaImagem(label, val.toString());
-              }
+                if (_isImageValue(val)) {
+                  return _linhaImagem(label, val.toString());
+                }
 
-              String texto;
-              debugPrint("label=$label | tipo=$tipo | val=$val | runtime=${val.runtimeType}");
+                final texto = _formatCustomValue(
+                  tipo: tipo,
+                  val: val,
+                  prefixo: prefixo,
+                  sufixo: sufixo,
+                  casasDecimais: casasDecimais,
+                );
 
-              switch (tipo) {
-                case "date":
-                  if (val is int) {
-                    texto = formatCustomDate(val);
-                  } else {
-                    texto = val?.toString() ?? "";
-                  }
-                  break;
-
-                case "bool":
-                case "boolType":
-                  if (val is bool) {
-                    texto = val ? "Sim" : "Não";
-                  } else {
-                    final s = (val ?? "").toString().toLowerCase().trim();
-
-                    const verdadeiros = ["true", "1", "sim", "yes"];
-                    const falsos = ["false", "0", "não", "nao", "no"];
-
-                    if (verdadeiros.contains(s)) {
-                      texto = "Sim";
-                    } else if (falsos.contains(s)) {
-                      texto = "Não";
-                    } else {
-                      texto = "Não";
-                    }
-                  }
-                  break;
-                                case "number":
-                  if (val is num) {
-                    texto = val % 1 == 0
-                        ? val.toInt().toString()
-                        : val.toString().replaceAll(".", ",");
-                  } else {
-                    texto = val?.toString() ?? "";
-                  }
-                  break;
-
-                default:
-                  texto = val?.toString() ?? "";
-              }
-
-              return _linha(label, texto);
-            }),
+                return _linha(label, texto);
+              }),
           ],
           if (incluirTabelaNutricional && tabelaNutricional != null) ...[
             const SizedBox(height: 14),
@@ -499,3 +540,4 @@ class EtiquetaDetailsCard extends StatelessWidget {
     );
   }
 }
+

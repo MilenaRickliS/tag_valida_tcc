@@ -29,8 +29,39 @@ class CampoCustomTile extends StatelessWidget {
     required this.onRemove,
   });
 
+  String _resumoConfiguracao(CampoCustomModel campo) {
+    final partes = <String>[];
+
+    if ((campo.prefixo ?? '').trim().isNotEmpty) {
+      partes.add('Prefixo: ${campo.prefixo}');
+    }
+
+    if ((campo.sufixo ?? '').trim().isNotEmpty) {
+      partes.add('Sufixo: ${campo.sufixo}');
+    }
+
+    if ((campo.unidadePadrao ?? '').trim().isNotEmpty) {
+      partes.add('Unidade: ${campo.unidadePadrao}');
+    }
+
+    if (campo.tipo == CampoTipo.priceMode && campo.opcoesModoPreco.isNotEmpty) {
+      partes.add('Preço por: ${campo.opcoesModoPreco.join(", ")}');
+    }
+
+    if (campo.casasDecimais > 0 &&
+        (campo.tipo == CampoTipo.decimal ||
+            campo.tipo == CampoTipo.currency ||
+            campo.tipo == CampoTipo.priceMode)) {
+      partes.add('Casas decimais: ${campo.casasDecimais}');
+    }
+
+    return partes.join(' • ');
+  }
+
   @override
   Widget build(BuildContext context) {
+    final resumo = _resumoConfiguracao(campo);
+
     return Container(
       margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(12),
@@ -40,6 +71,7 @@ class CampoCustomTile extends StatelessWidget {
         border: Border.all(color: borderColor),
       ),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Icon(Icons.drag_handle, color: mutedColor),
           const SizedBox(width: 10),
@@ -67,6 +99,17 @@ class CampoCustomTile extends StatelessWidget {
                     fontSize: 12,
                   ),
                 ),
+                if (resumo.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    resumo,
+                    style: TextStyle(
+                      color: mutedColor,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -123,6 +123,8 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
       labelText: label,
       filled: true,
       fillColor: fill,
+      isDense: false,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 16),
       border: border(borderColor),
       enabledBorder: border(borderColor),
       focusedBorder: border(brand),
@@ -992,30 +994,136 @@ Widget build(BuildContext context) {
         );
       }
 
-      case CampoTipo.number: {
+      case CampoTipo.integer:
+      case CampoTipo.decimal:
+      case CampoTipo.currency:
+      case CampoTipo.priceMode: {
         final raw = gerar.camposValores[campo.key]?["value"];
+
+        String initialValue = "";
+
+        if (campo.tipo == CampoTipo.priceMode && raw is Map) {
+          initialValue = (raw["valor"] ?? "").toString();
+        } else {
+          initialValue = raw == null ? "" : raw.toString();
+        }
+
         final ctrl = gerar.ctrlFor(
           campo.key,
-          initial: raw == null ? "" : raw.toString(),
+          initial: initialValue,
         );
 
-        return TextFormField(
-          controller: ctrl,
-          keyboardType: TextInputType.number,
-          decoration: appInputDecoration(label),
-          inputFormatters: [
-            FilteringTextInputFormatter.digitsOnly,
-            LengthLimitingTextInputFormatter(10), 
+        String modoPreco = campo.modoPrecoPadrao ?? "kg";
+
+        if (campo.tipo == CampoTipo.priceMode && raw is Map) {
+          modoPreco = (raw["modo"] ?? modoPreco).toString();
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            TextFormField(
+              controller: ctrl,
+              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              decoration: appInputDecoration(label).copyWith(
+                prefixText: (campo.prefixo ?? "").isNotEmpty ? campo.prefixo : null,
+                suffixText: (campo.sufixo ?? "").isNotEmpty ? campo.sufixo : null,
+                prefixStyle: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : const Color(0xFF2B2B2B),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+                suffixStyle: TextStyle(
+                  color: Theme.of(context).brightness == Brightness.dark
+                      ? Colors.white
+                      : const Color(0xFF2B2B2B),
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              validator: (v) {
+                if (campo.obrigatorio && (v ?? "").trim().isEmpty) {
+                  return "Campo obrigatório.";
+                }
+
+                final s = (v ?? "").trim().replaceAll(",", ".");
+                if (s.isNotEmpty && num.tryParse(s) == null) {
+                  return "Número inválido.";
+                }
+
+                return null;
+              },
+              onChanged: (v) {
+                final parsed = num.tryParse(v.replaceAll(",", "."));
+
+                if (campo.tipo == CampoTipo.priceMode) {
+                  context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                    key: campo.key,
+                    label: campo.label,
+                    value: {
+                      "valor": parsed,
+                      "modo": modoPreco,
+                    },
+                    tipo: campo.tipo,
+                    prefixo: campo.prefixo,
+                    sufixo: campo.sufixo,
+                    casasDecimais: campo.casasDecimais,
+                  );
+                } else {
+                  context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                    key: campo.key,
+                    label: campo.label,
+                    value: parsed,
+                    tipo: campo.tipo,
+                    prefixo: campo.prefixo,
+                    sufixo: campo.sufixo,
+                    casasDecimais: campo.casasDecimais,
+                  );
+                }
+              },
+            ),
+
+            if (campo.tipo == CampoTipo.priceMode &&
+                campo.opcoesModoPreco.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: modoPreco,
+                decoration: appInputDecoration("Tipo de preço"),
+                items: campo.opcoesModoPreco
+                    .map(
+                      (e) => DropdownMenuItem(
+                        value: e,
+                        child: Text(e),
+                      ),
+                    )
+                    .toList(),
+                onChanged: (v) {
+                  if (v == null) return;
+
+                  modoPreco = v;
+
+                  final parsed = num.tryParse(
+                    ctrl.text.replaceAll(",", "."),
+                  );
+
+                  context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                    key: campo.key,
+                    label: campo.label,
+                    value: {
+                      "valor": parsed,
+                      "modo": modoPreco,
+                    },
+                    tipo: campo.tipo,
+                    prefixo: campo.prefixo,
+                    sufixo: campo.sufixo,
+                    casasDecimais: campo.casasDecimais,
+                  );
+                },
+              ),
+            ],
           ],
-          validator: (v) {
-            if (campo.obrigatorio && (v ?? "").trim().isEmpty) return "Campo obrigatório.";
-            final s = (v ?? "").trim();
-            if (s.isNotEmpty && int.tryParse(s) == null) return "Número inválido.";
-            return null;
-          },
-          onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
-            key: campo.key, label: campo.label, value: int.tryParse(v), tipo: campo.tipo,
-          ),
         );
       }
 
@@ -1168,4 +1276,3 @@ Widget build(BuildContext context) {
     }
   }
 }
-
