@@ -201,6 +201,29 @@ class CampoCustomModel {
   }
 }
 
+enum TipoQrEtiqueta {
+  privado,
+  publico,
+}
+
+TipoQrEtiqueta tipoQrEtiquetaFromString(String s) {
+  switch (s) {
+    case 'publico':
+      return TipoQrEtiqueta.publico;
+    default:
+      return TipoQrEtiqueta.privado;
+  }
+}
+
+String tipoQrEtiquetaToString(TipoQrEtiqueta t) {
+  switch (t) {
+    case TipoQrEtiqueta.publico:
+      return 'publico';
+    case TipoQrEtiqueta.privado:
+      return 'privado';
+  }
+}
+
 class TipoEtiquetaModel {
   final String id;
   final String nome;
@@ -211,6 +234,7 @@ class TipoEtiquetaModel {
   final bool permiteTabelaNutricional;
   final double larguraMm;
   final double alturaMm;
+  final TipoQrEtiqueta tipoQr;
 
   TipoEtiquetaModel({
     required this.id,
@@ -222,6 +246,7 @@ class TipoEtiquetaModel {
     required this.permiteTabelaNutricional,
     this.larguraMm = 60,
     this.alturaMm = 40,
+    this.tipoQr = TipoQrEtiqueta.privado,
   });
 
   TipoEtiquetaModel copyWith({
@@ -234,6 +259,7 @@ class TipoEtiquetaModel {
     bool? permiteTabelaNutricional,
     double? larguraMm,
     double? alturaMm,
+    TipoQrEtiqueta? tipoQr,
   }) {
     return TipoEtiquetaModel(
       id: id ?? this.id,
@@ -247,6 +273,7 @@ class TipoEtiquetaModel {
           permiteTabelaNutricional ?? this.permiteTabelaNutricional,
       larguraMm: larguraMm ?? this.larguraMm,
       alturaMm: alturaMm ?? this.alturaMm,
+      tipoQr: tipoQr ?? this.tipoQr,
     );
   }
 
@@ -258,6 +285,7 @@ class TipoEtiquetaModel {
         'permiteTabelaNutricional': permiteTabelaNutricional,
         'larguraMm': larguraMm,
         'alturaMm': alturaMm,
+        'tipoQr': tipoQrEtiquetaToString(tipoQr),
         'camposCustom': camposCustom.map((c) => c.toMap()).toList(),
         'updatedAt': FieldValue.serverTimestamp(),
         'createdAt': FieldValue.serverTimestamp(),
@@ -282,6 +310,9 @@ class TipoEtiquetaModel {
       permiteTabelaNutricional: data['permiteTabelaNutricional'] == true,
       larguraMm: (data['larguraMm'] as num?)?.toDouble() ?? 60,
       alturaMm: (data['alturaMm'] as num?)?.toDouble() ?? 40,
+      tipoQr: tipoQrEtiquetaFromString(
+        (data['tipoQr'] ?? 'privado').toString(),
+      ),
     );
   }
 }

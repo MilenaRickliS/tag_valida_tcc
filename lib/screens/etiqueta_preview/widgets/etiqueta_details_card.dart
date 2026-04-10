@@ -225,7 +225,7 @@ class EtiquetaDetailsCard extends StatelessWidget {
           _linhaColor("Validade", validadeFormatada, validadeColor),
 
           if (hasLote) ...[
-            _linha(loteLabel, loteFormatado ?? "-"),
+            
             const SizedBox(height: 6),
             Container(
               width: double.infinity,
@@ -252,7 +252,7 @@ class EtiquetaDetailsCard extends StatelessWidget {
                   ),
                   Expanded(
                     child: Text(
-                      lotePrefixo ?? "-",
+                      loteFormatado ?? lotePrefixo ?? "-",
                       style: TextStyle(
                         fontWeight: FontWeight.w900,
                         color: Colors.black.withOpacity(0.55),

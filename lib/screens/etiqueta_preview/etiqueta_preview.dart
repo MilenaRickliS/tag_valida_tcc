@@ -10,11 +10,13 @@ import '../../data/local/repos/etiquetas_local_repo.dart';
 import '../../data/local/repos/design_etiqueta_local_repo.dart';
 import '../../models/etiqueta_model.dart';
 import '../../models/user_model.dart';
+import '../../models/tipo_etiqueta_model.dart';
+import '../../providers/tipos_etiqueta_local_provider.dart';
 import '../../providers/estoque_mov_local_provider.dart';
 import '../../providers/printer_config_provider.dart';
 import '../../services/etiqueta_pdf_service.dart';
 import '../../services/printer_app_service.dart';
-import '../../utils/etiqueta_qr.dart';
+import '../../services/etiqueta_qr_resolver.dart';
 import '../../utils/formatar_lote.dart';
 import '../criar_etiqueta/criar_etiqueta.dart';
 import './widgets/etiqueta_actions_row.dart';
@@ -613,6 +615,7 @@ class EtiquetaPreviewScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final repo = context.read<EtiquetasLocalRepo>();
+    final tiposProv = context.read<TiposEtiquetaLocalProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
@@ -677,9 +680,23 @@ class EtiquetaPreviewScreen extends StatelessWidget {
 
           final usuario = UserModel.fromMap(userDoc.data()!);
 
-          final qrData = buildEtiquetaQrPayload(
+          final tipoEtiqueta = tiposProv.items.firstWhere(
+            (t) => t.id == etiqueta.tipoId,
+            orElse: () => TipoEtiquetaModel(
+              id: '',
+              nome: '',
+              usarRegraValidadeCategoria: true,
+              controlaLote: false,
+              camposCustom: const [],
+              permiteTabelaNutricional: false,
+              tipoQr: TipoQrEtiqueta.privado,
+            ),
+          );
+
+          final qrData = EtiquetaQrResolver.resolve(
+            etiqueta: etiqueta,
+            tipoEtiqueta: tipoEtiqueta,
             uid: uid,
-            etiquetaId: etiqueta.id,
           );
 
           final produtoNome = etiqueta.produtoNome;

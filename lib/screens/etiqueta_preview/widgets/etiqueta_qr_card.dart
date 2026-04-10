@@ -9,7 +9,8 @@ class EtiquetaQrCard extends StatelessWidget {
   final Color borderColor;
   final Color textColor;
   final String qrData;
-  final VoidCallback onTapQr;
+  final VoidCallback? onTapQr;
+  final String? helperText;
 
   const EtiquetaQrCard({
     super.key,
@@ -18,11 +19,32 @@ class EtiquetaQrCard extends StatelessWidget {
     required this.borderColor,
     required this.textColor,
     required this.qrData,
-    required this.onTapQr,
+    this.onTapQr,
+    this.helperText,
   });
 
   @override
   Widget build(BuildContext context) {
+    final content = Column(
+      children: [
+        QrImageView(
+          data: qrData,
+          size: 180,
+        ),
+        if (onTapQr != null) ...[
+          const SizedBox(height: 8),
+          const Text(
+            "Toque para tela cheia",
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              color: Colors.black,
+            ),
+          ),
+        ],
+      ],
+    );
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
@@ -51,31 +73,18 @@ class EtiquetaQrCard extends StatelessWidget {
                     : borderColor,
               ),
             ),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(18),
-              onTap: onTapQr,
-              child: Column(
-                children: [
-                  QrImageView(
-                    data: qrData,
-                    size: 180,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    "Toque para tela cheia",
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+            child: onTapQr != null
+                ? InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: onTapQr,
+                    child: content,
+                  )
+                : content,
           ),
           const SizedBox(height: 10),
           Text(
-            "Escaneie para abrir e gerar PDF",
+            helperText ?? "Escaneie para abrir e gerar PDF",
+            textAlign: TextAlign.center,
             style: TextStyle(fontSize: 12.5, color: textColor),
           ),
         ],

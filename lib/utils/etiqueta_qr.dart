@@ -1,7 +1,8 @@
 import 'dart:convert';
+import '../models/tipo_etiqueta_model.dart';
+import '../models/etiqueta_model.dart';
 
-
-String buildEtiquetaQrPayload({
+String buildEtiquetaQrPrivado({
   required String uid,
   required String etiquetaId,
 }) {
@@ -11,11 +12,39 @@ String buildEtiquetaQrPayload({
     "uid": uid,
     "id": etiquetaId,
     "type": "etiqueta",
+    "mode": "privado",
   });
 
   return base64Url.encode(utf8.encode(json));
 }
 
+String buildEtiquetaQrPublico({
+  required String uid,
+  required String etiquetaId,
+}) {
+  // return 'https://seudominio.com/e/$etiquetaId?uid=$uid';
+  return 'PUBLICO:$uid:$etiquetaId';
+}
+
+String buildEtiquetaQrData({
+  required TipoQrEtiqueta tipoQr,
+  required EtiquetaModel etiqueta,
+  required String uid,
+}) {
+  switch (tipoQr) {
+    case TipoQrEtiqueta.publico:
+      return buildEtiquetaQrPublico(
+        uid: uid,
+        etiquetaId: etiqueta.id,
+      );
+
+    case TipoQrEtiqueta.privado:
+      return buildEtiquetaQrPrivado(
+        uid: uid,
+        etiquetaId: etiqueta.id,
+      );
+  }
+}
 
 class EtiquetaQrParsed {
   final String uid;
@@ -30,7 +59,6 @@ class EtiquetaQrParsed {
     required this.version,
   });
 }
-
 
 EtiquetaQrParsed parseEtiquetaQrPayload(String raw) {
   final decodedJson = utf8.decode(base64Url.decode(raw.trim()));

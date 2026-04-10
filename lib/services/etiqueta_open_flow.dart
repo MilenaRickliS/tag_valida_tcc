@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
 import 'package:path_provider/path_provider.dart';
@@ -6,7 +7,9 @@ import 'package:provider/provider.dart';
 
 import '../data/local/repos/etiquetas_local_repo.dart';
 import '../models/etiqueta_model.dart';
+import '../models/tipo_etiqueta_model.dart';
 import '../utils/etiqueta_qr.dart';
+import './firestore_paths.dart';
 import 'etiqueta_firebase_service.dart';
 import 'etiqueta_pdf_service.dart';
 
@@ -31,9 +34,29 @@ Future<void> openEtiquetaPdfFlow(
     return;
   }
 
-  final qrData = buildEtiquetaQrPayload(
+  TipoQrEtiqueta tipoQr = TipoQrEtiqueta.privado;
+
+  try {
+    final paths = FirestorePaths(FirebaseFirestore.instance);
+
+    final tipoDoc = await paths
+        .tiposEtiqueta(uid)
+        .doc(e.tipoId)
+        .get();
+
+    if (tipoDoc.exists) {
+      final data = tipoDoc.data();
+      final rawTipoQr = (data?['tipoQr'] ?? 'privado').toString();
+      tipoQr = tipoQrEtiquetaFromString(rawTipoQr);
+    }
+  } catch (_) {
+    // fallback: privado
+  }
+
+  final qrData = buildEtiquetaQrData(
+    tipoQr: tipoQr,
+    etiqueta: e,
     uid: uid,
-    etiquetaId: e.id,
   );
 
   final bytes = await EtiquetaPdfService.generateBytes(

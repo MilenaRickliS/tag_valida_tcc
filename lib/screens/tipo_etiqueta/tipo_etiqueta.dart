@@ -309,7 +309,8 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
     bool usarRegra = tipo?.usarRegraValidadeCategoria ?? true;
     bool controlaLote = tipo?.controlaLote ?? false;
     bool permiteTabelaNutricional = tipo?.permiteTabelaNutricional ?? false;
-
+    TipoQrEtiqueta tipoQrSelecionado = TipoQrEtiqueta.privado;
+    
     final List<CampoCustomModel> campos = [
       ...(tipo?.camposCustom ?? []),
     ];
@@ -553,6 +554,60 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                         ),
                       ),
                     ),
+                   const SizedBox(height: 10),
+
+                    Container(
+                      decoration: BoxDecoration(
+                        border: Border.all(
+                          color: tipoQrSelecionado == TipoQrEtiqueta.publico
+                              ? brand.withOpacity(0.22)
+                              : border,
+                        ),
+                        borderRadius: BorderRadius.circular(14),
+                        color: tipoQrSelecionado == TipoQrEtiqueta.publico
+                            ? brand.withOpacity(0.10)
+                            : fieldBg,
+                      ),
+                      child: SwitchTheme(
+                        data: SwitchThemeData(
+                          thumbColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) return brand;
+                            return null;
+                          }),
+                          trackColor: WidgetStateProperty.resolveWith((states) {
+                            if (states.contains(WidgetState.selected)) {
+                              return brand.withOpacity(0.35);
+                            }
+                            return null;
+                          }),
+                        ),
+                        child: SwitchListTile(
+                          title: Text(
+                            "QR Code público",
+                            style: TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: text,
+                            ),
+                          ),
+                          subtitle: Text(
+                            tipoQrSelecionado == TipoQrEtiqueta.publico
+                                ? "Marcado: qualquer celular pode ler e abrir a página pública da etiqueta."
+                                : "Desmarcado: o QR será privado e funcionará somente no app.",
+                            style: TextStyle(
+                              color: muted,
+                              fontSize: 12,
+                            ),
+                          ),
+                          value: tipoQrSelecionado == TipoQrEtiqueta.publico,
+                          onChanged: (v) {
+                            setLocal(() {
+                              tipoQrSelecionado =
+                                  v ? TipoQrEtiqueta.publico : TipoQrEtiqueta.privado;
+                            });
+                          },
+                        ),
+                      ),
+                    ),
                    const SizedBox(height: 18),
                     CampoCustomSection(
                       campos: campos,
@@ -633,6 +688,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                     controlaLote: controlaLote,
                     permiteTabelaNutricional: permiteTabelaNutricional,
                     camposCustom: campos,
+                    tipoQr: tipoQrSelecionado, 
                   );
 
                   final prov = context.read<TiposEtiquetaLocalProvider>();

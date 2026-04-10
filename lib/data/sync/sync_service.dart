@@ -92,6 +92,12 @@ class SyncService {
                     (v.toLowerCase().trim() == "true" || v == "1");
               }
             }
+            if (map.containsKey("tipoQr")) {
+              final v = (map["tipoQr"] ?? "privado").toString().trim().toLowerCase();
+              map["tipoQr"] = (v == "publico") ? "publico" : "privado";
+            } else {
+              map["tipoQr"] = "privado";
+            }
           }
           if (entity == "etiquetas") {
             if (map.containsKey("dataFabricacaoMs")) {
@@ -290,6 +296,10 @@ class SyncService {
     await _pullCollection(uid, "tipos_etiqueta", table: "tipos_etiqueta", mapToLocal: (doc) {
       final d = doc.data();
       final campos = (d["camposCustom"] as List? ?? []);
+      final tipoQrRaw = (d["tipoQr"] ?? "privado").toString().trim().toLowerCase();
+      final tipoQr = (tipoQrRaw == "publico") ? "publico" : "privado";
+
+
       return {
         "id": doc.id,
         "uid": uid,
@@ -301,6 +311,7 @@ class SyncService {
         "camposCustomJson": jsonEncode(campos),
         "larguraMm": (d["larguraMm"] as num?)?.toDouble() ?? 60,
         "alturaMm": (d["alturaMm"] as num?)?.toDouble() ?? 40,
+        "tipoQr": tipoQr, 
         "createdAt": (d["createdAt"] as Timestamp?)?.millisecondsSinceEpoch,
         "updatedAt": (d["updatedAt"] as Timestamp?)?.millisecondsSinceEpoch,
       };

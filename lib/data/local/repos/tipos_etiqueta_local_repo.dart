@@ -36,6 +36,7 @@ class TiposEtiquetaLocalRepo {
         "camposCustom": tipo.camposCustom.map((c) => c.toMap()).toList(),
         "larguraMm": tipo.larguraMm,
         "alturaMm": tipo.alturaMm,
+        "tipoQr": tipoQrEtiquetaToString(tipo.tipoQr),
         "createdAtMs": nowMs,
         "updatedAtMs": nowMs,
       };

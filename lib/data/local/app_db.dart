@@ -7,7 +7,7 @@ class AppDb {
   static final AppDb instance = AppDb._();
 
   static const _dbName = 'tag_valida.db';
-  static const _dbVersion = 17;
+  static const _dbVersion = 18;
 
   Database? _db;
 
@@ -69,6 +69,7 @@ class AppDb {
         larguraMm REAL NOT NULL DEFAULT 60,
         alturaMm REAL NOT NULL DEFAULT 40,
         camposCustomJson TEXT NOT NULL,
+        tipoQr TEXT NOT NULL DEFAULT 'privado',
         createdAt INTEGER,
         updatedAt INTEGER,
         PRIMARY KEY (uid, id)
@@ -584,6 +585,17 @@ class AppDb {
       if (!hasCol("mostrarMarcaTagValida")) {
         await db.execute(
           "ALTER TABLE design_etiqueta_configs ADD COLUMN mostrarMarcaTagValida INTEGER NOT NULL DEFAULT 1;"
+        );
+      }
+    }
+    if (oldVersion < 18) {
+      final colsTipo = await db.rawQuery("PRAGMA table_info(tipos_etiqueta)");
+      bool hasTipoCol(String name) =>
+          colsTipo.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasTipoCol("tipoQr")) {
+        await db.execute(
+          "ALTER TABLE tipos_etiqueta ADD COLUMN tipoQr TEXT NOT NULL DEFAULT 'privado';"
         );
       }
     }

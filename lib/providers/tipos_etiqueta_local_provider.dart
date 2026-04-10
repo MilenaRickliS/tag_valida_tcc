@@ -40,6 +40,7 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
       camposCustom: tipo.camposCustom,
       larguraMm: tipo.larguraMm,
       alturaMm: tipo.alturaMm,
+      tipoQr: tipo.tipoQr,
     );
 
     await repo.upsert(uid, novo);
@@ -57,6 +58,7 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
       camposCustom: tipo.camposCustom,
       larguraMm: tipo.larguraMm,
       alturaMm: tipo.alturaMm,
+      tipoQr: tipo.tipoQr,
     );
 
     await repo.upsert(uid, atualizado);
@@ -81,6 +83,22 @@ class TiposEtiquetaLocalProvider extends ChangeNotifier {
       larguraMm: larguraMm,
       alturaMm: alturaMm,
     );
+
+    await repo.upsert(uid, atualizado);
+
+    _items[index] = atualizado;
+    notifyListeners();
+  }
+
+   Future<void> updateTipoQr({
+    required String uid,
+    required String tipoId,
+    required TipoQrEtiqueta tipoQr,
+  }) async {
+    final index = items.indexWhere((e) => e.id == tipoId);
+    if (index == -1) return;
+
+    final atualizado = items[index].copyWith(tipoQr: tipoQr);
 
     await repo.upsert(uid, atualizado);
 

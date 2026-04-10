@@ -19,6 +19,7 @@ extension TipoEtiquetaLocalMapper on TipoEtiquetaModel {
       'camposCustomJson': camposJson,
       'larguraMm': larguraMm,
       'alturaMm': alturaMm,
+      'tipoQr': tipoQrEtiquetaToString(tipoQr),
       'createdAt': nowMs,
       'updatedAt': nowMs,
     };
@@ -41,6 +42,9 @@ extension TipoEtiquetaLocalMapper on TipoEtiquetaModel {
       permiteTabelaNutricional: (m['permiteTabelaNutricional'] ?? 0) == 1,
       larguraMm: (m['larguraMm'] ?? 60).toDouble(),
       alturaMm: (m['alturaMm'] ?? 40).toDouble(),
+      tipoQr: tipoQrEtiquetaFromString(
+        (m['tipoQr'] ?? 'privado').toString(),
+      ),
     );
   }
 }
