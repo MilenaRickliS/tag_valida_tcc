@@ -122,7 +122,16 @@ class _BackupScreenState extends State<BackupScreen> {
         color: _success,
       );
     } catch (e) {
-      _showSnack('Erro ao restaurar backup: $e', color: _danger);
+      if (!mounted) return;
+
+      Navigator.pushNamed(
+        context,
+        '/erro',
+        arguments: {
+          'title': 'Erro ao restaurar backup',
+          'message': 'Não foi possível restaurar os dados. Arquivo inválido ou corrompido.',
+        },
+      );
     } finally {
       if (mounted) setState(() => _loadingRestore = false);
     }

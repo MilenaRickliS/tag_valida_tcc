@@ -36,6 +36,7 @@ import 'screens/welcome/welcome.dart';
 import 'screens/login/login.dart';
 import 'screens/cadastro/cadastro.dart';
 import 'screens/home/home.dart';
+import 'screens/erro/erro_page.dart';
 import 'screens/perfil/perfil.dart';
 import 'screens/ajuda/ajuda.dart';
 import 'screens/scanner_etiqueta/scanner_etiqueta.dart';
@@ -62,6 +63,10 @@ void main() async {
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
+
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.dumpErrorToConsole(details);
+  };
 
   runApp(
     MultiProvider(
@@ -167,6 +172,7 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/cadastro': (context) => const CadastroScreen(),
         '/home': (context) => const HomeScreen(),
+        '/erro': (context) => const ErrorPage(),
         '/perfil': (context) => const PerfilScreen(),
         '/ajuda': (context) => const AjudaScreen(),
         '/scanner': (_) => const ScannerEtiquetaScreen(),
@@ -198,6 +204,15 @@ class MyApp extends StatelessWidget {
             syncService: context.read<SyncService>(),
           );
         },
+      },
+      builder: (context, child) {
+        ErrorWidget.builder = (FlutterErrorDetails details) {
+          return ErrorPage(
+            title: 'Erro na interface',
+            message: details.exception.toString(),
+          );
+        };
+        return child!;
       },
       onGenerateRoute: (settings) {
         if (settings.name == '/criar-etiqueta') {

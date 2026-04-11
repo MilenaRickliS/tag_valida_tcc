@@ -185,25 +185,41 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
   }
 
   Future<void> _exportPdf() async {
-    setState(() => _printing = true);
+    try {
+      setState(() => _printing = true);
 
-    await Future.delayed(const Duration(milliseconds: 150));
-    await WidgetsBinding.instance.endOfFrame;
-    await Future.delayed(const Duration(milliseconds: 150));
+      await Future.delayed(const Duration(milliseconds: 150));
+      await WidgetsBinding.instance.endOfFrame;
+      await Future.delayed(const Duration(milliseconds: 150));
 
-    final piePng = await _capturePng(_pieKeyPrint, pixelRatio: 3.0);
-    final barPng = await _capturePng(_barKeyPrint, pixelRatio: 3.0);
+      final piePng = await _capturePng(_pieKeyPrint, pixelRatio: 3.0);
+      final barPng = await _capturePng(_barKeyPrint, pixelRatio: 3.0);
 
-    setState(() => _printing = false);
+      final bytes = await _buildPdfBytes(
+        range: _range,
+        movs: _filtered,
+        piePng: piePng,
+        barPng: barPng,
+      );
 
-    final bytes = await _buildPdfBytes(
-      range: _range,
-      movs: _filtered,
-      piePng: piePng,
-      barPng: barPng,
-    );
+      await Printing.layoutPdf(
+        onLayout: (_) async => bytes,
+      );
+    } catch (e) {
+      if (!mounted) return;
 
-    await Printing.layoutPdf(onLayout: (_) async => bytes);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            'Erro ao gerar relatório em PDF: ${e.toString().replaceAll("Exception: ", "")}',
+          ),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => _printing = false);
+      }
+    }
   }
 
   Future<Uint8List?> _capturePng(GlobalKey key,

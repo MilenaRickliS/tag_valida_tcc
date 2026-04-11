@@ -309,7 +309,29 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                 return const Center(child: CircularProgressIndicator());
               }
               if (snap.hasError) {
-                return Center(child: Text("Erro: ${snap.error}"));
+                return Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                      const SizedBox(height: 10),
+                      const Text(
+                        "Erro ao carregar histórico",
+                        style: TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 6),
+                      Text(
+                        "Tente novamente.",
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                      const SizedBox(height: 12),
+                      ElevatedButton(
+                        onPressed: () => setState(() {}),
+                        child: const Text("Recarregar"),
+                      ),
+                    ],
+                  ),
+                );
               }
 
               var all = snap.data ?? [];

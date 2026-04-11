@@ -73,12 +73,14 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
           ),
         );
       } else {
-        _mostrarErro(
-          'Erro na análise (${response.statusCode}).\n${response.body}',
+        _tratarErroCritico(
+          'Não foi possível analisar a imagem.\nTente novamente mais tarde.',
         );
       }
     } catch (e) {
-      _mostrarErro('Erro ao enviar imagem: $e');
+      _tratarErroCritico(
+        'Erro ao conectar com o servidor.\nVerifique sua internet.',
+      );
     } finally {
       if (mounted) {
         setState(() => _loading = false);
@@ -143,16 +145,19 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
     );
   }
 
-  void _mostrarErro(String mensagem) {
+  void _tratarErroCritico(String mensagem) {
     if (!mounted) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(mensagem),
-        backgroundColor: Colors.red.shade700,
-      ),
+    Navigator.pushNamed(
+      context,
+      '/erro',
+      arguments: {
+        'title': 'Erro na análise',
+        'message': mensagem,
+      },
     );
   }
+
 
   @override
   Widget build(BuildContext context) {
