@@ -36,6 +36,9 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
   DateTimeRange? _periodo;
   bool _showGraficos = false;
 
+  Future<EstoqueMovResumo>? _resumoFuture;
+  Future<List<EstoqueMovModel>>? _movsFuture;
+
   bool _isDark(BuildContext context) =>
       Theme.of(context).brightness == Brightness.dark;
 
@@ -52,16 +55,46 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       ? const Color(0xFFD4AF37).withOpacity(0.16)
       : Colors.black.withOpacity(0.08);
 
-  @override
-  void initState() {
-    super.initState();
-    _qCtrl.addListener(() => setState(() => _q = _qCtrl.text));
-  }
+    @override
+    void initState() {
+      super.initState();
+
+      _qCtrl.addListener(() {
+        final texto = _qCtrl.text;
+        if (_q != texto) {
+          setState(() => _q = texto);
+        }
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final uid = context.read<AuthProvider>().user?.uid;
+        if (uid == null) return;
+
+        final movProv = context.read<EstoqueMovLocalProvider>();
+
+        setState(() {
+          _resumoFuture = movProv.resumo(uid: uid);
+          _movsFuture = movProv.listAll(uid: uid);
+        });
+      });
+    }
 
   @override
   void dispose() {
     _qCtrl.dispose();
     super.dispose();
+  }
+
+  void _reloadData() {
+    final uid = context.read<AuthProvider>().user?.uid;
+    if (uid == null) return;
+
+    final movProv = context.read<EstoqueMovLocalProvider>();
+
+    setState(() {
+      _resumoFuture = movProv.resumo(uid: uid);
+      _movsFuture = movProv.listAll(uid: uid);
+    });
   }
 
   Future<void> _pickPeriodo(BuildContext context) async {
@@ -273,8 +306,6 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
       return const Scaffold(body: Center(child: Text("Faça login novamente.")));
     }
 
-    final movProv = context.read<EstoqueMovLocalProvider>();
-
     return Scaffold(
       backgroundColor: _bg(context),
       appBar: AppBar(
@@ -299,209 +330,211 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                 ],
               ),
       ),
-      body: FutureBuilder<EstoqueMovResumo>(
-        future: movProv.resumo(uid: uid),
-        builder: (context, resumoSnap) {
-          return FutureBuilder<List<EstoqueMovModel>>(
-            future: movProv.listAll(uid: uid),
-            builder: (context, snap) {
-              if (snap.connectionState == ConnectionState.waiting) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (snap.hasError) {
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const Icon(Icons.error_outline, size: 48, color: Colors.red),
-                      const SizedBox(height: 10),
-                      const Text(
-                        "Erro ao carregar histórico",
-                        style: TextStyle(fontWeight: FontWeight.bold),
+      body: (_resumoFuture == null || _movsFuture == null)
+        ? const Center(child: CircularProgressIndicator())
+        : FutureBuilder<EstoqueMovResumo>(
+            future: _resumoFuture,
+            builder: (context, resumoSnap) {
+              return FutureBuilder<List<EstoqueMovModel>>(
+                future: _movsFuture,
+                builder: (context, snap) {
+                  if (snap.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+                  if (snap.hasError) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          const Icon(Icons.error_outline, size: 48, color: Colors.red),
+                          const SizedBox(height: 10),
+                          const Text(
+                            "Erro ao carregar histórico",
+                            style: TextStyle(fontWeight: FontWeight.bold),
+                          ),
+                          const SizedBox(height: 6),
+                          Text(
+                            "Tente novamente.",
+                            style: TextStyle(color: Colors.grey),
+                          ),
+                          const SizedBox(height: 12),
+                          ElevatedButton(
+                            onPressed: _reloadData,
+                            child: const Text("Recarregar"),
+                          ),
+                        ],
                       ),
-                      const SizedBox(height: 6),
-                      Text(
-                        "Tente novamente.",
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                      const SizedBox(height: 12),
-                      ElevatedButton(
-                        onPressed: () => setState(() {}),
-                        child: const Text("Recarregar"),
-                      ),
-                    ],
-                  ),
-                );
-              }
+                    );
+                  }
 
-              var all = snap.data ?? [];
-              all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
+                  var all = snap.data ?? [];
+                  all.sort((a, b) => b.createdAt.compareTo(a.createdAt));
 
-              if (_periodo != null) {
-                final start = DateTime(
-                  _periodo!.start.year,
-                  _periodo!.start.month,
-                  _periodo!.start.day,
-                  0,
-                  0,
-                  0,
-                );
-                final end = DateTime(
-                  _periodo!.end.year,
-                  _periodo!.end.month,
-                  _periodo!.end.day,
-                  23,
-                  59,
-                  59,
-                );
-                all = all.where((m) {
-                  final d = m.createdAt;
-                  return !d.isBefore(start) && !d.isAfter(end);
-                }).toList();
-              }
+                  if (_periodo != null) {
+                    final start = DateTime(
+                      _periodo!.start.year,
+                      _periodo!.start.month,
+                      _periodo!.start.day,
+                      0,
+                      0,
+                      0,
+                    );
+                    final end = DateTime(
+                      _periodo!.end.year,
+                      _periodo!.end.month,
+                      _periodo!.end.day,
+                      23,
+                      59,
+                      59,
+                    );
+                    all = all.where((m) {
+                      final d = m.createdAt;
+                      return !d.isBefore(start) && !d.isAfter(end);
+                    }).toList();
+                  }
 
-              if (_tipoFiltro != null) {
-                all = all.where((m) => m.tipo == _tipoFiltro).toList();
-              }
+                  if (_tipoFiltro != null) {
+                    all = all.where((m) => m.tipo == _tipoFiltro).toList();
+                  }
 
-              final q = _q.trim().toLowerCase();
-              if (q.isNotEmpty) {
-                all = all.where((m) {
-                  final s = [
-                    m.motivo ?? "",
-                    m.produtoNome ?? "",
-                    m.etiquetaId,
-                    m.tipo,
-                  ].join(" ").toLowerCase();
-                  return s.contains(q);
-                }).toList();
-              }
+                  final q = _q.trim().toLowerCase();
+                  if (q.isNotEmpty) {
+                    all = all.where((m) {
+                      final s = [
+                        m.motivo ?? "",
+                        m.produtoNome ?? "",
+                        m.etiquetaId,
+                        m.tipo,
+                      ].join(" ").toLowerCase();
+                      return s.contains(q);
+                    }).toList();
+                  }
 
-              final resumo = resumoSnap.data;
-              final stats = MovStats.fromMovs(all);
+                  final resumo = resumoSnap.data;
+                  final stats = MovStats.fromMovs(all);
 
-              return LayoutBuilder(
-                builder: (context, constraints) {
-                  final footerH = (resumo != null) ? 92.0 : 0.0;
-                  final headerH = compact ? 86.0 : 78.0;
-                  final filtersH = compact ? 160.0 : 86.0;
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      final footerH = (resumo != null) ? 92.0 : 0.0;
+                      final headerH = compact ? 86.0 : 78.0;
+                      final filtersH = compact ? 160.0 : 86.0;
 
-                  final cardH = (constraints.maxHeight - headerH - filtersH - footerH - 24)
-                      .clamp(320.0, 700.0);
+                      final cardH = (constraints.maxHeight - headerH - filtersH - footerH - 24)
+                          .clamp(320.0, 700.0);
 
-                  return CustomScrollView(
-                    slivers: [
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
-                          child: PageHeader(compact: compact),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
-                          child: LayoutBuilder(
-                            builder: (context, c) {
-                              final isNarrow = c.maxWidth < 680;
+                      return CustomScrollView(
+                        slivers: [
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(18, 18, 18, 10),
+                              child: PageHeader(compact: compact),
+                            ),
+                          ),
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.fromLTRB(18, 0, 18, 10),
+                              child: LayoutBuilder(
+                                builder: (context, c) {
+                                  final isNarrow = c.maxWidth < 680;
 
-                              final controls = <Widget>[
-                                SizedBox(
-                                  width: isNarrow ? c.maxWidth : 360,
-                                  child: SearchBox(controller: _qCtrl),
-                                ),
-                                TipoDrop(
-                                  value: _tipoFiltro,
-                                  onChanged: (v) => setState(() => _tipoFiltro = v),
-                                ),
-                                PeriodoButton(
-                                  range: _periodo,
-                                  onPick: () => _pickPeriodo(context),
-                                  onClear: () => setState(() => _periodo = null),
-                                ),
-                                ToggleViewButton(
-                                  showGraficos: _showGraficos,
-                                  onPressed: () => setState(() => _showGraficos = !_showGraficos),
-                                ),
-                                PdfButton(
-                                  onPressed: () async {
-                                    await _exportPdf(
-                                      context,
-                                      all: all,
-                                      stats: stats,
-                                      periodo: _periodo,
-                                      tipo: _tipoFiltro,
-                                      query: _q,
-                                    );
-                                  },
-                                ),
-                              ];
+                                  final controls = <Widget>[
+                                    SizedBox(
+                                      width: isNarrow ? c.maxWidth : 360,
+                                      child: SearchBox(controller: _qCtrl),
+                                    ),
+                                    TipoDrop(
+                                      value: _tipoFiltro,
+                                      onChanged: (v) => setState(() => _tipoFiltro = v),
+                                    ),
+                                    PeriodoButton(
+                                      range: _periodo,
+                                      onPick: () => _pickPeriodo(context),
+                                      onClear: () => setState(() => _periodo = null),
+                                    ),
+                                    ToggleViewButton(
+                                      showGraficos: _showGraficos,
+                                      onPressed: () => setState(() => _showGraficos = !_showGraficos),
+                                    ),
+                                    PdfButton(
+                                      onPressed: () async {
+                                        await _exportPdf(
+                                          context,
+                                          all: all,
+                                          stats: stats,
+                                          periodo: _periodo,
+                                          tipo: _tipoFiltro,
+                                          query: _q,
+                                        );
+                                      },
+                                    ),
+                                  ];
 
-                              return isNarrow
-                                  ? Column(
-                                      crossAxisAlignment: CrossAxisAlignment.stretch,
-                                      children: [
-                                        controls[0],
-                                        const SizedBox(height: 10),
-                                        Wrap(
+                                  return isNarrow
+                                      ? Column(
+                                          crossAxisAlignment: CrossAxisAlignment.stretch,
+                                          children: [
+                                            controls[0],
+                                            const SizedBox(height: 10),
+                                            Wrap(
+                                              spacing: 10,
+                                              runSpacing: 10,
+                                              children: controls.sublist(1),
+                                            ),
+                                          ],
+                                        )
+                                      : Wrap(
                                           spacing: 10,
                                           runSpacing: 10,
-                                          children: controls.sublist(1),
-                                        ),
-                                      ],
-                                    )
-                                  : Wrap(
-                                      spacing: 10,
-                                      runSpacing: 10,
-                                      crossAxisAlignment: WrapCrossAlignment.center,
-                                      children: controls,
-                                    );
-                            },
-                          ),
-                        ),
-                      ),
-                      SliverToBoxAdapter(
-                        child: Padding(
-                          padding: const EdgeInsets.symmetric(horizontal: 18),
-                          child: SizedBox(
-                            height: cardH,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: _cardAlt(context),
-                                borderRadius: BorderRadius.circular(18),
-                                border: Border.all(color: _border(context)),
+                                          crossAxisAlignment: WrapCrossAlignment.center,
+                                          children: controls,
+                                        );
+                                },
                               ),
-                              child: all.isEmpty
-                                  ? Center(
-                                      child: Text(
-                                        "Nenhuma movimentação encontrada.",
-                                        style: TextStyle(color: _muted(context)),
-                                      ),
-                                    )
-                                  : AnimatedSwitcher(
-                                      duration: const Duration(milliseconds: 220),
-                                      child: _showGraficos
-                                          ? GraficosView(stats: stats)
-                                          : TabelaView(all: all),
-                                    ),
                             ),
                           ),
-                        ),
-                      ),
-                      if (resumo != null)
-                        SliverToBoxAdapter(
-                          child: Padding(
-                            padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
-                            child: EstoqueFooter(
-                              entradas: resumo.entradas,
-                              saidas: resumo.saidasVenda + resumo.saidasCancelamento,
-                              total: resumo.saldo,
+                          SliverToBoxAdapter(
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(horizontal: 18),
+                              child: SizedBox(
+                                height: cardH,
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: _cardAlt(context),
+                                    borderRadius: BorderRadius.circular(18),
+                                    border: Border.all(color: _border(context)),
+                                  ),
+                                  child: all.isEmpty
+                                      ? Center(
+                                          child: Text(
+                                            "Nenhuma movimentação encontrada.",
+                                            style: TextStyle(color: _muted(context)),
+                                          ),
+                                        )
+                                      : AnimatedSwitcher(
+                                          duration: const Duration(milliseconds: 220),
+                                          child: _showGraficos
+                                              ? GraficosView(stats: stats)
+                                              : TabelaView(all: all),
+                                        ),
+                                ),
+                              ),
                             ),
                           ),
-                        ),
-                    ],
+                          if (resumo != null)
+                            SliverToBoxAdapter(
+                              child: Padding(
+                                padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
+                                child: EstoqueFooter(
+                                  entradas: resumo.entradas,
+                                  saidas: resumo.saidasVenda + resumo.saidasCancelamento,
+                                  total: resumo.saldo,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   );
-                },
-              );
             },
           );
         },

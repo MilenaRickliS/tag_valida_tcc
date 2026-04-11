@@ -144,7 +144,10 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
             final okSetor = _setorSel == null || t.setorNome == _setorSel;
             final okCat = _categoriaSel == null || t.categoriaNome == _categoriaSel;
             return okNome && okSetor && okCat;
-          }).toList();
+          }).toList()
+            ..sort((a, b) => a.produtoNome.toLowerCase().compareTo(
+                  b.produtoNome.toLowerCase(),
+                ));
 
           final isPhone = w < 560;
 

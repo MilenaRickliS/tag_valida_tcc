@@ -97,7 +97,9 @@ class ErrorPage extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: onRetry,
+                        onPressed: (){
+                          Navigator.pop(context);
+                        },
                         icon: const Icon(Icons.refresh_rounded, color: Colors.white,),
                         label: const Text('Recarregar'),
                         style: ElevatedButton.styleFrom(

@@ -289,7 +289,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
     }
   }
 
-  Future<void> _openTipoDialog(BuildContext context, String uid, {TipoEtiquetaModel? tipo}) async {
+  Future<void> _openTipoDialog(BuildContext rootContext, String uid, {TipoEtiquetaModel? tipo}) async {
     final isEdit = tipo != null;
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
@@ -309,7 +309,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
     bool usarRegra = tipo?.usarRegraValidadeCategoria ?? true;
     bool controlaLote = tipo?.controlaLote ?? false;
     bool permiteTabelaNutricional = tipo?.permiteTabelaNutricional ?? false;
-    TipoQrEtiqueta tipoQrSelecionado = TipoQrEtiqueta.privado;
+    TipoQrEtiqueta tipoQrSelecionado = tipo?.tipoQr ?? TipoQrEtiqueta.privado;
     
     final List<CampoCustomModel> campos = [
       ...(tipo?.camposCustom ?? []),
@@ -318,11 +318,11 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
     String? erro;
 
     await showDialog(
-      context: context,
+      context: rootContext,
       barrierColor: Colors.black.withOpacity(0.35),
       barrierDismissible: false,
       builder: (_) => StatefulBuilder(
-        builder: (context, setLocal) {
+        builder: (dialogContext, setLocal) {
           return AlertDialog(
             backgroundColor: dialogBg,
             surfaceTintColor: Colors.transparent,
@@ -620,21 +620,24 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                       onBrandColor: onBrand,
                       isDark: isDark,
                       onAdd: () async {
-                        final novo = await _openCampoDialog(context, campo: null);
-                        if (novo != null) {
+                        final novo = await _openCampoDialog(rootContext, campo: null);
+                        if (novo != null && dialogContext.mounted) {
                           setLocal(() => campos.add(novo));
                         }
                       },
                       onEdit: (index, campo) async {
-                        final editado = await _openCampoDialog(context, campo: campo);
-                        if (editado != null) {
+                        final editado = await _openCampoDialog(rootContext, campo: campo);
+                        if (editado != null && dialogContext.mounted) {
                           setLocal(() => campos[index] = editado);
                         }
                       },
                       onRemove: (index) {
-                        setLocal(() => campos.removeAt(index));
+                        if (dialogContext.mounted) {
+                          setLocal(() => campos.removeAt(index));
+                        }
                       },
                       onReorder: (oldIndex, newIndex) {
+                        if (!dialogContext.mounted) return;
                         setLocal(() {
                           if (newIndex > oldIndex) newIndex--;
                           final item = campos.removeAt(oldIndex);
@@ -650,7 +653,8 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
             ),
             actions: [
               TextButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: () => Navigator.pop(dialogContext),
+                
                 style: TextButton.styleFrom(
                   foregroundColor: isDark ? brand : const Color(0xFF2B2B2B),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -699,7 +703,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                     await prov.create(uid, novoTipo);
                   }
 
-                  if (context.mounted) Navigator.pop(context);
+                  if (dialogContext.mounted) Navigator.pop(dialogContext);
                 },
                 child: Text(
                   isEdit ? "Salvar" : "Criar",
