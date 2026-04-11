@@ -23,6 +23,7 @@ import 'widgets/etiqueta_actions_row.dart';
 import 'widgets/etiqueta_details_card.dart';
 import 'widgets/etiqueta_print_preview.dart';
 import 'widgets/etiqueta_qr_card.dart';
+import 'widgets/historico_etiqueta_screen.dart';
 
 class EtiquetaDetalhesScreen extends StatelessWidget {
   final String uid;
@@ -922,6 +923,44 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                         etiqueta: etiqueta,
                         usuario: usuario,
                         qrData: qrData,
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: OutlinedButton.icon(
+                        onPressed: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => HistoricoEtiquetaScreen(
+                                uid: uid,
+                                etiquetaId: etiqueta.id,
+                                produtoNome: etiqueta.produtoNome,
+                              ),
+                            ),
+                          );
+                        },
+                        icon: Icon(
+                          Icons.history_rounded,
+                          color: isDark ? _gold : const Color(0xFFED7227),
+                        ),
+                        label: Text(
+                          "Histórico da etiqueta",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                            color: isDark ? _gold : const Color(0xFF2B2B2B),
+                          ),
+                        ),
+                        style: OutlinedButton.styleFrom(
+                          side: BorderSide(color: borderColor),
+                          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(height: 10),
