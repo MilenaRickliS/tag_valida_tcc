@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 class EstoqueMovModel {
   static const tipoEntrada = "entrada";
   static const tipoVenda = "venda";
+  static const tipoUso = "uso";
+  static const tipoDescarte = "descarte";
   static const tipoCancelamento = "cancelamento";
   static const tipoAjusteEntrada = "ajuste_entrada";
   static const tipoAjusteSaida = "ajuste_saida";

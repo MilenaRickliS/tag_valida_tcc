@@ -42,6 +42,7 @@ import 'screens/scanner_etiqueta/scanner_etiqueta.dart';
 import 'screens/tipo_etiqueta/tipo_etiqueta.dart';
 import 'screens/criar_etiqueta/criar_etiqueta.dart';
 import 'screens/etiquetas_ativas/etiquetas_ativas.dart';
+import 'screens/etiquetas_ativas/movimentacao/scan_movimentacao.dart';
 import 'screens/etiquetas_diarias/etiquetas_diarias.dart';
 import 'screens/etiquetas_finalizadas/etiquetas_finalizadas.dart';
 import 'screens/configuracoes/configuracoes.dart';
@@ -170,6 +171,7 @@ class MyApp extends StatelessWidget {
         '/scanner': (_) => const ScannerEtiquetaScreen(),
         '/tipos-etiqueta': (_) => const TiposEtiquetaScreen(),
         '/etiquetas-ativas': (context) => const EtiquetasAtivasScreen(),
+        '/scanner_movimentacao': (_) => const ScannerMovimentacaoScreen(),
         '/etiquetas-diarias': (context) => const EtiquetasDiariasScreen(),
         '/etiquetas-finalizadas': (context) => const EtiquetasFinalizadasScreen(),
         '/configuracoes': (context) => const ConfiguracoesScreen(),

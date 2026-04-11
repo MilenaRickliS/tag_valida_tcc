@@ -86,4 +86,58 @@ class EtiquetaModel {
         "createdAt": FieldValue.serverTimestamp(),
         "updatedAt": FieldValue.serverTimestamp(),
       };
+
+   EtiquetaModel copyWith({
+      String? tipoId,
+      String? tipoNome,
+      String? produtoNome,
+      String? categoriaId,
+      String? categoriaNome,
+      String? setorId,
+      String? setorNome,
+      DateTime? dataFabricacao,
+      DateTime? dataValidade,
+      Map<String, dynamic>? camposCustomValores,
+      String? status,
+      String? lote,
+      bool? incluirTabelaNutricional,
+      TabelaNutricionalModel? tabelaNutricional,
+      num? quantidade,
+      num? quantidadeRestante,
+      String? statusEstoque,
+      DateTime? soldAt,
+      DateTime? createdAt,
+    }) {
+      final novoRestante = quantidadeRestante ?? this.quantidadeRestante;
+
+      final novoStatusEstoque = statusEstoque ??
+          calcStatusEstoque(
+            restante: novoRestante,
+            current: this.statusEstoque,
+          );
+
+      return EtiquetaModel(
+        id: id,
+        tipoId: tipoId ?? this.tipoId,
+        tipoNome: tipoNome ?? this.tipoNome,
+        produtoNome: produtoNome ?? this.produtoNome,
+        categoriaId: categoriaId ?? this.categoriaId,
+        categoriaNome: categoriaNome ?? this.categoriaNome,
+        setorId: setorId ?? this.setorId,
+        setorNome: setorNome ?? this.setorNome,
+        dataFabricacao: dataFabricacao ?? this.dataFabricacao,
+        dataValidade: dataValidade ?? this.dataValidade,
+        camposCustomValores: camposCustomValores ?? this.camposCustomValores,
+        status: status ?? this.status,
+        lote: lote ?? this.lote,
+        incluirTabelaNutricional:
+            incluirTabelaNutricional ?? this.incluirTabelaNutricional,
+        tabelaNutricional: tabelaNutricional ?? this.tabelaNutricional,
+        quantidade: quantidade ?? this.quantidade,
+        quantidadeRestante: novoRestante,
+        statusEstoque: novoStatusEstoque,
+        soldAt: soldAt ?? this.soldAt,
+        createdAt: createdAt ?? this.createdAt,
+      );
+    }
 }

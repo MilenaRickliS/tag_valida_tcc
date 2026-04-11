@@ -193,6 +193,7 @@ class _EtiquetasAtivasScreenState extends State<EtiquetasAtivasScreen> {
                   },
                 ),
                 const SizedBox(height: 6),
+          
                 Text(
                   "Clique em um tipo para ver as etiquetas ativas dele.",
                   style: TextStyle(color: muted),

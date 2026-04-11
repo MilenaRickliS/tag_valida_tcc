@@ -355,6 +355,60 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
   );
 }
 
+  Widget _buildAcoesOperacionais() {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final primary = isDark
+        ? const Color(0xFFD4AF37)
+        : const Color(0xFFED7227);
+
+    final secondary = isDark
+        ? const Color.fromARGB(255, 228, 228, 228)
+        : const Color.fromARGB(255, 26, 25, 25);
+
+    
+
+    return Row(
+      children: [
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, '/scanner_movimentacao');
+            },
+            icon: Icon(Icons.swap_horiz_rounded, color: isDark ? Colors.black : Colors.white),
+            label: const Text("Movimentar"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: isDark ? Colors.black : Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: ElevatedButton.icon(
+            onPressed: () {
+              Navigator.pushNamed(context, '/inventario');
+            },
+            icon: Icon(Icons.inventory_2_outlined, color: isDark ? Colors.black : Colors.white),
+            label: const Text("Inventário"),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: secondary,
+              foregroundColor: isDark ? Colors.black : Colors.white,
+              padding: const EdgeInsets.symmetric(vertical: 14),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(14),
+              ),
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   Widget _topBar({
     required int activeCount,
     required VoidCallback onOpenFilters,
@@ -443,9 +497,7 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
               clearBtn,
             ],
           );
-        }
-
-        
+        }        
         return Column(
           children: [
             searchBox,
@@ -622,6 +674,8 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
                 ),
                 onClearFilters: _clearAll,
               ),
+              const SizedBox(height: 12),
+              _buildAcoesOperacionais(),
               if (activeChips.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 ActiveChipsRow(
@@ -685,6 +739,8 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
                           ),
                           onClearFilters: _clearAll,
                         ),
+                        const SizedBox(height: 12),
+                        _buildAcoesOperacionais(),
                         if (activeChips.isNotEmpty) ...[
                           const SizedBox(height: 10),
                           ActiveChipsRow(
@@ -730,3 +786,5 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
     );
   }
 }
+
+
