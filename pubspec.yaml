@@ -70,6 +70,7 @@ dependencies:
   mime: ^2.0.0
   image: ^4.5.4
   url_launcher: ^6.3.2
+  audioplayers: ^6.6.0
 
 dev_dependencies:
   flutter_test:
@@ -97,6 +98,7 @@ flutter:
     - assets/rotulagem/
     - assets/portifolio/
     - assets/exemplos/
+    - assets/sounds/beep.mp3
   
   fonts:
   - family: RobotoMono
