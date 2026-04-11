@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../models/etiqueta_model.dart';
 import './pill.dart';
 import './mini_badge.dart';
-import '../../etiqueta_preview/etiqueta_preview.dart';
+import '../../etiqueta_detalhes/etiqueta_detalhes.dart';
 import '../../../providers/auth_provider.dart';
 import '../../../providers/estoque_mov_local_provider.dart';
 import '../../../providers/gerar_etiqueta_local_provider.dart';
@@ -215,7 +215,7 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
         Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => EtiquetaPreviewScreen(uid: uid, etiquetaId: e.id),
+            builder: (_) => EtiquetaDetalhesScreen(uid: uid, etiquetaId: e.id),
           ),
         );
       },

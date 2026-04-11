@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../models/etiqueta_model.dart';
 import '../../../providers/estoque_mov_local_provider.dart';
 import '../../../data/local/repos/etiquetas_local_repo.dart';
-import '../../etiqueta_preview/etiqueta_preview.dart';
+import '../../etiqueta_detalhes/etiqueta_detalhes.dart';
 import '../../criar_etiqueta/criar_etiqueta.dart';
 import './mini_pill.dart';
 
@@ -155,7 +155,7 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
               context,
               MaterialPageRoute(
                 builder: (_) =>
-                    EtiquetaPreviewScreen(uid: uid, etiquetaId: e.id),
+                    EtiquetaDetalhesScreen(uid: uid, etiquetaId: e.id),
               ),
             );
           },

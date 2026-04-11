@@ -3,8 +3,8 @@
 import 'package:flutter/material.dart';
 import 'badge_chip.dart';
 import 'status_chip.dart';
-import './tabela_nutricional_preview_card.dart';
-import './rotulagem_frontal_card.dart';
+import 'tabela_nutricional_preview_card.dart';
+import 'rotulagem_frontal_card.dart';
 import '../../../models/tabela_nutricional_model.dart';
 
 
@@ -177,14 +177,15 @@ class EtiquetaDetailsCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      tipoNome,
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        color: textColor,
+                    if (tipoNome.isNotEmpty)
+                      Text(
+                        tipoNome,
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w900,
+                          color: textColor,
+                        ),
                       ),
-                    ),
                     const SizedBox(height: 4),
                     Text(
                       produtoNome,
@@ -218,9 +219,10 @@ class EtiquetaDetailsCard extends StatelessWidget {
           const SizedBox(height: 14),
           Divider(color: Colors.black.withOpacity(0.06), height: 1),
           const SizedBox(height: 14),
-
-          _linha("Categoria", categoriaNome),
-          _linha("Setor/Responsável", setorNome),
+          if (categoriaNome.isNotEmpty)
+            _linha("Categoria", categoriaNome),
+          if (setorNome.isNotEmpty)
+            _linha("Setor/Responsável", setorNome),
           _linha("Fabricação", fabricacaoFormatada),
           _linhaColor("Validade", validadeFormatada, validadeColor),
 
@@ -266,15 +268,16 @@ class EtiquetaDetailsCard extends StatelessWidget {
 
           const SizedBox(height: 8),
 
-          Row(
-            children: [
-              Expanded(child: _metric("Quantidade", quantidade)),
-              const SizedBox(width: 10),
-              Expanded(child: _metric("Saídas", saidas)),
-              const SizedBox(width: 10),
-              Expanded(child: _metric("Restante", restante)),
-            ],
-          ),
+          if (quantidade.isNotEmpty)
+            Row(
+              children: [
+                Expanded(child: _metric("Quantidade", quantidade)),
+                const SizedBox(width: 10),
+                Expanded(child: _metric("Saídas", saidas)),
+                const SizedBox(width: 10),
+                Expanded(child: _metric("Restante", restante)),
+              ],
+            ),
 
           if (customSemLote.isNotEmpty) ...[
             const SizedBox(height: 16),

@@ -25,7 +25,10 @@ class EtiquetaQrCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final hasHelperText = helperText != null && helperText!.trim().isNotEmpty;
+
     final content = Column(
+      mainAxisSize: MainAxisSize.min,
       children: [
         QrImageView(
           data: qrData,
@@ -33,12 +36,12 @@ class EtiquetaQrCard extends StatelessWidget {
         ),
         if (onTapQr != null) ...[
           const SizedBox(height: 8),
-          const Text(
+          Text(
             "Toque para tela cheia",
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w800,
-              color: Colors.black,
+              color: isDark ? const Color(0xFFD4AF37) : Colors.black87,
             ),
           ),
         ],
@@ -81,12 +84,18 @@ class EtiquetaQrCard extends StatelessWidget {
                   )
                 : content,
           ),
-          const SizedBox(height: 10),
-          Text(
-            helperText ?? "Escaneie para abrir e gerar PDF",
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 12.5, color: textColor),
-          ),
+          if (hasHelperText) ...[
+            const SizedBox(height: 10),
+            Text(
+              helperText!.trim(),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 12.5,
+                color: textColor,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ],
       ),
     );

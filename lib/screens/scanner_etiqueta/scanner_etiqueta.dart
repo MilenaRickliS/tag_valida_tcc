@@ -17,6 +17,7 @@ class ScannerEtiquetaScreen extends StatefulWidget {
 
 class _ScannerEtiquetaScreenState extends State<ScannerEtiquetaScreen> {
   bool _handled = false;
+  final MobileScannerController _controller = MobileScannerController();
 
   Future<void> _abrirLinkPublico(String raw) async {
     final uri = Uri.tryParse(raw);
@@ -35,72 +36,85 @@ class _ScannerEtiquetaScreenState extends State<ScannerEtiquetaScreen> {
   }
 
   @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text("Ler QR da etiqueta")),
       body: MobileScanner(
+        controller: _controller,
         onDetect: (capture) async {
-            if (_handled) return;
+          if (_handled) return;
 
-            final barcode = capture.barcodes.firstOrNull;
-            final raw = barcode?.rawValue?.trim();
+          final barcode = capture.barcodes.firstOrNull;
+          final raw = barcode?.rawValue?.trim();
 
-            if (raw == null || raw.isEmpty) return;
+          if (raw == null || raw.isEmpty) return;
 
-            _handled = true;
+          _handled = true;
 
+          try {
+            await _controller.stop();
+
+            final parsed = parseEtiquetaQrPayload(raw);
+
+            await openEtiquetaPdfFlow(
+              context,
+              uid: parsed.uid,
+              etiquetaId: parsed.id,
+            );
+
+            return;
+          } catch (_) {
             try {
-              final parsed = parseEtiquetaQrPayload(raw);
+              if (raw.startsWith('PUBLICO:')) {
+                final parts = raw.split(':');
 
-              await openEtiquetaPdfFlow(
-                context,
-                uid: parsed.uid,
-                etiquetaId: parsed.id,
-              );
+                if (parts.length < 3) {
+                  throw const FormatException('QR público inválido');
+                }
 
-              if (context.mounted) Navigator.pop(context);
-            } catch (_) {
-              try {
-              
-                if (raw.startsWith('PUBLICO:')) {
-                  final parts = raw.split(':');
-                  final uid = parts[1];
-                  final id = parts[2];
+                final uid = parts[1];
+                final id = parts[2];
 
-                  await Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => EtiquetaPublicaScreen(
-                        uid: uid,
-                        etiquetaId: id,
-                      ),
+                await Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => EtiquetaPublicaScreen(
+                      uid: uid,
+                      etiquetaId: id,
                     ),
-                  );
-
-                  if (context.mounted) Navigator.pop(context);
-                  return;
-                }
-
-               
-                if (raw.startsWith('http')) {
-                  await _abrirLinkPublico(raw);
-
-                  if (context.mounted) Navigator.pop(context);
-                  return;
-                }
-
-                throw const FormatException('QR não reconhecido');
-              } catch (e) {
-                _handled = false;
-
-                if (!context.mounted) return;
-
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text("QR inválido: $raw")),
+                  ),
                 );
+
+                return;
               }
+
+              if (raw.startsWith('http')) {
+                await _abrirLinkPublico(raw);
+                if (context.mounted) {
+                  Navigator.pop(context);
+                }
+                return;
+              }
+
+              throw const FormatException('QR não reconhecido');
+            } catch (e) {
+              _handled = false;
+              await _controller.start();
+
+              if (!context.mounted) return;
+
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(content: Text("QR inválido: $raw")),
+              );
             }
-          },
+          }
+        },
       ),
     );
   }

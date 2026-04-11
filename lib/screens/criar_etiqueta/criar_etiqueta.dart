@@ -20,7 +20,7 @@ import '../../data/local/repos/etiquetas_local_repo.dart';
 import '../../data/local/repos/etiqueta_template_local_repo.dart';
 
 
-import '../etiqueta_preview/etiqueta_preview.dart';
+import '../etiqueta_detalhes/etiqueta_detalhes.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/menu.dart';
 import './widgets/app_dropdown.dart';
@@ -890,7 +890,7 @@ Widget build(BuildContext context) {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => EtiquetaPreviewScreen(
+                                        builder: (_) => EtiquetaDetalhesScreen(
                                           uid: uid,
                                           etiquetaId: widget.editarEtiquetaId!,
                                         ),
@@ -906,7 +906,7 @@ Widget build(BuildContext context) {
                                     Navigator.pushReplacement(
                                       context,
                                       MaterialPageRoute(
-                                        builder: (_) => EtiquetaPreviewScreen(
+                                        builder: (_) => EtiquetaDetalhesScreen(
                                           uid: uid,
                                           etiquetaId: id,
                                         ),

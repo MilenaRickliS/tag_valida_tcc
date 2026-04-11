@@ -19,16 +19,16 @@ import '../../services/printer_app_service.dart';
 import '../../services/etiqueta_qr_resolver.dart';
 import '../../utils/formatar_lote.dart';
 import '../criar_etiqueta/criar_etiqueta.dart';
-import './widgets/etiqueta_actions_row.dart';
-import './widgets/etiqueta_details_card.dart';
-import './widgets/etiqueta_print_preview.dart';
-import './widgets/etiqueta_qr_card.dart';
+import 'widgets/etiqueta_actions_row.dart';
+import 'widgets/etiqueta_details_card.dart';
+import 'widgets/etiqueta_print_preview.dart';
+import 'widgets/etiqueta_qr_card.dart';
 
-class EtiquetaPreviewScreen extends StatelessWidget {
+class EtiquetaDetalhesScreen extends StatelessWidget {
   final String uid;
   final String etiquetaId;
 
-  const EtiquetaPreviewScreen({
+  const EtiquetaDetalhesScreen({
     super.key,
     required this.uid,
     required this.etiquetaId,
