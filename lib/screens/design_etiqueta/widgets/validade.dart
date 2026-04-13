@@ -14,7 +14,7 @@ Widget buildValidadeTermica({
   required TextAlign align,
   required bool isBold,
 }) {
-  final weight = isBold ? FontWeight.w800 : FontWeight.w500;
+  final weight = isBold ? FontWeight.w800 : FontWeight.w600;
 
   String texto = 'VALIDADE: $valor';
 
@@ -29,11 +29,14 @@ Widget buildValidadeTermica({
   return Text(
     texto,
     textAlign: align,
+    maxLines: 1,
+    overflow: TextOverflow.ellipsis,
     style: TextStyle(
+      fontFamily: 'RobotoMono',
       fontSize: fontSize,
       fontWeight: weight,
       color: Colors.black87,
-      height: 1.05,
+      height: 0.94,
     ),
   );
 }

@@ -1,8 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../models/design_etiqueta_model.dart';
-import './etiqueta_preview_design.dart';
+import '../../../providers/design_etiqueta_provider.dart';
+import './preview_image_widget.dart';
 
 const double _minLarguraMm = 20;
 const double _maxLarguraMm = 111;
@@ -25,8 +27,7 @@ Widget buildPreviewPanel({
   required Color border,
   required DesignEtiquetaModel config,
 }) {
-  final shell = isDark ? const Color(0xFF121212) : const Color(0xFFFFFBF6);
-  final etiquetaBg = Colors.white;
+ 
 
   final larguraMm = clampLargura(
     config.larguraMm <= 0 ? 60 : config.larguraMm,
@@ -72,57 +73,63 @@ Widget buildPreviewPanel({
           ),
         ),
         const SizedBox(height: 18),
-
-        LayoutBuilder(
+       LayoutBuilder(
           builder: (context, constraints) {
-            const double shellPadding = 22;
-            const double pixelsPorMm = 3.2;
-            const double maxPreviewHeight = 300;
+            final is60x40 = larguraMm <= 60.5 && alturaMm <= 40.5;
 
-            final larguraBase = larguraMm * pixelsPorMm;
-            final alturaBase = alturaMm * pixelsPorMm;
+            double previewWidth;
+            double previewHeight;
 
-            final larguraDisponivel =
-                (constraints.maxWidth - (shellPadding * 2)).clamp(120.0, 520.0);
+            if (is60x40) {
+              const double pixelsPorMm = 5.8;
+              previewWidth = larguraMm * pixelsPorMm;
+              previewHeight = alturaMm * pixelsPorMm;
 
-            double escala = larguraDisponivel / larguraBase;
+              if (previewWidth < 240) {
+                final factor = 240 / previewWidth;
+                previewWidth *= factor;
+                previewHeight *= factor;
+              }
 
-            final alturaEscalada = alturaBase * escala;
-            if (alturaEscalada > maxPreviewHeight) {
-              escala = maxPreviewHeight / alturaBase;
+              if (previewHeight > 320) {
+                final factor = 320/ previewHeight;
+                previewWidth *= factor;
+                previewHeight *= factor;
+              }
+            } else {
+              const double pixelsPorMm = 3.8;
+              previewWidth = larguraMm * pixelsPorMm;
+              previewHeight = alturaMm * pixelsPorMm;
+
+              if (previewWidth < 240) {
+                final factor = 240 / previewWidth;
+                previewWidth *= factor;
+                previewHeight *= factor;
+              }
+
+              if (previewHeight > 320) {
+                final factor = 320 / previewHeight;
+                previewWidth *= factor;
+                previewHeight *= factor;
+              }
             }
 
-            final previewWidth = larguraBase * escala;
-            final previewHeight = alturaBase * escala;
+            final designProvider = context.watch<DesignEtiquetaProvider>();
+            final isInvalid = designProvider.validation != null &&
+                !designProvider.validation!.ok;
 
-            return Center(
-              child: Container(
-                padding: const EdgeInsets.all(shellPadding),
-                decoration: BoxDecoration(
-                  color: shell,
-                  borderRadius: BorderRadius.circular(22),
-                  border: Border.all(color: border),
-                ),
-                child: SizedBox(
+            return SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: SizedBox(
+                width: previewWidth,
+                height: previewHeight,
+                child: EtiquetaPreviewImageWidget(
+                  config: config,
+                  isInvalid: isInvalid,
+                  errorMessage: designProvider.validation?.message,
                   width: previewWidth,
                   height: previewHeight,
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: etiquetaBg,
-                      borderRadius: BorderRadius.circular(18),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(isDark ? 0.22 : 0.08),
-                          blurRadius: 18,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(18),
-                      child: buildEtiquetaPreview(config),
-                    ),
-                  ),
+                  borderRadius: 18,
                 ),
               ),
             );

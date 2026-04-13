@@ -370,7 +370,8 @@ Widget buildConfigPanel({
             final isProduto = campo.id == 'produto';
             final isQrCode = campo.tipo == CampoDesignTipo.qrcode || campo.id == 'qrcode';
             final posicaoFixa = isEmpresa || isProduto || isQrCode;
-
+            final ocultarFonte = isQrCode || isEmpresa;
+            
             return Padding(
               key: ValueKey(campo.id),
               padding: const EdgeInsets.only(bottom: 12),
@@ -413,11 +414,12 @@ Widget buildConfigPanel({
                           v ?? false,
                         );
                   },
-             onFontChanged: isQrCode
+              onFontChanged: ocultarFonte
                 ? null
                 : (value) {
                     context.read<DesignEtiquetaProvider>().setFontSize(campo.id, value);
                   },
+            
             onBoldChanged: isQrCode
                 ? null
                 : (value) {

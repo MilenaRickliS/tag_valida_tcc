@@ -4,8 +4,14 @@ import 'package:flutter/material.dart';
 import '../../../models/design_etiqueta_model.dart';
 import './validade.dart';
 
-Widget buildLinhaInfo(CampoDesignEtiquetaModel campo, {required bool destacarValidade,}) {
+Widget buildLinhaInfo(
+  CampoDesignEtiquetaModel campo, {
+  required bool destacarValidade,
+  required bool is60x40,
+}) {
   final valor = getValorExemplo(campo);
+  final previewFont = _previewFontForCampo(campo, is60x40: is60x40);
+  final label = (campo.labelImpresso ?? campo.nome).toUpperCase();
 
   if (campo.id == 'validade') {
     return Align(
@@ -13,11 +19,8 @@ Widget buildLinhaInfo(CampoDesignEtiquetaModel campo, {required bool destacarVal
       child: buildValidadeTermica(
         valor: valor,
         destacar: destacarValidade,
-        // StatusValidadePreview.normal
-        // StatusValidadePreview.alerta
-        // StatusValidadePreview.vencido
         status: StatusValidadePreview.vencido,
-        fontSize: campo.fontSize.clamp(9, 11).toDouble(),
+        fontSize: previewFont,
         align: campo.align,
         isBold: campo.isBold,
       ),
@@ -28,19 +31,21 @@ Widget buildLinhaInfo(CampoDesignEtiquetaModel campo, {required bool destacarVal
     alignment: toAlignment(campo.align),
     child: RichText(
       textAlign: campo.align,
+      maxLines: _maxLinesForCampo(campo),
+      overflow: TextOverflow.ellipsis,
       text: TextSpan(
         style: TextStyle(
           fontFamily: 'RobotoMono',
-          fontSize: campo.fontSize.clamp(9, 11).toDouble(),
+          fontSize: previewFont,
           color: Colors.black,
-          height: 1.05,
+          height: is60x40 ? 0.94 : 1.0,
           fontWeight: campo.isBold ? FontWeight.w600 : FontWeight.w400,
         ),
         children: [
           TextSpan(
-            text: '${campo.labelImpresso ?? campo.nome}: ',
+            text: '$label: ',
             style: TextStyle(
-              fontWeight: campo.isBold ? FontWeight.w800 : FontWeight.w500,
+              fontWeight: campo.isBold ? FontWeight.w800 : FontWeight.w600,
             ),
           ),
           TextSpan(
@@ -51,13 +56,45 @@ Widget buildLinhaInfo(CampoDesignEtiquetaModel campo, {required bool destacarVal
           ),
         ],
       ),
-      maxLines:
-          campo.id == 'ingredientes' || campo.id == 'alergenicos' ? 2 : 1,
-      overflow: TextOverflow.ellipsis,
     ),
   );
 }
 
+double _previewFontForCampo(
+  CampoDesignEtiquetaModel campo, {
+  required bool is60x40,
+}) {
+  final userFont = campo.fontSize <= 0 ? 7.0 : campo.fontSize;
+
+  if (is60x40) {
+    if (campo.id == 'validade') {
+      return userFont * 2.4;
+    }
+
+    if (campo.id == 'observacao' ||
+        campo.id == 'ingredientes' ||
+        campo.id == 'alergenicos') {
+      return userFont * 2.2;
+    }
+
+    return userFont * 2.25;
+  }
+
+  if (campo.id == 'validade') {
+    return userFont * 2.1;
+  }
+
+  return userFont * 2.0;
+}
+
+int _maxLinesForCampo(CampoDesignEtiquetaModel campo) {
+  if (campo.id == 'ingredientes' ||
+      campo.id == 'alergenicos' ||
+      campo.id == 'observacao') {
+    return 2;
+  }
+  return 1;
+}
 
 String exampleValue(String id, String nome) {
   switch (id) {

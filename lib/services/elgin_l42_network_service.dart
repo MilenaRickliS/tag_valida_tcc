@@ -7,6 +7,39 @@ import '../models/design_etiqueta_model.dart';
 import '../models/etiqueta_model.dart';
 import '../models/user_model.dart';
 
+class _TsplFontSpec {
+  final String font;
+  final int xMul;
+  final int yMul;
+
+  const _TsplFontSpec({
+    required this.font,
+    required this.xMul,
+    required this.yMul,
+  });
+}
+
+_TsplFontSpec _fontSpecFromPt(double pt, {bool compact = false}) {
+  final value = pt.clamp(6.0, 28.0);
+
+  if (compact) {
+    if (value <= 7) return const _TsplFontSpec(font: '1', xMul: 1, yMul: 1);
+    if (value <= 9) return const _TsplFontSpec(font: '2', xMul: 1, yMul: 1);
+    if (value <= 12) return const _TsplFontSpec(font: '2', xMul: 1, yMul: 2);
+    if (value <= 15) return const _TsplFontSpec(font: '3', xMul: 1, yMul: 1);
+    if (value <= 18) return const _TsplFontSpec(font: '3', xMul: 1, yMul: 2);
+    return const _TsplFontSpec(font: '4', xMul: 1, yMul: 1);
+  }
+
+  if (value <= 7) return const _TsplFontSpec(font: '1', xMul: 1, yMul: 1);
+  if (value <= 9) return const _TsplFontSpec(font: '2', xMul: 1, yMul: 1);
+  if (value <= 11) return const _TsplFontSpec(font: '2', xMul: 1, yMul: 2);
+  if (value <= 14) return const _TsplFontSpec(font: '3', xMul: 1, yMul: 1);
+  if (value <= 17) return const _TsplFontSpec(font: '3', xMul: 2, yMul: 1);
+  if (value <= 21) return const _TsplFontSpec(font: '3', xMul: 2, yMul: 2);
+  return const _TsplFontSpec(font: '4', xMul: 1, yMul: 1);
+}
+
 enum _StatusValidadePrint {
   normal,
   alerta,
@@ -191,30 +224,23 @@ PRINT $qtdCopias,1
 
    
     final qrModule = hasQr ? (is60x40 ? 2 : 3) : 0;
-    final qrVisualSize = hasQr ? (is60x40 ? 84 : 126) : 0; 
-    final qrGap = hasQr ? _mmToDots(3.0) : 0;
-    final qrRightSafe = _mmToDots(is60x40 ? 6.0 : 5.0);
+    final qrVisualSize = hasQr ? (is60x40 ? 72 : 126) : 0;
+    final qrGap = hasQr ? _mmToDots(2.2) : 0;
+    final qrRightSafe = _mmToDots(is60x40 ? 4.0 : 5.0);
+
     final qrX = hasQr ? (larguraDots - qrRightSafe - qrVisualSize) : 0;
-    final qrY = outerPad + _mmToDots(1.0);
+    final qrY = outerPad + _mmToDots(1.8); 
 
-  final textAreaX = outerPad;
- 
-  final headerRightReserve = hasQr
-      ? _mmToDots(is60x40 ? 8.0 : 10.0)
-      : _mmToDots(is60x40 ? 6.0 : 8.0);
+    final textAreaX = outerPad;
+    final textAreaRight = hasQr
+        ? (qrX - _mmToDots(is60x40 ? 3.0 : 4.0))
+        : (larguraDots - outerPad);
 
-  final headerRightLimit = hasQr
-      ? (qrX - headerRightReserve)
-      : (larguraDots - outerPad - headerRightReserve);
+    final textAreaWidth = (textAreaRight - textAreaX).clamp(
+      _mmToDots(16.0),
+      larguraDots,
+    );
 
-  final textAreaWidth = (headerRightLimit - textAreaX).clamp(
-    _mmToDots(16.0),
-    larguraDots,
-  );
-
-  final headerHardRightLimit = hasQr
-    ? (qrX - _mmToDots(is60x40 ? 4.0 : 5.0))
-    : (larguraDots - outerPad - _mmToDots(is60x40 ? 3.0 : 4.0));
 
     final sb = StringBuffer();
     sb.writeln('SIZE ${larguraMm.toStringAsFixed(0)} mm,${alturaMm.toStringAsFixed(0)} mm');
@@ -227,51 +253,114 @@ PRINT $qtdCopias,1
 
     if (empresaCampo != null) {
       final empresaText = valores['empresa'] ?? '';
-      y = _addMultiLineTextStyled(
+      final empresaFont = is60x40 ? 7.0 : 9.0;
+
+      final empresaSpec = _fontSpecFromPt(
+        empresaFont,
+        compact: is60x40,
+      );
+
+      final empresaBoxHeight = is60x40 ? 38 : 54;
+
+      final empresaStartY = y;
+
+      _addMultiLineTextStyled(
         sb: sb,
         text: empresaText,
         xBase: textAreaX,
-        y: y,
+        y: empresaStartY,
         maxWidth: textAreaWidth,
-        font: is60x40 ? '1' : _fontFromPt(empresaCampo.fontSize.clamp(7, 9)),
+        spec: empresaSpec,
         maxLines: is60x40 ? 2 : 3,
         align: empresaCampo.align,
         isBold: empresaCampo.isBold,
-        hardRightLimit: headerHardRightLimit,
+        hardRightLimit: textAreaRight,
       );
-      y += _mmToDots(0.6);
+
+      y = empresaStartY + empresaBoxHeight;
     }
 
-   if (produtoCampo != null) {
-      final produtoText = valores['produto'] ?? '';
-      y = _addMultiLineTextStyled(
-        sb: sb,
-        text: produtoText,
-        xBase: textAreaX,
-        y: y,
-        maxWidth: textAreaWidth,
-        font: is60x40 ? '3' : _fontFromPt(produtoCampo.fontSize),
-        maxLines: 2,
-        align: produtoCampo.align,
-        isBold: produtoCampo.isBold,
-        hardRightLimit: headerHardRightLimit,
-      );
-      y += _mmToDots(0.8);
-    }
+  if (produtoCampo != null) {
+    final produtoText = valores['produto'] ?? '';
+    final produtoFont = is60x40
+        ? produtoCampo.fontSize.clamp(7.0, 8.0)
+        : produtoCampo.fontSize.clamp(8.0, 14.0);
 
-    if (hasQr) {
-      sb.writeln('QRCODE $qrX,$qrY,L,$qrModule,A,0,"${_cleanQr(qrData)}"');
-    }
+    final produtoSpec = _fontSpecFromPt(
+      produtoFont,
+      compact: is60x40,
+    );
+
+    final produtoBoxHeight = is60x40 ? 42 : 58;
+    final produtoStartY = y;
+
+    _addMultiLineTextStyled(
+      sb: sb,
+      text: produtoText,
+      xBase: textAreaX,
+      y: produtoStartY,
+      maxWidth: textAreaWidth,
+      spec: produtoSpec,
+      maxLines: 2,
+      align: produtoCampo.align,
+      isBold: produtoCampo.isBold,
+      hardRightLimit: textAreaRight,
+    );
+
+    y = produtoStartY + produtoBoxHeight;
+  }
+
+   if (hasQr && design.mostrarMarcaTagValida) {
+    final brandText = 'TagValida';
+    final brandSpec = _fontSpecFromPt(7, compact: is60x40);
+
+    final brandWidth = _estimateTextWidth(brandText, brandSpec);
+    final brandX = qrX + ((qrVisualSize - brandWidth) ~/ 2);
 
    
-    final qrBottom = hasQr ? (qrY + qrVisualSize) : y;
-    final dividerY = hasQr
-        ? (qrBottom + _mmToDots(1.5))
-        : y;
+    final brandY = qrY - _lineHeight(brandSpec);
 
-    final dividerX1 = outerPad;
-    final dividerX2 = larguraDots - outerPad;
-    sb.writeln('BAR $dividerX1,$dividerY,${dividerX2 - dividerX1},1');
+    _writeText(
+      sb: sb,
+      x: brandX < qrX ? qrX : brandX,
+      y: brandY,
+      spec: brandSpec,
+      text: brandText,
+      isBold: true,
+    );
+
+    sb.writeln('QRCODE $qrX,$qrY,L,$qrModule,A,0,"${_cleanQr(qrData)}"');
+  } else if (hasQr) {
+    sb.writeln('QRCODE $qrX,$qrY,L,$qrModule,A,0,"${_cleanQr(qrData)}"');
+  } else if (design.mostrarMarcaTagValida) {
+    final brandText = 'TagValida';
+    final brandSpec = _fontSpecFromPt(7, compact: is60x40);
+    final brandY = alturaDots - outerPad - _lineHeight(brandSpec);
+
+    _writeText(
+      sb: sb,
+      x: textAreaX,
+      y: brandY,
+      spec: brandSpec,
+      text: brandText,
+      isBold: true,
+    );
+  }
+
+   
+    final dividerY = y + _mmToDots(0.8);
+
+    final dividerStartX = outerPad;
+    final dividerEndX = hasQr
+        ? (qrX - _mmToDots(1.5))
+        : (larguraDots - outerPad);
+
+    final dividerWidth = dividerEndX - dividerStartX;
+
+    if (dividerWidth > 8) {
+      sb.writeln('BAR $dividerStartX,$dividerY,$dividerWidth,1');
+    }
+
 
     final blocoY1 = dividerY + _mmToDots(1.4);
     final blocoY2 = alturaDots - outerPad;
@@ -279,23 +368,24 @@ PRINT $qtdCopias,1
     int infoY = blocoY1 + innerPad;
     final infoX = outerPad + innerPad;
 
-    final infoRightInset = hasQr
-        ? _mmToDots(is60x40 ? 3.6 : 4.2)
-        : _mmToDots(is60x40 ? 5.5 : 7.0);
-
     final infoRightLimit = hasQr
-        ? (qrX - qrGap - infoRightInset)
-        : (larguraDots - outerPad - innerPad - infoRightInset);
+        ? (qrX - qrGap - _mmToDots(2.0))
+        : (larguraDots - outerPad - innerPad);
 
     final infoWidth = (infoRightLimit - infoX).clamp(
       _mmToDots(16.0),
       larguraDots,
     );
 
+    final infoBottomLimit = blocoY2 - innerPad;
+
     for (final campo in infoCampos) {
       final valor = (valores[campo.id] ?? '').trim();
       if (valor.isEmpty) continue;
-
+      final campoSpec = _fontSpecFromPt(
+        campo.fontSize,
+        compact: is60x40,
+      );
      
       if (campo.id == 'validade' && design.destacarValidade) {
         infoY = _addValidadeDestaque(
@@ -304,14 +394,14 @@ PRINT $qtdCopias,1
           y: infoY,
           maxWidth: infoWidth,
           valor: valor,
-          font: is60x40 ? '1' : _fontFromPt(campo.fontSize),
+          spec: campoSpec,
           align: campo.align,
           isBold: campo.isBold,
           status: _getStatusValidade(etiqueta.dataValidade),
         );
         infoY += _mmToDots(0.8);
 
-        if (infoY > blocoY2 - innerPad) break;
+        if (infoY > infoBottomLimit) break;
         continue;
       }
 
@@ -324,7 +414,7 @@ PRINT $qtdCopias,1
         xBase: infoX,
         y: infoY,
         maxWidth: infoWidth,
-        font: is60x40 ? '1' : _fontFromPt(campo.fontSize),
+        spec: campoSpec,
         maxLines: (campo.id == 'ingredientes' || campo.id == 'alergenicos') ? 2 : 2,
         align: campo.align,
         isBold: campo.isBold,
@@ -335,28 +425,6 @@ PRINT $qtdCopias,1
       if (infoY > blocoY2 - innerPad) {
         break;
       }
-    }
-
-   
-    if (design.mostrarMarcaTagValida) {
-      final brandText = 'TagValida';
-      final brandFont = '1';
-      final brandY = alturaDots - outerPad - _lineHeight(brandFont);
-      final brandX = _resolveAlignedX(
-        align: TextAlign.left,
-        xBase: infoX,
-        containerWidth: infoWidth,
-        text: brandText,
-        font: brandFont,
-      );
-      _writeText(
-        sb: sb,
-        x: brandX,
-        y: brandY,
-        font: brandFont,
-        text: brandText,
-        isBold: true,
-      );
     }
 
     sb.writeln('PRINT $qtdCopias,1');
@@ -488,7 +556,7 @@ PRINT $qtdCopias,1
     required int xBase,
     required int y,
     required int maxWidth,
-    required String font,
+    required _TsplFontSpec spec,
     required TextAlign align,
     required bool isBold,
     int? maxLines,
@@ -500,7 +568,7 @@ PRINT $qtdCopias,1
     for (final bloco in blocos) {
       final wrapped = _wrapText(
         _clean(bloco, max: 180),
-        maxChars: _estimateCharsPerLine(font, maxWidth),
+        maxChars: _estimateCharsPerLine(spec, maxWidth),
       );
       linhasFinais.addAll(wrapped);
     }
@@ -516,30 +584,26 @@ PRINT $qtdCopias,1
         xBase: xBase,
         containerWidth: maxWidth,
         text: linha,
-        font: font,
+        spec: spec,
       );
 
       if (hardRightLimit != null) {
-        final larguraLinha = _estimateTextWidth(linha, font);
+        final larguraLinha = _estimateTextWidth(linha, spec);
         final maxAllowedX = hardRightLimit - larguraLinha;
-        if (x > maxAllowedX) {
-          x = maxAllowedX;
-        }
-        if (x < xBase) {
-          x = xBase;
-        }
+        if (x > maxAllowedX) x = maxAllowedX;
+        if (x < xBase) x = xBase;
       }
 
       _writeText(
         sb: sb,
         x: x,
         y: currentY,
-        font: font,
+        spec: spec,
         text: linha,
         isBold: isBold,
       );
 
-      currentY += _lineHeight(font);
+      currentY += _lineHeight(spec);
     }
 
     return currentY;
@@ -549,17 +613,20 @@ PRINT $qtdCopias,1
     required StringBuffer sb,
     required int x,
     required int y,
-    required String font,
+    required _TsplFontSpec spec,
     required String text,
     required bool isBold,
   }) {
     final safe = _clean(text, max: 180);
 
-    sb.writeln('TEXT $x,$y,"$font",0,1,1,"$safe"');
+    sb.writeln(
+      'TEXT $x,$y,"${spec.font}",0,${spec.xMul},${spec.yMul},"$safe"',
+    );
 
-   
     if (isBold) {
-      sb.writeln('TEXT ${x + 1},$y,"$font",0,1,1,"$safe"');
+      sb.writeln(
+        'TEXT ${x + 1},$y,"${spec.font}",0,${spec.xMul},${spec.yMul},"$safe"',
+      );
     }
   }
 
@@ -569,7 +636,7 @@ PRINT $qtdCopias,1
     required int y,
     required int maxWidth,
     required String valor,
-    required String font,
+    required _TsplFontSpec spec,
     required TextAlign align,
     required bool isBold,
     required _StatusValidadePrint status,
@@ -588,7 +655,7 @@ PRINT $qtdCopias,1
       xBase: xBase,
       y: y,
       maxWidth: maxWidth,
-      font: font,
+      spec: spec,
       maxLines: 1,
       align: align,
       isBold: isBold,
@@ -600,35 +667,60 @@ PRINT $qtdCopias,1
     required int xBase,
     required int containerWidth,
     required String text,
-    required String font,
+    required _TsplFontSpec spec,
   }) {
-    final estimatedWidth = _estimateTextWidth(text, font);
+    final estimatedWidth = _estimateTextWidth(text, spec);
     final safeWidth = estimatedWidth.clamp(0, containerWidth);
     const rightPadding = 10;
 
     switch (align) {
       case TextAlign.center:
         return xBase + ((containerWidth - safeWidth) ~/ 2);
-
       case TextAlign.right:
         final rightX = xBase + containerWidth - safeWidth - rightPadding;
         return rightX < xBase ? xBase : rightX;
-
       case TextAlign.left:
       default:
         return xBase;
     }
   }
 
-  int _estimateTextWidth(String text, String font) {
-    final charWidth = switch (font) {
+  int _estimateTextWidth(String text, _TsplFontSpec spec) {
+    final baseCharWidth = switch (spec.font) {
       '1' => 7,
       '2' => 8,
       '3' => 10,
       '4' => 13,
       _ => 8,
     };
-    return text.length * charWidth;
+
+    return text.length * baseCharWidth * spec.xMul;
+  }
+
+  int _estimateCharsPerLine(_TsplFontSpec spec, int maxWidth) {
+    final baseCharWidth = switch (spec.font) {
+      '1' => 7,
+      '2' => 8,
+      '3' => 10,
+      '4' => 13,
+      _ => 8,
+    };
+
+    final charWidth = baseCharWidth * spec.xMul;
+    final value = maxWidth ~/ charWidth;
+    return value < 6 ? 6 : value;
+  }
+
+  int _lineHeight(_TsplFontSpec spec) {
+    final baseHeight = switch (spec.font) {
+      '1' => 16,
+      '2' => 20,
+      '3' => 24,
+      '4' => 30,
+      _ => 20,
+    };
+
+    return baseHeight * spec.yMul;
   }
 
   List<String> _wrapText(String text, {required int maxChars}) {
@@ -650,35 +742,6 @@ PRINT $qtdCopias,1
 
     if (current.isNotEmpty) lines.add(current);
     return lines;
-  }
-
-  int _estimateCharsPerLine(String font, int maxWidth) {
-    final charWidth = switch (font) {
-      '1' => 7,
-      '2' => 8,
-      '3' => 10,
-      '4' => 13,
-      _ => 8,
-    };
-    final value = maxWidth ~/ charWidth;
-    return value < 6 ? 6 : value;
-  }
-
-  int _lineHeight(String font) {
-    return switch (font) {
-      '1' => 16,
-      '2' => 20,
-      '3' => 24,
-      '4' => 30,
-      _ => 20,
-    };
-  }
-
-  String _fontFromPt(double pt) {
-    if (pt <= 7) return '1';
-    if (pt <= 10) return '2';
-    if (pt <= 15) return '3';
-    return '4';
   }
 
   int _mmToDots(double mm) => (mm * 8).round();

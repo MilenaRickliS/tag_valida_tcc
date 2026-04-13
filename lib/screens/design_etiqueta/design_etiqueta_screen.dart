@@ -326,11 +326,29 @@ double maxFontForCampo(
   DesignEtiquetaModel config,
 ) {
   final visibleCount = config.campos.where((c) => c.visivel).length;
+  final is60x40 = config.larguraMm <= 60.5 && config.alturaMm <= 40.5;
+
+  if (campo.tipo == CampoDesignTipo.qrcode) {
+    return 0;
+  }
+
+  if (is60x40) {
+    if (campo.id == 'empresa') return 7;
+    if (campo.id == 'produto') return visibleCount >= 8 ? 8 : 9;
+    if (campo.id == 'validade') return visibleCount >= 8 ? 8 : 9;
+
+    if (campo.id == 'ingredientes' ||
+        campo.id == 'alergenicos' ||
+        campo.id == 'observacao') {
+      return 7;
+    }
+
+    return visibleCount >= 9 ? 7 : 8;
+  }
+
   final area = config.larguraMm * config.alturaMm;
 
   double baseMax;
-  double minFont = 8;
-
   if (area <= 2400) {
     baseMax = visibleCount <= 4 ? 18 : 14;
   } else if (area <= 5000) {
@@ -339,34 +357,25 @@ double maxFontForCampo(
     baseMax = visibleCount <= 8 ? 26 : 22;
   }
 
-
   if (campo.id == 'produto') {
     return baseMax.clamp(12, 28).toDouble();
   }
 
- 
   if (campo.id == 'empresa') {
     return (baseMax - 4).clamp(7, 14).toDouble();
   }
 
- 
   if (campo.id == 'validade') {
     return (baseMax - 1).clamp(10, 20).toDouble();
   }
 
- 
   if (campo.id == 'ingredientes' ||
       campo.id == 'alergenicos' ||
       campo.id == 'observacao') {
     return (baseMax - 4).clamp(8, 14).toDouble();
   }
 
-
-  if (campo.tipo == CampoDesignTipo.qrcode) {
-    return 0;
-  }
-
-  return (baseMax - 2).clamp(minFont, 18).toDouble();
+  return (baseMax - 2).clamp(8, 18).toDouble();
 }
 
   Alignment toAlignment(TextAlign align) {
