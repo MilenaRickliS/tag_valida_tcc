@@ -161,7 +161,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                                   ? constraints.maxWidth
                                   : constraints.maxHeight;
 
-                              final qrSize = (side * 0.90).clamp(180.0, 900.0);
+                              final qrSize = (side * 0.70).clamp(160.0, 400.0);
 
                               return Container(
                                 padding: const EdgeInsets.all(10),

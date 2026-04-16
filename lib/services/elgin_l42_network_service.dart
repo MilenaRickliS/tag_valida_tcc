@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import '../models/design_etiqueta_model.dart';
 import '../models/etiqueta_model.dart';
 import '../models/user_model.dart';
+import '../models/tabela_nutricional_model.dart';
 
 class _TsplFontSpec {
   final String font;
@@ -793,4 +794,616 @@ PRINT $qtdCopias,1
   String _cleanQr(String value) {
     return value.replaceAll('\n', '').replaceAll('\r', '').trim();
   }
+
+ Future<void> printEtiqueta100x80ComTabelaNutricional({
+  required EtiquetaModel etiqueta,
+  required UserModel usuario,
+  required String qrData,
+  int copias = 1,
+}) async {
+  final qtdCopias = copias <= 0 ? 1 : copias;
+
+  final tabela = etiqueta.tabelaNutricional;
+  if (tabela == null) {
+    throw Exception('Tabela nutricional não informada.');
+  }
+
+  final produto = _clean(etiqueta.produtoNome, max: 40);
+  final validade = DateFormat('dd/MM/yyyy').format(etiqueta.dataValidade);
+  final fabricacao = DateFormat('dd/MM/yyyy').format(etiqueta.dataFabricacao);
+  final quantidade = _fmtNum(etiqueta.quantidade);
+  final lote = _clean(etiqueta.lote ?? '', max: 24);
+  final empresa = _buildEmpresaText(usuario, compact: false);
+
+  final sb = StringBuffer();
+
+  sb.writeln('SIZE 100 mm,80 mm');
+  sb.writeln('GAP 2 mm,0 mm');
+  sb.writeln('DIRECTION 1');
+  sb.writeln('REFERENCE 0,0');
+  sb.writeln('CLS');
+
+  const outerLeft = 26;
+  const outerTop = 16;
+  const outerWidth = 748;
+  const outerHeight = 608;
+  const padding = 16;
+
+  const qrX = 664;
+  const qrY = 42;
+
+  const headerTextLeft = outerLeft + padding;
+  const headerTextRight = qrX - 24;
+  const headerTextWidth = headerTextRight - headerTextLeft;
+
+  const dividerY = 174;
+  const contentTop = 190;
+  const contentBottom = outerTop + outerHeight - 12;
+  const contentHeight = contentBottom - contentTop;
+
+  const leftColX = outerLeft + padding;
+  const leftColW = 246;
+
+  const separatorX = 384;
+
+  const rightColX = 404;
+  const rightColW = 360;
+
+  _addMultiLineTextStyled(
+    sb: sb,
+    text: empresa,
+    xBase: headerTextLeft,
+    y: outerTop + 8,
+    maxWidth: headerTextWidth,
+    spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+    align: TextAlign.left,
+    isBold: false,
+    maxLines: 3,
+    hardRightLimit: headerTextRight,
+  );
+
+  _addMultiLineTextStyled(
+    sb: sb,
+    text: produto,
+    xBase: headerTextLeft,
+    y: outerTop + 64,
+    maxWidth: headerTextWidth,
+    spec: const _TsplFontSpec(font: '3', xMul: 1, yMul: 1),
+    align: TextAlign.left,
+    isBold: true,
+    maxLines: 2,
+    hardRightLimit: headerTextRight,
+  );
+
+  _writeText(
+    sb: sb,
+    x: qrX + 18,
+    y: outerTop + 8,
+    spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+    text: 'TagValida',
+    isBold: true,
+  );
+
+  sb.writeln('QRCODE $qrX,$qrY,L,4,A,0,"${_cleanQr(qrData)}"');
+
+  sb.writeln('BAR ${outerLeft + 4},$dividerY,${outerWidth - 8},2');
+  sb.writeln('BAR $separatorX,$contentTop,2,$contentHeight');
+
+  int y = contentTop + 10;
+  final limiteInferiorEsquerda = contentBottom - 8;
+
+  bool cabe(int proxY) => proxY <= limiteInferiorEsquerda;
+
+  int proximo;
+
+  proximo = _printLinhaCampo(
+    sb: sb,
+    x: leftColX,
+    y: y,
+    label: 'Fab.:',
+    value: fabricacao,
+  );
+  if (cabe(proximo)) y = proximo;
+
+  proximo = _printLinhaCampo(
+    sb: sb,
+    x: leftColX,
+    y: y,
+    label: 'Val.:',
+    value: validade,
+    bold: true,
+  );
+  if (cabe(proximo)) y = proximo;
+
+  proximo = _printLinhaCampo(
+    sb: sb,
+    x: leftColX,
+    y: y,
+    label: 'Lote:',
+    value: lote.isEmpty ? '-' : lote,
+  );
+  if (cabe(proximo)) y = proximo;
+
+  proximo = _printLinhaCampo(
+    sb: sb,
+    x: leftColX,
+    y: y,
+    label: 'Qtd.:',
+    value: quantidade,
+  );
+  if (cabe(proximo)) y = proximo;
+
+  if (etiqueta.categoriaNome.trim().isNotEmpty) {
+    proximo = _printLinhaCampo(
+      sb: sb,
+      x: leftColX,
+      y: y,
+      label: 'Categoria:',
+      value: _clean(etiqueta.categoriaNome, max: 18),
+    );
+    if (cabe(proximo)) y = proximo;
+  }
+
+  if (etiqueta.setorNome.trim().isNotEmpty) {
+    proximo = _printLinhaCampo(
+      sb: sb,
+      x: leftColX,
+      y: y,
+      label: 'Setor:',
+      value: _clean(etiqueta.setorNome, max: 18),
+    );
+    if (cabe(proximo)) y = proximo;
+  }
+
+  final custom = Map<String, dynamic>.from(etiqueta.camposCustomValores);
+
+  String? ingredientes;
+  String? alergenicos;
+
+  for (final entry in custom.entries) {
+    final key = entry.key.toString().toLowerCase();
+    final value = entry.value;
+
+    String texto = '';
+    if (value is Map) {
+      texto = (value['value'] ?? '').toString().trim();
+    } else if (value != null) {
+      texto = value.toString().trim();
+    }
+
+    if (texto.isEmpty) continue;
+
+    if (key.contains('ingred')) {
+      ingredientes = texto;
+    } else if (key.contains('alerg')) {
+      alergenicos = texto;
+    }
+  }
+
+  if (ingredientes != null &&
+      ingredientes.trim().isNotEmpty &&
+      y + 38 < limiteInferiorEsquerda) {
+    y += 6;
+    _writeText(
+      sb: sb,
+      x: leftColX,
+      y: y,
+      spec: const _TsplFontSpec(font: '2', xMul: 1, yMul: 1),
+      text: 'INGREDIENTES',
+      isBold: true,
+    );
+    y += 20;
+
+    final novoY = _addMultiLineTextStyled(
+      sb: sb,
+      text: ingredientes,
+      xBase: leftColX,
+      y: y,
+      maxWidth: leftColW,
+      spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+      align: TextAlign.left,
+      isBold: false,
+      maxLines: 3,
+      hardRightLimit: leftColX + leftColW,
+    );
+
+    if (novoY <= limiteInferiorEsquerda) {
+      y = novoY;
+    }
+  }
+
+  if (alergenicos != null &&
+      alergenicos.trim().isNotEmpty &&
+      y + 38 < limiteInferiorEsquerda) {
+    y += 8;
+    _writeText(
+      sb: sb,
+      x: leftColX,
+      y: y,
+      spec: const _TsplFontSpec(font: '2', xMul: 1, yMul: 1),
+      text: 'ALERGENICOS',
+      isBold: true,
+    );
+    y += 20;
+
+    final novoY = _addMultiLineTextStyled(
+      sb: sb,
+      text: alergenicos,
+      xBase: leftColX,
+      y: y,
+      maxWidth: leftColW,
+      spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+      align: TextAlign.left,
+      isBold: false,
+      maxLines: 2,
+      hardRightLimit: leftColX + leftColW,
+    );
+
+    if (novoY <= limiteInferiorEsquerda) {
+      y = novoY;
+    }
+  }
+
+  _printTabelaNutricional100x80(
+    sb: sb,
+    x: rightColX,
+    y: contentTop + 2,
+    width: rightColW,
+    tabela: tabela,
+  );
+
+  sb.writeln('PRINT $qtdCopias,1');
+  await sendRaw(sb.toString());
+}
+
+
+   int _printLinhaCampo({
+    required StringBuffer sb,
+    required int x,
+    required int y,
+    required String label,
+    required String value,
+    bool bold = false,
+  }) {
+    _writeText(
+      sb: sb,
+      x: x,
+      y: y,
+      spec: const _TsplFontSpec(font: '2', xMul: 1, yMul: 1),
+      text: _clean('$label $value', max: 52),
+      isBold: bold,
+    );
+
+    return y + 22;
+  }
+
+    void _printTabelaNutricional100x80({
+      required StringBuffer sb,
+      required int x,
+      required int y,
+      required int width,
+      required TabelaNutricionalModel tabela,
+    }) {
+      const titleFont = _TsplFontSpec(font: '2', xMul: 1, yMul: 1);
+      const bodyFont = _TsplFontSpec(font: '1', xMul: 1, yMul: 1);
+
+      final porcaoLabel = '${tabela.porcao}g';
+      final medidaCaseira =
+          '${tabela.quantidadeMedida} ${tabela.medidaCaseira}'.trim();
+
+      final tableLeft = x + 2;
+      final tableTop = y;
+      final tableWidth = width - 4;
+      const tableHeight = 560;
+
+      final tableRight = tableLeft + tableWidth;
+      final tableBottom = tableTop + tableHeight;
+
+      final col1 = tableLeft + 8;
+      final col2 = tableLeft + 198;
+      final col3 = tableLeft + 262;
+      final col4 = tableLeft + 322;
+
+      sb.writeln('BOX $tableLeft,$tableTop,$tableRight,$tableBottom,1');
+
+      _writeText(
+        sb: sb,
+        x: tableLeft + 12,
+        y: y + 8,
+        spec: titleFont,
+        text: 'INFORMACAO NUTRICIONAL',
+        isBold: true,
+      );
+
+      sb.writeln('BAR ${tableLeft + 4},${y + 34},${tableRight - tableLeft - 8},1');
+
+      _writeText(
+        sb: sb,
+        x: tableLeft + 8,
+        y: y + 42,
+        spec: bodyFont,
+        text: 'Porcoes por emb.: ${tabela.porcoesPorEmbalagem}',
+        isBold: true,
+      );
+
+      _writeText(
+        sb: sb,
+        x: tableLeft + 8,
+        y: y + 60,
+        spec: bodyFont,
+        text: 'Porcao: $porcaoLabel ($medidaCaseira)',
+        isBold: true,
+      );
+
+      sb.writeln('BAR ${tableLeft + 4},${y + 84},${tableRight - tableLeft - 8},2');
+
+      _writeText(
+        sb: sb,
+        x: col2,
+        y: y + 92,
+        spec: bodyFont,
+        text: '100g',
+        isBold: true,
+      );
+      _writeText(
+        sb: sb,
+        x: col3,
+        y: y + 92,
+        spec: bodyFont,
+        text: porcaoLabel,
+        isBold: true,
+      );
+      _writeText(
+        sb: sb,
+        x: col4,
+        y: y + 92,
+        spec: bodyFont,
+        text: '%VD',
+        isBold: true,
+      );
+
+      int rowY = y + 115;
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Valor energetico',
+        valorPorcao: tabela.valorEnergetico,
+        vdRef: 2000,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Carboidratos',
+        valorPorcao: tabela.carboidratos,
+        vdRef: 300,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1 + 8,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Acucares totais',
+        valorPorcao: tabela.acucaresTotais,
+        vdRef: 50,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1 + 8,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Acuc. adicionados',
+        valorPorcao: tabela.acucaresAdicionados,
+        vdRef: 50,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Proteinas',
+        valorPorcao: tabela.proteinas,
+        vdRef: 50,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Gorduras totais',
+        valorPorcao: tabela.gordurasTotais,
+        vdRef: 55,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1 + 8,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Gord. saturadas',
+        valorPorcao: tabela.gordurasSaturadas,
+        vdRef: 22,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1 + 8,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Gord. trans',
+        valorPorcao: tabela.gordurasTrans,
+        vdRef: 2,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Fibras',
+        valorPorcao: tabela.fibraAlimentar,
+        vdRef: 25,
+        porcaoBase: tabela.porcao,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      rowY = _printNutriRow(
+        sb: sb,
+        y: rowY,
+        labelX: col1,
+        c100X: col2,
+        porcaoX: col3,
+        vdX: col4,
+        label: 'Sodio',
+        valorPorcao: tabela.sodio,
+        vdRef: 2000,
+        porcaoBase: tabela.porcao,
+        linhaFinalGrossa: true,
+        lineStartX: tableLeft + 2,
+        lineWidth: tableWidth - 4,
+      );
+
+      final verticalTop = y + 88;
+      final verticalHeight = (rowY - 6) - verticalTop;
+
+      sb.writeln('BAR ${tableLeft + 188},$verticalTop,1,$verticalHeight');
+      sb.writeln('BAR ${tableLeft + 254},$verticalTop,1,$verticalHeight');
+      sb.writeln('BAR ${tableLeft + 314},$verticalTop,1,$verticalHeight');
+
+      _writeText(
+        sb: sb,
+        x: tableLeft + 8,
+        y: rowY + 10,
+        spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+        text: '* Valores diarios por porcao.',
+        isBold: false,
+      );
+    }
+
+   int _printNutriRow({
+      required StringBuffer sb,
+      required int y,
+      required int labelX,
+      required int c100X,
+      required int porcaoX,
+      required int vdX,
+      required String label,
+      required double valorPorcao,
+      required double vdRef,
+      required String porcaoBase,
+      required int lineStartX,
+      required int lineWidth,
+      bool linhaFinalGrossa = false,
+    }) {
+      final valor100 = _calcPor100(valorPorcao, porcaoBase);
+      final vd = _calcVD(valorPorcao, vdRef);
+
+      _writeText(
+        sb: sb,
+        x: labelX,
+        y: y,
+        spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+        text: _clean(label, max: 24),
+        isBold: false,
+      );
+
+      _writeText(
+        sb: sb,
+        x: c100X,
+        y: y,
+        spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+        text: _fmtNutri(valor100),
+        isBold: false,
+      );
+
+      _writeText(
+        sb: sb,
+        x: porcaoX,
+        y: y,
+        spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+        text: _fmtNutri(valorPorcao),
+        isBold: false,
+      );
+
+      _writeText(
+        sb: sb,
+        x: vdX,
+        y: y,
+        spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+        text: '${vd.round()}%',
+        isBold: false,
+      );
+
+      final nextY = y + 22;
+      sb.writeln('BAR $lineStartX,$nextY,$lineWidth,${linhaFinalGrossa ? 2 : 1}');
+      return nextY + 6;
+    }
+
+    double _calcPor100(double valorNaPorcao, String porcao) {
+      final base = double.tryParse(porcao.replaceAll(',', '.')) ?? 0;
+      if (base <= 0) return 0;
+      return (valorNaPorcao / base) * 100;
+    }
+
+    double _calcVD(double valorNaPorcao, double vdReferencia) {
+      if (vdReferencia <= 0) return 0;
+      return (valorNaPorcao / vdReferencia) * 100;
+    }
+
+    String _fmtNutri(num v) {
+      if (v % 1 == 0) return v.toInt().toString();
+      return v.toStringAsFixed(1).replaceAll('.', ',');
+    }
 }

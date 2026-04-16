@@ -235,7 +235,7 @@ class TagValidaPipeline:
                 cv2.LINE_AA,
             )
 
-            # texto mais limpo
+            
             font = cv2.FONT_HERSHEY_SIMPLEX
             font_scale = 0.58
             font_thickness = 2

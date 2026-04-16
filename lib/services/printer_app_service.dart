@@ -64,6 +64,26 @@ class PrinterAppService {
       );
     }
 
+    final is100x80 = _isEtiqueta100x80(
+      larguraMm: design.larguraMm,
+      alturaMm: design.alturaMm,
+    );
+
+    final usarTabelaNutricional =
+        is100x80 &&
+        etiqueta.incluirTabelaNutricional &&
+        etiqueta.tabelaNutricional != null;
+
+    if (usarTabelaNutricional) {
+      await service.printEtiqueta100x80ComTabelaNutricional(
+        etiqueta: etiqueta,
+        usuario: usuario,
+        qrData: qrData,
+        copias: copias,
+      );
+      return;
+    }
+
     await service.printEtiquetaComDesign(
       design: design,
       etiqueta: etiqueta,
@@ -71,5 +91,15 @@ class PrinterAppService {
       qrData: qrData,
       copias: copias,
     );
+  }
+
+  bool _isEtiqueta100x80({
+    required double larguraMm,
+    required double alturaMm,
+  }) {
+    return larguraMm >= 99 &&
+        larguraMm <= 101 &&
+        alturaMm >= 79 &&
+        alturaMm <= 81;
   }
 }

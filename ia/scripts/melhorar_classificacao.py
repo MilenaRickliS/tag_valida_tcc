@@ -10,7 +10,6 @@ import numpy as np
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 CSV_ERROS = BASE_DIR / "scripts" / "results" / "avaliacao_classificacao" / "erros_classificacao.csv"
-# se seu CSV estiver em outro lugar, ajuste acima
 
 DATASET_BASE = BASE_DIR / "dataset" / "classification"
 TRAIN_DIR = DATASET_BASE / "train"

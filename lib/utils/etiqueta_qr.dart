@@ -22,7 +22,7 @@ String buildEtiquetaQrPublico({
   required String uid,
   required String etiquetaId,
 }) {
-  // return 'https://seudominio.com/e/$etiquetaId?uid=$uid';
+  // return 'https://dominio.com/e/$etiquetaId?uid=$uid';
   return 'PUBLICO:$uid:$etiquetaId';
 }
 
