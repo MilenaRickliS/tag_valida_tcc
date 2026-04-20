@@ -85,53 +85,56 @@ class HomeMenuCardV2 extends StatelessWidget {
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: TextStyle(
-                    fontSize: 16.5,
+                    fontSize: 15.5,
                     fontWeight: FontWeight.w800,
                     color: titleColor,
                   ),
                 ),
-                const SizedBox(height: 12),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 42,
-                      height: 42,
-                      decoration: BoxDecoration(
-                        borderRadius: BorderRadius.circular(12),
-                        color: innerIconBg,
-                        border: Border.all(
-                          color: borderColor,
+                const SizedBox(height: 10),
+                Expanded(
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: 40,
+                        height: 40,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(12),
+                          color: innerIconBg,
+                          border: Border.all(
+                            color: borderColor,
+                          ),
+                        ),
+                        child: Icon(
+                          icon,
+                          size: 20,
+                          color: iconColor,
                         ),
                       ),
-                      child: Icon(
-                        icon,
-                        size: 22,
-                        color: iconColor,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        subtitle,
-                        maxLines: 3,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          fontSize: 13,
-                          height: 1.25,
-                          color: subtitleColor,
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          subtitle,
+                          maxLines: 3,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontSize: 12.5,
+                            height: 1.2,
+                            color: subtitleColor,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
-                const Spacer(),
+                const SizedBox(height: 6),
                 Align(
                   alignment: Alignment.centerRight,
                   child: Icon(

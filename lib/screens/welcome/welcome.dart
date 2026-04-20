@@ -196,7 +196,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                       ),
                       const SizedBox(height: 24),
                       SizedBox(
-                        height: 240,
+                        height: 270,
                         child: PageView.builder(
                           controller: _pageController,
                           itemCount: features.length,

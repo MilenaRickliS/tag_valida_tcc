@@ -113,7 +113,7 @@ class ConfiguracoesScreen extends StatelessWidget {
                         physics: const NeverScrollableScrollPhysics(),
                         crossAxisSpacing: 14,
                         mainAxisSpacing: 14,
-                        childAspectRatio: cols == 1 ? 3.2 : 2.6,
+                        childAspectRatio: cols == 1 ? 2.8 : 2.1,
                         children: [
                           ConfigTile(
                             icon: Icons.category_outlined,

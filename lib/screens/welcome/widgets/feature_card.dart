@@ -66,7 +66,7 @@ class FeatureCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(26),
         gradient: isDark
@@ -103,34 +103,43 @@ class FeatureCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CircleAvatar(
-            radius: 28,
+            radius: 24,
             backgroundColor: isDark
                 ? Colors.white.withOpacity(0.08)
                 : Colors.white.withOpacity(0.90),
             child: Icon(
               item.icon,
-              size: 30,
+              size: 26,
               color: const Color(0xFF54A73B),
             ),
           ),
-          const SizedBox(height: 20),
+          const SizedBox(height: 16),
           Text(
             item.title,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
             style: TextStyle(
-              fontSize: 22,
+              fontSize: 20,
               fontWeight: FontWeight.bold,
               color: Theme.of(context).colorScheme.onSurface,
             ),
           ),
-          const SizedBox(height: 12),
-          Text(
-            item.description,
-            style: TextStyle(
-              fontSize: 15.5,
-              height: 1.7,
-              color: Theme.of(context).colorScheme.onSurface.withOpacity(0.74),
+          const SizedBox(height: 10),
+         Expanded(
+            child: Text(
+              item.description,
+              maxLines: 4,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontSize: 14.5,
+                height: 1.5,
+                color: Theme.of(context)
+                    .colorScheme
+                    .onSurface
+                    .withOpacity(0.74),
+              ),
             ),
-          ),
+         ),
         ],
       ),
     );

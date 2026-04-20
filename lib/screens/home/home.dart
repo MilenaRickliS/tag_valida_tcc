@@ -187,9 +187,9 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   }
 
   double _gridAspect(double w) {
-    if (w < 600) return 2.25;
-    if (w < 1024) return 1.15;
-    return 0.95;
+    if (w < 600) return 1.9;
+    if (w < 1024) return 1.25;
+    return 1.05;
   }
 
   double _contentMaxWidth(double w) {
