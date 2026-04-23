@@ -1,7 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import '../../../providers/gerar_etiqueta_local_provider.dart';
+import '../../../providers/gerar_etiqueta_provider.dart';
 import 'package:flutter/services.dart';
 
 class DecimalTextInputFormatter extends TextInputFormatter {
@@ -40,7 +40,7 @@ class TabelaNutricionalSection extends StatelessWidget {
   final Color muted;
   final Color border;
   final Color softCard;
-  final GerarEtiquetaLocalProvider gerar;
+  final GerarEtiquetaProvider gerar;
   final InputDecoration Function(String label) inputDecoration;
 
   const TabelaNutricionalSection({
@@ -313,190 +313,174 @@ class TabelaNutricionalSection extends StatelessWidget {
             firstChild: const SizedBox(height: 0),
             secondChild: Padding(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 16),
-              child: Column(
-                children: [
-                  Row(
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  final isSmall = constraints.maxWidth < 450;
+
+                  Widget twoFields(Widget left, Widget right) {
+                    if (isSmall) {
+                      return Column(
+                        children: [
+                          left,
+                          const SizedBox(height: 12),
+                          right,
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(child: left),
+                        const SizedBox(width: 12),
+                        Expanded(child: right),
+                      ],
+                    );
+                  }
+
+                  return Column(
                     children: [
-                      Expanded(
-                        child: _numericField(
+                      twoFields(
+                        _numericField(
                           controller: gerar.porcoesPorEmbalagemCtrl,
                           label: "Porções por embalagem",
                           suffix: "",
                           integerOnly: true,
-                        )
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _numericField(
+                        ),
+                        _numericField(
                           controller: gerar.porcaoCtrl,
                           label: "Porção",
                           suffix: "g",
                         ),
                       ),
-                    ],
-                  ),
-                 const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _quantidadeMedidaField(),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _medidaCaseiraField(),
-                      ),
-                    ],
-                  ),
-                  if (_mostrarQtdMedidaManual) ...[
-                    const SizedBox(height: 12),
-                    TextFormField(
-                      controller: gerar.quantidadeMedidaCtrl,
-                      style: TextStyle(color: text),
-                      decoration: inputDecoration("Digite a quantidade").copyWith(
-                        hintText: "Ex: 7, 1/8, 2,5",
-                      ),
-                      validator: (v) {
-                        if (!gerar.incluirTabelaNutricional) return null;
-                        if ((v ?? '').trim().isEmpty) return "Campo obrigatório.";
-                        return null;
-                      },
-                    ),
-                  ],
-            
-                  const SizedBox(height: 12),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _numericField(
+                      const SizedBox(height: 12),
+
+                      twoFields(
+                        _quantidadeMedidaField(),
+                        _medidaCaseiraField(),
+                      ),
+
+                      if (_mostrarQtdMedidaManual) ...[
+                        const SizedBox(height: 12),
+                        TextFormField(
+                          controller: gerar.quantidadeMedidaCtrl,
+                          style: TextStyle(color: text),
+                          decoration: inputDecoration("Digite a quantidade").copyWith(
+                            hintText: "Ex: 7, 1/8, 2,5",
+                          ),
+                          validator: (v) {
+                            if (!gerar.incluirTabelaNutricional) return null;
+                            if ((v ?? '').trim().isEmpty) return "Campo obrigatório.";
+                            return null;
+                          },
+                        ),
+                      ],
+
+                      const SizedBox(height: 12),
+
+                      twoFields(
+                        _numericField(
                           controller: gerar.valorEnergeticoCtrl,
                           label: "Valor energético",
                           suffix: "kcal",
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _numericField(
+                        _numericField(
                           controller: gerar.carboidratosCtrl,
                           label: "Carboidratos",
                           suffix: "g",
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _numericField(
+                      const SizedBox(height: 12),
+
+                      twoFields(
+                        _numericField(
                           controller: gerar.acucaresTotaisCtrl,
                           label: "Açúcares totais",
                           suffix: "g",
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _numericField(
+                        _numericField(
                           controller: gerar.acucaresAdicionadosCtrl,
                           label: "Açúcares adicionados",
                           suffix: "g",
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _numericField(
+                      const SizedBox(height: 12),
+
+                      twoFields(
+                        _numericField(
                           controller: gerar.proteinasCtrl,
                           label: "Proteínas",
                           suffix: "g",
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _numericField(
+                        _numericField(
                           controller: gerar.gordurasTotaisCtrl,
                           label: "Gorduras totais",
                           suffix: "g",
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _numericField(
+                      const SizedBox(height: 12),
+
+                      twoFields(
+                        _numericField(
                           controller: gerar.gordurasSaturadasCtrl,
                           label: "Gorduras saturadas",
                           suffix: "g",
                         ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _numericField(
+                        _numericField(
                           controller: gerar.gordurasTransCtrl,
                           label: "Gorduras trans",
                           suffix: "g",
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
 
-                  Row(
-                    children: [
-                      Expanded(
-                        child: _numericField(
-                            controller: gerar.fibraAlimentarCtrl,
-                            label: "Fibras alimentares",
-                            suffix: "g",
-                          ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: _numericField(
+                      const SizedBox(height: 12),
+
+                      twoFields(
+                        _numericField(
+                          controller: gerar.fibraAlimentarCtrl,
+                          label: "Fibras alimentares",
+                          suffix: "g",
+                        ),
+                        _numericField(
                           controller: gerar.sodioCtrl,
                           label: "Sódio",
                           suffix: "mg",
                         ),
                       ),
-                    ],
-                  ),
 
-                  const SizedBox(height: 10),
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: softCard,
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: border),
-                    ),
-                    child: Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.info_outline, color: brand, size: 18),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            "Os campos podem ser exibidos na tabela mesmo com valor zero. O ideal é manter a tabela completa e padronizada.",
-                            style: TextStyle(
-                              color: muted,
-                              fontSize: 12,
-                              height: 1.35,
-                            ),
-                          ),
+                      const SizedBox(height: 10),
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: softCard,
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(color: border),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
+                        child: Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Icon(Icons.info_outline, color: brand, size: 18),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(
+                                "Os campos podem ser exibidos na tabela mesmo com valor zero. O ideal é manter a tabela completa e padronizada.",
+                                style: TextStyle(
+                                  color: muted,
+                                  fontSize: 12,
+                                  height: 1.35,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
             ),
           ),

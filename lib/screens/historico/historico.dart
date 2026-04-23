@@ -7,7 +7,7 @@ import 'package:pdf/widgets.dart' as pw;
 import 'package:printing/printing.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../providers/estoque_mov_local_provider.dart';
+import '../../providers/estoque_mov_provider.dart';
 import '../../models/estoque_mov_model.dart';
 import '../../models/estoque_mov_resumo.dart';
 import '../../widgets/menu.dart';
@@ -70,7 +70,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
         final uid = context.read<AuthProvider>().user?.uid;
         if (uid == null) return;
 
-        final movProv = context.read<EstoqueMovLocalProvider>();
+        final movProv = context.read<EstoqueMovProvider>();
 
         setState(() {
           _resumoFuture = movProv.resumo(uid: uid);
@@ -89,7 +89,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
     final uid = context.read<AuthProvider>().user?.uid;
     if (uid == null) return;
 
-    final movProv = context.read<EstoqueMovLocalProvider>();
+    final movProv = context.read<EstoqueMovProvider>();
 
     setState(() {
       _resumoFuture = movProv.resumo(uid: uid);

@@ -61,11 +61,11 @@ extension EtiquetaLocalMapper on EtiquetaModel {
 
     final soldAt = dtMsNullable(m['soldAtMs']);
 
-    final statusEstoqueRaw = (m['statusEstoque'] ?? '').toString().trim();
-    final statusEstoque = EtiquetaModel.calcStatusEstoque(
-      restante: rest,
-      current: statusEstoqueRaw.isEmpty ? null : statusEstoqueRaw,
-    );
+    final statusEstoqueRaw = (m['statusEstoque'] ?? '').toString().trim().toLowerCase();
+
+    final statusEstoque = statusEstoqueRaw.isEmpty
+        ? EtiquetaModel.calcStatusEstoque(restante: rest, current: null)
+        : statusEstoqueRaw;
 
     final tabelaStr = m['tabelaNutricionalJson']?.toString();
     final tabela = (tabelaStr == null || tabelaStr.trim().isEmpty)

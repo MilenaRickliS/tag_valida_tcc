@@ -4,10 +4,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
+import 'package:tag_valida/providers/gerar_etiqueta_provider.dart';
 
-import '../../../data/local/repos/etiquetas_local_repo.dart';
 import '../../../models/etiqueta_model.dart';
-import '../../../services/etiqueta_firebase_service.dart';
 import '../../../utils/etiqueta_qr.dart';
 import 'inventario_resumo_screen.dart';
 
@@ -102,11 +101,9 @@ class _ScannerInventarioScreenState extends State<ScannerInventarioScreen> {
     required String uid,
     required String etiquetaId,
   }) async {
-    final repo = context.read<EtiquetasLocalRepo>();
-    final fb = EtiquetaFirebaseService();
+    final etiquetasProv = context.read<GerarEtiquetaProvider>();
 
-    EtiquetaModel? e = await repo.getById(uid: uid, id: etiquetaId);
-    e ??= await fb.getById(uid: uid, id: etiquetaId);
+    EtiquetaModel? e = await etiquetasProv.getById(uid: uid, id: etiquetaId);
     return e;
   }
 

@@ -1,9 +1,9 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 import '../../services/resultado_previsao_pdf_service.dart';
 
 class ResultadoPrevisaoScreen extends StatefulWidget {
@@ -22,6 +22,8 @@ class ResultadoPrevisaoScreen extends StatefulWidget {
 }
 
 class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
+  String? _pdfStatus;
+  bool _gerandoPdf = false;
     String _formatarNomeProduto(String nome) {
       switch (nome.toLowerCase().trim()) {
         case 'pao_frances':
@@ -40,19 +42,33 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
       }
     }
 
-    Future<String?> _baixarImagemComBoundingBox(String imageUrl) async {
+    void _setPdfStatus(String msg) {
+      if (!mounted) return;
+      setState(() {
+        _pdfStatus = msg;
+      });
+    }
+
+    Future<Uint8List?> _baixarImagemComBoundingBoxBytes(String imageUrl) async {
       try {
-        if (imageUrl.isEmpty) return null;
+        debugPrint('Tentando baixar imagem da URL: $imageUrl');
+
+        if (imageUrl.isEmpty) {
+          debugPrint('URL da imagem está vazia');
+          return null;
+        }
 
         final response = await http.get(Uri.parse(imageUrl));
+
+        debugPrint('Status code imagem: ${response.statusCode}');
+        debugPrint('Headers imagem: ${response.headers}');
+
         if (response.statusCode != 200) return null;
 
-        final dir = await getTemporaryDirectory();
-        final file = File('${dir.path}/imagem_resultado_box.jpg');
-        await file.writeAsBytes(response.bodyBytes, flush: true);
-
-        return file.path;
-      } catch (_) {
+        return response.bodyBytes;
+      } catch (e, st) {
+        debugPrint('Erro ao baixar imagem: $e');
+        debugPrintStack(stackTrace: st);
         return null;
       }
     }
@@ -71,15 +87,18 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
         ? Colors.white.withOpacity(0.07)
         : Colors.black.withOpacity(0.06);
 
-    final root = widget.resultado;
-    final data = ((root['data'] is Map<String, dynamic>)
-        ? root['data'] as Map<String, dynamic>
-        : root);
+    final root = Map<String, dynamic>.from(widget.resultado);
+
+    final rawData = root['data'];
+    final data = rawData is Map
+        ? Map<String, dynamic>.from(rawData)
+        : root;
 
     final success = root['success'] ?? true;
     final message = (root['message'] ?? '').toString();
     final quantidadeDetectada = (data['quantidade_detectada'] as num?)?.toInt() ?? 0;
-    final items = (data['items'] as List?) ?? [];
+    final itemsRaw = data['items'];
+    final items = itemsRaw is List ? itemsRaw : [];
 
  
     final imagemResultadoUrl =
@@ -106,43 +125,63 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
           padding: const EdgeInsets.only(right: 12),
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
-           onTap: () async {
+            onTap: () async {
+              if (_gerandoPdf) return;
+
+              setState(() {
+                _gerandoPdf = true;
+                _pdfStatus = 'Iniciando geração do PDF...';
+              });
+
               try {
-                final root = widget.resultado;
-                final data = ((root['data'] is Map<String, dynamic>)
-                    ? root['data'] as Map<String, dynamic>
-                    : root);
+                _setPdfStatus('Lendo dados do resultado...');
+
+                final root = Map<String, dynamic>.from(widget.resultado);
+
+                final rawData = root['data'];
+                final data = rawData is Map
+                    ? Map<String, dynamic>.from(rawData)
+                    : root;
+
+                _setPdfStatus('Obtendo URL da imagem processada...');
 
                 final imagemResultadoUrl =
                     (data['imagem_resultado_url'] ?? '').toString();
 
-                String imagemParaPdf = widget.imagemPath;
+                _setPdfStatus(
+                  imagemResultadoUrl.isEmpty
+                      ? 'URL da imagem está vazia. Gerando PDF sem imagem.'
+                      : 'Baixando imagem processada...',
+                );
 
-                final imagemBaixada =
-                    await _baixarImagemComBoundingBox(imagemResultadoUrl);
+                final imagemBytes =
+                    await _baixarImagemComBoundingBoxBytes(imagemResultadoUrl);
 
-                if (imagemBaixada != null && imagemBaixada.isNotEmpty) {
-                  imagemParaPdf = imagemBaixada;
-                }
+                _setPdfStatus(
+                  imagemBytes == null
+                      ? 'Imagem não foi baixada. Tentando gerar PDF mesmo assim...'
+                      : 'Imagem baixada com ${imagemBytes.length} bytes. Gerando PDF...',
+                );
 
                 await ResultadoPrevisaoPdfService.salvarPdf(
-                  imagemPath: imagemParaPdf,
+                  imagemPath: kIsWeb ? '' : widget.imagemPath,
+                  imagemBytes: imagemBytes,
                   resultado: widget.resultado,
                 );
 
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('PDF gerado com sucesso.'),
-                  ),
+                _setPdfStatus(
+                  kIsWeb
+                      ? 'PDF gerado. O navegador deve iniciar o download.'
+                      : 'PDF gerado com sucesso.',
                 );
-              } catch (e) {
-                if (!mounted) return;
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(
-                    content: Text('Erro ao gerar PDF: $e'),
-                  ),
-                );
+              } catch (e, st) {
+                _setPdfStatus('ERRO: $e\n\n$st');
+              } finally {
+                if (mounted) {
+                  setState(() {
+                    _gerandoPdf = false;
+                  });
+                }
               }
             },
             child: Container(
@@ -167,16 +206,16 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
               ),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
-                children: const [
-                  Icon(
-                    Icons.picture_as_pdf_rounded,
-                    color: Colors.white,
-                    size: 20,
-                  ),
-                  SizedBox(width: 8),
-                  Text(
-                    'Gerar PDF',
-                    style: TextStyle(
+                children: [
+                    Icon(
+                      _gerandoPdf ? Icons.hourglass_top_rounded : Icons.picture_as_pdf_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      _gerandoPdf ? 'Gerando...' : 'Gerar PDF',
+                      style: TextStyle(
                       color: Colors.white,
                       fontWeight: FontWeight.w800,
                       fontSize: 13.5,
@@ -213,6 +252,41 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
               cardColor: card,
               borderColor: border,
             ),
+
+            if (_pdfStatus != null) ...[
+              const SizedBox(height: 14),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: card,
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: border),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Status do PDF',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w800,
+                        color: text,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    SelectableText(
+                      _pdfStatus!,
+                      style: TextStyle(
+                        fontSize: 13.5,
+                        height: 1.45,
+                        color: muted,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
             const SizedBox(height: 18),
 
             _buildResumoRapido(
@@ -262,8 +336,8 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
                 ),
               ),
               const SizedBox(height: 14),
-              ...items.map((item) {
-                final map = Map<String, dynamic>.from(item as Map);
+              ...items.whereType<Map>().map((item) {
+                final map = Map<String, dynamic>.from(item);
                 final produtoRaw = (map['produto'] ?? 'Produto').toString();
                 final produto = _formatarNomeProduto(produtoRaw);
                 final estado = (map['estado'] ?? 'desconhecido').toString();
@@ -495,8 +569,6 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
   required Color cardColor,
   required Color borderColor,
 }) {
-  final fallbackFile = File(fallbackPath);
-
   Widget buildZoomableImage(Widget child) {
     return ClipRRect(
       borderRadius: BorderRadius.circular(22),
@@ -510,6 +582,12 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
           child: child,
         ),
       ),
+    );
+  }
+
+  Widget fallbackWidget() {
+    return const Center(
+      child: Text('Não foi possível carregar a imagem'),
     );
   }
 
@@ -539,29 +617,11 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
                     Image.network(
                       imageUrl,
                       fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) {
-                        return Image.file(
-                          fallbackFile,
-                          fit: BoxFit.contain,
-                          errorBuilder: (_, __, ___) {
-                            return const Center(
-                              child: Text('Não foi possível carregar a imagem'),
-                            );
-                          },
-                        );
-                      },
+                      errorBuilder: (_, __, ___) => fallbackWidget(),
                     ),
                   )
                 : buildZoomableImage(
-                    Image.file(
-                      fallbackFile,
-                      fit: BoxFit.contain,
-                      errorBuilder: (_, __, ___) {
-                        return const Center(
-                          child: Text('Não foi possível carregar a imagem'),
-                        );
-                      },
-                    ),
+                    fallbackWidget(),
                   ),
           ),
         ),
@@ -592,7 +652,7 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
   );
 }
 
-  Widget _buildResumoRapido({
+ Widget _buildResumoRapido({
     required Color card,
     required Color border,
     required Color text,
@@ -636,35 +696,56 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
             ),
           ),
           const SizedBox(height: 16),
-          Row(
-            children: [
-              Expanded(
-                child: _ResumoBox(
+
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isSmall = constraints.maxWidth < 400;
+
+              final cards = [
+                _ResumoBox(
                   icon: Icons.category_rounded,
                   titulo: 'Itens detectados',
                   valor: '$quantidadeDetectada',
                   color: Colors.blue,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _ResumoBox(
+                _ResumoBox(
                   icon: Icons.speed_rounded,
                   titulo: 'Confiança média',
                   valor: '${confiancaMedia.toStringAsFixed(0)}%',
                   color: Colors.deepPurple,
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _ResumoBox(
+                _ResumoBox(
                   icon: _estadoIcon(estadoGeral),
                   titulo: 'Status geral',
                   valor: estadoGeral.toUpperCase(),
                   color: _estadoColor(estadoGeral),
                 ),
-              ),
-            ],
+              ];
+
+              if (isSmall) {
+                return Column(
+                  children: [
+                    for (int i = 0; i < cards.length; i++) ...[
+                      SizedBox(
+                        width: double.infinity,
+                        child: cards[i],
+                      ),
+                      if (i != cards.length - 1) const SizedBox(height: 12),
+                    ],
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: cards[0]),
+                  const SizedBox(width: 12),
+                  Expanded(child: cards[1]),
+                  const SizedBox(width: 12),
+                  Expanded(child: cards[2]),
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -895,11 +976,12 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
     if (items.isEmpty) return 'desconhecido';
 
     final estados = items
-        .map((e) => (Map<String, dynamic>.from(e as Map)['estado'] ?? '')
-            .toString()
-            .toLowerCase()
-            .trim())
-        .toList();
+      .whereType<Map>()
+      .map((e) => (Map<String, dynamic>.from(e)['estado'] ?? '')
+          .toString()
+          .toLowerCase()
+          .trim())
+      .toList();
 
     if (estados.contains('vencido')) return 'vencido';
     if (estados.contains('alerta')) return 'alerta';
@@ -909,7 +991,9 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
 
   String _produtoPrincipal(List items) {
     if (items.isEmpty) return '';
-    final map = Map<String, dynamic>.from(items.first as Map);
+    final maps = items.whereType<Map>().toList();
+    if (maps.isEmpty) return '';
+    final map = Map<String, dynamic>.from(maps.first);
     final raw = (map['produto'] ?? '').toString();
     return _formatarNomeProduto(raw);
   }
@@ -920,8 +1004,8 @@ class _ResultadoPrevisaoScreenState extends State<ResultadoPrevisaoScreen> {
     double soma = 0;
     int count = 0;
 
-    for (final item in items) {
-      final map = Map<String, dynamic>.from(item as Map);
+    for (final item in items.whereType<Map>()) {
+      final map = Map<String, dynamic>.from(item);
       final produtoConf = _toDouble(map['produto_conf']);
       final estadoConf = _toDouble(map['estado_conf']);
 

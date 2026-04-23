@@ -342,10 +342,16 @@ static String _formatarCampoCustomPdf(Map<String, dynamic> obj) {
       return v.toStringAsFixed(casas).replaceAll('.', ',');
     }
 
-    String fmtVd(double v) {
-      if (v <= 0) return '0%';
-      return '${v.round()}%';
+    String fmtValorComUnidade(num v, String unidade, {int casas = 1}) {
+      return '${fmtNum(v, casas: casas)} $unidade';
     }
+
+    String fmtVd(double v, {bool mostrarTracoQuandoZero = false}) {
+        if (v <= 0) {
+          return mostrarTracoQuandoZero ? '-' : '0%';
+        }
+        return '${v.round()}%';
+      }
 
     pw.TextStyle titleStyle() => pw.TextStyle(
           color: PdfColors.black,
@@ -383,57 +389,65 @@ static String _formatarCampoCustomPdf(Map<String, dynamic> obj) {
     }
 
     pw.TableRow dataRow({
-      required String label,
-      required double valorPorcao,
-      required double vdReferencia,
-      bool indentado = false,
+    required String label,
+    required double valorPorcao,
+    required double vdReferencia,
+    required String unidade,
+    bool indentado = false,
+  }) {
+    final valor100 = calc100g(valorPorcao);
+    final vd = calcVD(valorPorcao, vdReferencia);
+
+    final labelLower = label.toLowerCase();
+    final mostrarTracoNoVd =
+        labelLower.contains('açúcares adicionados') ||
+        labelLower.contains('gorduras trans');
+
+    pw.Widget cell(
+      String text, {
+      pw.TextAlign align = pw.TextAlign.left,
+      pw.EdgeInsets? padding,
     }) {
-      final valor100 = calc100g(valorPorcao);
-      final vd = calcVD(valorPorcao, vdReferencia);
-
-      pw.Widget cell(
-        String text, {
-        pw.TextAlign align = pw.TextAlign.left,
-        pw.EdgeInsets? padding,
-        bool bold = false,
-      }) {
-        return pw.Padding(
-          padding: padding ??
-              const pw.EdgeInsets.symmetric(horizontal: 4, vertical: 2.5),
-          child: pw.Text(
-            text,
-            textAlign: align,
-            style: cellStyle(bold: bold),
-          ),
-        );
-      }
-
-      return pw.TableRow(
-        children: [
-          cell(
-            label,
-            padding: pw.EdgeInsets.fromLTRB(
-              indentado ? 12 : 4,
-              4,
-              4,
-              4,
+      return pw.Padding(
+        padding: padding ??
+            pw.EdgeInsets.symmetric(
+              horizontal: 4,
+              vertical: 2.5,
             ),
-          ),
-          cell(
-            fmtNum(valor100),
-            align: pw.TextAlign.center,
-          ),
-          cell(
-            fmtNum(valorPorcao),
-            align: pw.TextAlign.center,
-          ),
-          cell(
-            fmtVd(vd),
-            align: pw.TextAlign.center,
-          ),
-        ],
+        child: pw.Text(
+          text,
+          textAlign: align,
+          style: cellStyle(),
+        ),
       );
     }
+
+    return pw.TableRow(
+      children: [
+        cell(
+          label,
+          padding: pw.EdgeInsets.fromLTRB(
+            indentado ? 12 : 4,
+            4,
+            4,
+            4,
+          ),
+        ),
+        cell(
+          fmtValorComUnidade(valor100, unidade),
+          align: pw.TextAlign.center,
+        ),
+        cell(
+          fmtValorComUnidade(valorPorcao, unidade),
+          align: pw.TextAlign.center,
+        ),
+        cell(
+          fmtVd(vd, mostrarTracoQuandoZero: mostrarTracoNoVd),
+          align: pw.TextAlign.center,
+        ),
+      ],
+    );
+  }
 
     return pw.Container(
       margin: const pw.EdgeInsets.only(top: 14),
@@ -465,14 +479,14 @@ static String _formatarCampoCustomPdf(Map<String, dynamic> obj) {
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  'Porções por embalagem: ${t.porcoesPorEmbalagem}',
+                  'Porção: $porcaoLabel ($medidaCaseiraCompleta)',
                   style: infoStyle(),
                 ),
                 pw.SizedBox(height: 2),
                 pw.Text(
-                  'Porção: $porcaoLabel ($medidaCaseiraCompleta)',
+                  'Porções por embalagem: ${t.porcoesPorEmbalagem}',
                   style: infoStyle(),
-                ),
+                ),                
               ],
             ),
           ),
@@ -529,58 +543,68 @@ static String _formatarCampoCustomPdf(Map<String, dynamic> obj) {
             },
             children: [
               dataRow(
-                label: 'Valor energético (kcal)',
+                label: 'Valor energético',
                 valorPorcao: t.valorEnergetico,
                 vdReferencia: 2000,
+                unidade: 'kcal',
               ),
               dataRow(
-                label: 'Carboidratos totais (g)',
+                label: 'Carboidratos totais',
                 valorPorcao: t.carboidratos,
                 vdReferencia: 300,
+                unidade: 'g',
               ),
               dataRow(
-                label: 'Açúcares totais (g)',
+                label: 'Açúcares totais',
                 valorPorcao: t.acucaresTotais,
                 vdReferencia: 50,
+                unidade: 'g',
                 indentado: true,
               ),
               dataRow(
-                label: 'Açúcares adicionados (g)',
+                label: 'Açúcares adicionados',
                 valorPorcao: t.acucaresAdicionados,
                 vdReferencia: 50,
+                unidade: 'g',
                 indentado: true,
               ),
               dataRow(
-                label: 'Proteínas (g)',
+                label: 'Proteínas',
                 valorPorcao: t.proteinas,
                 vdReferencia: 50,
+                unidade: 'g',
               ),
               dataRow(
-                label: 'Gorduras totais (g)',
+                label: 'Gorduras totais',
                 valorPorcao: t.gordurasTotais,
                 vdReferencia: 55,
+                unidade: 'g',
               ),
               dataRow(
-                label: 'Gorduras saturadas (g)',
+                label: 'Gorduras saturadas',
                 valorPorcao: t.gordurasSaturadas,
                 vdReferencia: 22,
+                unidade: 'g',
                 indentado: true,
               ),
               dataRow(
-                label: 'Gorduras trans (g)',
+                label: 'Gorduras trans',
                 valorPorcao: t.gordurasTrans,
                 vdReferencia: 2,
+                unidade: 'g',
                 indentado: true,
               ),
               dataRow(
-                label: 'Fibras alimentares (g)',
+                label: 'Fibras alimentares',
                 valorPorcao: t.fibraAlimentar,
                 vdReferencia: 25,
+                unidade: 'g',
               ),
               dataRow(
-                label: 'Sódio (mg)',
+                label: 'Sódio',
                 valorPorcao: t.sodio,
                 vdReferencia: 2000,
+                unidade: 'mg',
               ),
             ],
           ),
@@ -593,7 +617,7 @@ static String _formatarCampoCustomPdf(Map<String, dynamic> obj) {
             ),
             padding: const pw.EdgeInsets.fromLTRB(8, 6, 8, 8),
             child: pw.Text(
-              '* Percentual de valores diários fornecidos pela porção.',
+              '* Percentual de valores diários fornecidos por porção, com base em uma dieta de 2000 kcal. Seus valores podem ser diferentes dependendo de suas necessidades energéticas.',
               style: pw.TextStyle(
                 color: PdfColors.black,
                 fontSize: 9.8,

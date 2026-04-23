@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/local/repos/etiquetas_local_repo.dart';
 import '../../../models/tipo_etiqueta_model.dart';
 import '../../../models/etiqueta_model.dart';
+import '../../../providers/gerar_etiqueta_provider.dart';
 import './active_chips_row.dart';
 import './filters_bar_pretty.dart';
 import '../../../widgets/estoque_footer.dart';
@@ -517,10 +517,10 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.read<EtiquetasLocalRepo>();
+    final etiquetasProv = context.read<GerarEtiquetaProvider>();
 
     return FutureBuilder<List<EtiquetaModel>>(
-      future: repo.listByPeriodo(
+      future: etiquetasProv.listByPeriodo(
         uid: widget.uid,
         inicio: DateTime(2000, 1, 1),
         fim: DateTime(2100, 1, 1),

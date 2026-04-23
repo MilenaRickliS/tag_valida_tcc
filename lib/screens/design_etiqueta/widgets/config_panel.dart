@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import '../../../models/design_etiqueta_model.dart';
 import '../../../providers/design_etiqueta_provider.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../providers/tipos_etiqueta_local_provider.dart';
+import '../../../providers/tipos_etiqueta_provider.dart';
 import './settings_card.dart';
 import './campo_config_tile.dart';
 import './switch_tile.dart';
@@ -204,7 +204,7 @@ Widget buildConfigPanel({
 
                         final tipo = context.read<DesignEtiquetaProvider>().tipoSelecionado;
                         if (tipo != null) {
-                          await context.read<TiposEtiquetaLocalProvider>().updateMedidas(
+                          await context.read<TiposEtiquetaProvider>().updateMedidas(
                             uid: context.read<AuthProvider>().user!.uid,
                             tipoId: tipo.id,
                             larguraMm: larguraFinal,

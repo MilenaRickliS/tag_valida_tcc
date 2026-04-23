@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
-import '../../providers/tipos_etiqueta_local_provider.dart';
+import '../../providers/tipos_etiqueta_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/tipo_etiqueta_model.dart';
 import '../../widgets/menu.dart';
@@ -75,14 +75,19 @@ class TiposEtiquetaScreen extends StatefulWidget {
 class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
   bool _loaded = false;
 
-  @override
+ @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_loaded) return;
 
     final uid = context.read<AuthProvider>().user?.uid;
     if (uid != null) {
-      context.read<TiposEtiquetaLocalProvider>().fetch(uid);
+      _loaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<TiposEtiquetaProvider>().fetch(uid);
+      });
+    } else {
       _loaded = true;
     }
   }
@@ -119,7 +124,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
       );
     }
 
-    final prov = context.watch<TiposEtiquetaLocalProvider>();
+    final prov = context.watch<TiposEtiquetaProvider>();
 
     return Scaffold(
       backgroundColor: bg,
@@ -285,7 +290,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
     );
 
     if (ok == true && context.mounted) {
-      await context.read<TiposEtiquetaLocalProvider>().delete(uid, t.id);
+      await context.read<TiposEtiquetaProvider>().delete(uid, t.id);
     }
   }
 
@@ -695,7 +700,7 @@ class _TiposEtiquetaScreenState extends State<TiposEtiquetaScreen> {
                     tipoQr: tipoQrSelecionado, 
                   );
 
-                  final prov = context.read<TiposEtiquetaLocalProvider>();
+                  final prov = context.read<TiposEtiquetaProvider>();
 
                   if (isEdit) {
                     await prov.update(uid, novoTipo);

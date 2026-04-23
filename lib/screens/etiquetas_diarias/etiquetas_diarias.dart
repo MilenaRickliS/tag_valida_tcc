@@ -38,14 +38,19 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
     super.dispose();
   }
 
-  @override
+ @override
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (_loaded) return;
 
     final uid = context.read<AuthProvider>().user?.uid;
     if (uid != null) {
-      context.read<TemplatesProvider>().fetch(uid);
+      _loaded = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<TemplatesProvider>().fetch(uid);
+      });
+    } else {
       _loaded = true;
     }
   }

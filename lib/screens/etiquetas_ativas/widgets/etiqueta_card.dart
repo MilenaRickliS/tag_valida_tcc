@@ -2,9 +2,9 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:tag_valida/providers/gerar_etiqueta_provider.dart';
 import '../../../models/etiqueta_model.dart';
-import '../../../providers/estoque_mov_local_provider.dart';
-import '../../../data/local/repos/etiquetas_local_repo.dart';
+import '../../../providers/estoque_mov_provider.dart';
 import '../../etiqueta_detalhes/etiqueta_detalhes.dart';
 import '../../criar_etiqueta/criar_etiqueta.dart';
 import './mini_pill.dart';
@@ -132,7 +132,7 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
         ? const Color(0xFFD4AF37).withOpacity(0.12)
         : Colors.black.withOpacity(0.08);
     final neutralIconColor = isDark ? const Color(0xFFD4AF37) : Colors.black87;
-    final repo = context.read<EtiquetasLocalRepo>();
+    final etiquetasProv = context.read<GerarEtiquetaProvider>();
 
     final produto = e.produtoNome;
     final categoria = e.categoriaNome;
@@ -292,9 +292,9 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
               if (!ok) return;
 
               // ignore: use_build_context_synchronously
-              final mov = context.read<EstoqueMovLocalProvider>();
+              final mov = context.read<EstoqueMovProvider>();
 
-              final before = await repo.getById(uid: uid, id: e.id);
+              final before = await etiquetasProv.getById(uid: uid, id: e.id);
               if (before == null) return;
 
               final st = (before.statusEstoque.trim().isEmpty)
@@ -320,7 +320,7 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
                 motivo: "Exclusão suave (tela de ativas)",
               );
 
-              await repo.deleteSoft(uid, before.id);
+              await etiquetasProv.deleteSoft(uid, before.id);
 
               if (context.mounted) {
                 ScaffoldMessenger.of(context).showSnackBar(

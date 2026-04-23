@@ -7,8 +7,8 @@ import './pill.dart';
 import './mini_badge.dart';
 import '../../etiqueta_detalhes/etiqueta_detalhes.dart';
 import '../../../providers/auth_provider.dart';
-import '../../../providers/estoque_mov_local_provider.dart';
-import '../../../providers/gerar_etiqueta_local_provider.dart';
+import '../../../providers/estoque_mov_provider.dart';
+import '../../../providers/gerar_etiqueta_provider.dart';
 import '../../../models/estoque_mov_model.dart';
 
 class EtiquetaFinalizadaCard extends StatelessWidget {
@@ -100,8 +100,8 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
 
   Future<void> _reabrirEtiqueta(BuildContext context, EtiquetaModel etiqueta) async {
     final authProvider = context.read<AuthProvider>();
-    final gerarEtiquetaProvider = context.read<GerarEtiquetaLocalProvider>();
-    final estoqueMovProvider = context.read<EstoqueMovLocalProvider>();
+    final gerarEtiquetaProvider = context.read<GerarEtiquetaProvider>();
+    final estoqueMovProvider = context.read<EstoqueMovProvider>();
     final messenger = ScaffoldMessenger.of(context);
 
     final authUid = authProvider.user?.uid;

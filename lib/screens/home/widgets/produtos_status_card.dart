@@ -22,6 +22,78 @@ class ProdutosStatusCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    if (loading) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: const LinearGradient(
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+            colors: [
+              Color(0xFFE3F2FD),
+              Color(0xFFBBDEFB),
+              Color(0xFF90CAF9),
+            ],
+          ),
+          border: Border.all(color: Colors.black.withOpacity(0.08)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.14),
+              blurRadius: 18,
+              offset: const Offset(0, 10),
+            ),
+          ],
+        ),
+        child: Column(
+          children: [
+            const LinearProgressIndicator(minHeight: 3),
+            const SizedBox(height: 14),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.22),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.sync_rounded,
+                    size: 26,
+                    color: Color(0xFF1565C0),
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Flexible(
+                  child: Text(
+                    "Carregando status dos produtos",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: titleSize.clamp(22, 28),
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF1565C0),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 12),
+            Text(
+              "Aguarde enquanto os indicadores são atualizados.",
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: subtitleSize,
+                color: Colors.black.withOpacity(0.60),
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
     final hasVencidas = qtdVencidas > 0;
     final hasAlerta = qtdAlerta > 0;
 

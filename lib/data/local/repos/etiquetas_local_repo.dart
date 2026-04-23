@@ -380,6 +380,7 @@ class EtiquetasLocalRepo {
       );
     });
   }
+  
 
   Future<void> ajustarQuantidade({
     required String uid,

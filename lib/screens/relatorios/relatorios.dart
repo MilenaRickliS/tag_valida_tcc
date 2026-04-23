@@ -9,7 +9,7 @@ import 'package:printing/printing.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/rendering.dart';
 import 'package:pdf/pdf.dart';
-import '../../providers/estoque_mov_local_provider.dart';
+import '../../providers/estoque_mov_provider.dart';
 import '../../models/estoque_mov_model.dart';
 import '../../widgets/menu.dart';
 import './widgets/chart_only_bar.dart';
@@ -73,7 +73,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
 
-    final provider = context.read<EstoqueMovLocalProvider>();
+    final provider = context.read<EstoqueMovProvider>();
     final list = await provider.listAll(uid: widget.uid, limit: 2000);
 
     list.sort((a, b) => b.createdAt.compareTo(a.createdAt));

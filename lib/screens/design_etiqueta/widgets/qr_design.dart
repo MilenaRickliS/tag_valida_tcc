@@ -1,9 +1,10 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:qr_flutter/qr_flutter.dart';
 import '../../../models/design_etiqueta_model.dart';
 
- Widget buildQrPreviewNovo(DesignEtiquetaModel config) {
+Widget buildQrPreviewNovo(DesignEtiquetaModel config) {
   final largura = config.larguraMm;
   final size = largura >= 100 ? 108.0 : 84.0;
 
@@ -26,6 +27,23 @@ import '../../../models/design_etiqueta_model.dart';
           size: 72,
         ),
       ),
+    ),
+  );
+}
+
+Widget buildQrPreviewNovoComData(String qrData, {double size = 84}) {
+  return Container(
+    width: size,
+    height: size,
+    padding: const EdgeInsets.all(6),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(10),
+    ),
+    child: QrImageView(
+      data: qrData,
+      size: size - 12,
+      backgroundColor: Colors.white,
     ),
   );
 }

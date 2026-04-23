@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../providers/setores_local_provider.dart';
+import '../../providers/setores_provider.dart';
 import '../../models/setor_model.dart';
 import '../../widgets/menu.dart';
 import './widgets/setores_list.dart';
@@ -116,7 +116,7 @@ class _SetoresScreenState extends State<SetoresScreen> {
       _loaded = true;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        context.read<SetoresLocalProvider>().fetch(uid);
+        context.read<SetoresProvider>().fetch(uid);
       });
     }
   }
@@ -127,7 +127,7 @@ class _SetoresScreenState extends State<SetoresScreen> {
     final compact = w < 835;
 
     final uid = context.watch<AuthProvider>().user?.uid;
-    final prov = context.watch<SetoresLocalProvider>();
+    final prov = context.watch<SetoresProvider>();
 
     final bg = _bg(context);
     final text = _text(context);
@@ -315,7 +315,7 @@ class _SetoresScreenState extends State<SetoresScreen> {
     );
 
     if (ok == true && context.mounted) {
-      await context.read<SetoresLocalProvider>().softDelete(uid, s.id);
+      await context.read<SetoresProvider>().softDelete(uid, s.id);
     }
   }
 
@@ -481,7 +481,7 @@ class _SetoresScreenState extends State<SetoresScreen> {
                 return;
               }
 
-              final prov = context.read<SetoresLocalProvider>();
+              final prov = context.read<SetoresProvider>();
 
               if (isEdit) {
                 await prov.update(

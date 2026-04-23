@@ -3,12 +3,10 @@
 import 'package:flutter/material.dart';
 import 'package:mobile_scanner/mobile_scanner.dart';
 import 'package:provider/provider.dart';
-
-import '../../../data/local/repos/etiquetas_local_repo.dart';
-import '../../../data/local/repos/estoque_mov_local_repo.dart';
 import '../../../models/etiqueta_model.dart';
-import '../../../services/etiqueta_firebase_service.dart';
 import '../../../utils/etiqueta_qr.dart';
+import '../../../providers/gerar_etiqueta_provider.dart';
+import '../../../providers/estoque_mov_provider.dart';
 import 'movimentar_estoque_modal.dart';
 import 'estoque_mov_service.dart';
 
@@ -30,11 +28,9 @@ class _ScannerMovimentacaoScreenState extends State<ScannerMovimentacaoScreen> {
     required String uid,
     required String etiquetaId,
   }) async {
-    final repo = context.read<EtiquetasLocalRepo>();
-    final fb = EtiquetaFirebaseService();
+    final repo = context.read<GerarEtiquetaProvider>();
 
     EtiquetaModel? e = await repo.getById(uid: uid, id: etiquetaId);
-    e ??= await fb.getById(uid: uid, id: etiquetaId);
     return e;
   }
 
@@ -86,12 +82,12 @@ class _ScannerMovimentacaoScreenState extends State<ScannerMovimentacaoScreen> {
       );
 
       if (result != null) {
-        final etiquetasRepo = context.read<EtiquetasLocalRepo>();
-        final movRepo = context.read<EstoqueMovLocalRepo>();
+        final etiquetasProv = context.read<GerarEtiquetaProvider>();
+        final movProv = context.read<EstoqueMovProvider>();
 
         final service = EstoqueMovService(
-          etiquetasRepo: etiquetasRepo,
-          movRepo: movRepo,
+          etiquetasRepo: etiquetasProv,
+          movRepo: movProv,
         );
 
         await service.salvarMovimentacao(

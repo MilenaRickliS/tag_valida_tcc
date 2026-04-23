@@ -2,7 +2,8 @@
 // ignore_for_file: use_build_context_synchronously
 
 import 'dart:convert';
-import 'dart:io';
+import 'dart:typed_data';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
@@ -32,63 +33,96 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
   bool _loading = false;
   
 
-  Future<void> enviarParaApi(File file) async {
-    setState(() => _loading = true);
-    const baseUrl = 'https://tag-valida-tcc.onrender.com';
+  Future<void> enviarParaApi({
+  required XFile image,
+}) async {
+  setState(() => _loading = true);
+  const baseUrl = 'https://tag-valida-tcc.onrender.com';
 
-    try {
-      final request = http.MultipartRequest(
-        'POST',
-        Uri.parse('$baseUrl/analisar'),
-      );
+  try {
+    final request = http.MultipartRequest(
+      'POST',
+      Uri.parse('$baseUrl/analisar'),
+    );
+
+    if (kIsWeb) {
+      final Uint8List bytes = await image.readAsBytes();
 
       request.files.add(
-        await http.MultipartFile.fromPath('file', file.path),
+        http.MultipartFile.fromBytes(
+          'file',
+          bytes,
+          filename: image.name.isNotEmpty ? image.name : 'imagem.jpg',
+        ),
       );
+    } else {
+      request.files.add(
+        await http.MultipartFile.fromPath('file', image.path),
+      );
+    }
 
-      final streamedResponse = await request.send();
-      final response = await http.Response.fromStream(streamedResponse);
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
 
-      if (response.statusCode == 200) {
-        Map<String, dynamic> data = {};
+    if (response.statusCode == 200) {
+      Map<String, dynamic> data = {};
 
-        try {
-          data = jsonDecode(response.body) as Map<String, dynamic>;
-        } catch (_) {
+      try {
+        final decoded = jsonDecode(response.body);
+        if (decoded is Map) {
+          data = Map<String, dynamic>.from(decoded);
+        } else {
           data = {
             'mensagem': 'Análise concluída com sucesso',
             'raw': response.body,
           };
         }
+      } catch (_) {
+        data = {
+          'mensagem': 'Análise concluída com sucesso',
+          'raw': response.body,
+        };
+      }
 
-        if (!mounted) return;
+      if (!mounted) return;
 
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (_) => ResultadoPrevisaoScreen(
-              imagemPath: file.path,
-              resultado: data,
-            ),
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => ResultadoPrevisaoScreen(
+            imagemPath: kIsWeb ? '' : image.path,
+            resultado: data,
           ),
-        );
-      } else {
-        _tratarErroCritico(
-          'Não foi possível analisar a imagem.\nTente novamente mais tarde.',
-        );
-      }
-    } catch (e) {
-      _tratarErroCritico(
-        'Erro ao conectar com o servidor.\nVerifique sua internet.',
+        ),
       );
-    } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+    } else {
+      _tratarErroCritico(
+        'Não foi possível analisar a imagem.\n'
+        'Status: ${response.statusCode}\n'
+        'Resposta: ${response.body}',
+      );
+    }
+  } catch (e) {
+    _tratarErroCritico(
+      'Erro ao conectar com o servidor.\n'
+      'Detalhe: $e',
+    );
+  } finally {
+    if (mounted) {
+      setState(() => _loading = false);
     }
   }
+}
 
   Future<void> _abrirCamera() async {
+    if (kIsWeb) {
+      _tratarErroCritico(
+        'A câmera direta pode não estar disponível neste navegador.\n'
+        'Use a opção "Escolher da galeria".',
+      );
+      return;
+    }
+
     final XFile? image = await _picker.pickImage(
       source: ImageSource.camera,
       imageQuality: 80,
@@ -96,8 +130,7 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
 
     if (image == null) return;
 
-    final file = File(image.path);
-    await enviarParaApi(file);
+    await enviarParaApi(image: image);
   }
 
   Future<void> _abrirGaleria() async {
@@ -108,11 +141,15 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
 
     if (image == null) return;
 
-    final file = File(image.path);
-    await enviarParaApi(file);
+    await enviarParaApi(image: image);
   }
 
   void _abrirOpcoes() {
+    if (kIsWeb) {
+      _abrirGaleria();
+      return;
+    }
+
     showModalBottomSheet(
       context: context,
       shape: const RoundedRectangleBorder(

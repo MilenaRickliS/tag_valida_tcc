@@ -60,6 +60,7 @@ class EtiquetaModel {
   }) {
     final c = (current ?? "").trim().toLowerCase();
     if (c == "cancelado") return "cancelado";
+    if (c == "vendido") return "vendido";
     if (restante <= 0) return "vendido";
     return "ativo";
   }

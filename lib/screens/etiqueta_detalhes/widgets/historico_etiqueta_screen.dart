@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 
-import '../../../data/local/repos/estoque_mov_local_repo.dart';
+import '../../../providers/estoque_mov_provider.dart';
 import '../../../models/estoque_mov_model.dart';
 
 class HistoricoEtiquetaScreen extends StatelessWidget {
@@ -21,7 +21,7 @@ class HistoricoEtiquetaScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.read<EstoqueMovLocalRepo>();
+    final repo = context.read<EstoqueMovProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final bg = isDark ? const Color(0xFF0F0F0F) : const Color(0xFFFDF7ED);
     final card = isDark ? const Color(0xFF1E1E1E) : Colors.white;
@@ -46,13 +46,15 @@ class HistoricoEtiquetaScreen extends StatelessWidget {
           }
 
           if (snap.hasError) {
-            return Center(
-              child: Text(
-                "Erro ao carregar histórico.",
-                style: TextStyle(color: text),
-              ),
-            );
-          }
+              debugPrint('ERRO histórico etiqueta: ${snap.error}');
+              return Center(
+                child: Text(
+                  "Erro ao carregar histórico: ${snap.error}",
+                  style: TextStyle(color: text),
+                  textAlign: TextAlign.center,
+                ),
+              );
+            }
 
           final itens = snap.data ?? [];
 

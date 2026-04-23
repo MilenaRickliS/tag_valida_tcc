@@ -10,7 +10,8 @@ class CategoriaSection extends StatelessWidget {
   final List<EtiquetaModel> etiquetas;
   final String uid;
 
-  const CategoriaSection({super.key, 
+  const CategoriaSection({
+    super.key,
     required this.categoriaNome,
     required this.etiquetas,
     required this.uid,
@@ -40,20 +41,50 @@ class CategoriaSection extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         iconColor: isDark ? const Color(0xFFD4AF37) : null,
         collapsedIconColor: isDark ? const Color(0xFFD4AF37) : null,
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                categoriaNome,
-                style: TextStyle(
-                  fontSize: 14.5,
-                  fontWeight: FontWeight.w900,
-                  color: text,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 600;
+
+            if (isSmall) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    categoriaNome,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w900,
+                      color: text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: CustomBadge(
+                      text: "Mais próximo a vencer: ${_fmt(minCat)}",
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    categoriaNome,
+                    style: TextStyle(
+                      fontSize: 14.5,
+                      fontWeight: FontWeight.w900,
+                      color: text,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            CustomBadge(text: "Mais próximo a vencer: ${_fmt(minCat)}"),
-          ],
+                const SizedBox(width: 10),
+                CustomBadge(text: "Mais próximo a vencer: ${_fmt(minCat)}"),
+              ],
+            );
+          },
         ),
         children: [
           for (final e in etiquetas) ...[

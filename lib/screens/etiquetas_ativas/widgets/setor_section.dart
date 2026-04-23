@@ -11,7 +11,8 @@ class SetorSection extends StatelessWidget {
   final DateTime Function(List<EtiquetaModel>) minValidadeOf;
   final String uid;
 
-  const SetorSection({super.key, 
+  const SetorSection({
+    super.key,
     required this.setorNome,
     required this.categoriasMap,
     required this.minValidadeOf,
@@ -45,20 +46,50 @@ class SetorSection extends StatelessWidget {
         childrenPadding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
         iconColor: isDark ? const Color(0xFFD4AF37) : null,
         collapsedIconColor: isDark ? const Color(0xFFD4AF37) : null,
-        title: Row(
-          children: [
-            Expanded(
-              child: Text(
-                setorNome,
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w900,
-                  color: text,
+        title: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 600;
+
+            if (isSmall) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    setorNome,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: text,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: CustomBadge(
+                      text: "Mais próximo a vencer: ${_fmt(minSetor)}",
+                    ),
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    setorNome,
+                    style: TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w900,
+                      color: text,
+                    ),
+                  ),
                 ),
-              ),
-            ),
-            CustomBadge(text: "Mais próximo a vencer: ${_fmt(minSetor)}"),
-          ],
+                const SizedBox(width: 10),
+                CustomBadge(text: "Mais próximo a vencer: ${_fmt(minSetor)}"),
+              ],
+            );
+          },
         ),
         children: [
           for (final catEntry in categoriasOrdenadas) ...[

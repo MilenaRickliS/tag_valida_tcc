@@ -27,50 +27,56 @@ class EstoqueFooter extends StatelessWidget {
     required Color bg,
     required Color fg,
     required Color border,
+    bool expand = true,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-        decoration: BoxDecoration(
-          color: bg,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: border),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
-              blurRadius: 14,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Row(
-          children: [
-            Icon(icon, color: fg, size: 18),
-            const SizedBox(width: 8),
-            Expanded(
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  color: fg.withOpacity(0.90),
-                  fontSize: 12.5,
-                ),
-              ),
-            ),
-            Text(
-              _fmt(value),
+    final child = Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: border),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(isDark ? 0.18 : 0.05),
+            blurRadius: 14,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: fg, size: 18),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              label,
               style: TextStyle(
                 fontWeight: FontWeight.w900,
-                color: fg,
-                fontSize: 14,
+                color: fg.withOpacity(0.90),
+                fontSize: 12.5,
               ),
             ),
-          ],
-        ),
+          ),
+          Text(
+            _fmt(value),
+            style: TextStyle(
+              fontWeight: FontWeight.w900,
+              color: fg,
+              fontSize: 14,
+            ),
+          ),
+        ],
       ),
     );
+
+    if (expand) {
+      return Expanded(child: child);
+    }
+
+    return child;
   }
 
   @override
@@ -94,50 +100,111 @@ class EstoqueFooter extends StatelessWidget {
           borderRadius: BorderRadius.circular(18),
           border: Border.all(color: containerBorder),
         ),
-        child: Row(
-          children: [
-            _pill(
-              context: context,
-              icon: Icons.input_rounded,
-              label: "Entradas",
-              value: entradas,
-              bg: isDark
-                  ? Colors.green.withOpacity(0.14)
-                  : Colors.green.withOpacity(0.08),
-              fg: isDark ? Colors.greenAccent.shade200 : Colors.green.shade800,
-              border: isDark
-                  ? Colors.greenAccent.withOpacity(0.22)
-                  : Colors.green.withOpacity(0.20),
-            ),
-            const SizedBox(width: 10),
-            _pill(
-              context: context,
-              icon: Icons.output_rounded,
-              label: "Saídas",
-              value: saidas,
-              bg: isDark
-                  ? Colors.orange.withOpacity(0.14)
-                  : Colors.orange.withOpacity(0.08),
-              fg: isDark ? Colors.orangeAccent.shade100 : Colors.orange.shade800,
-              border: isDark
-                  ? Colors.orangeAccent.withOpacity(0.22)
-                  : Colors.orange.withOpacity(0.20),
-            ),
-            const SizedBox(width: 10),
-            _pill(
-              context: context,
-              icon: Icons.inventory_2_outlined,
-              label: "Total em estoque",
-              value: total,
-              bg: isDark
-                  ? const Color(0xFFD4AF37).withOpacity(0.12)
-                  : Colors.black.withOpacity(0.04),
-              fg: isDark ? const Color(0xFFD4AF37) : Colors.black87,
-              border: isDark
-                  ? const Color(0xFFD4AF37).withOpacity(0.22)
-                  : Colors.black.withOpacity(0.12),
-            ),
-          ],
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isSmall = constraints.maxWidth < 700;
+
+            if (isSmall) {
+              return Column(
+                children: [
+                  _pill(
+                    context: context,
+                    icon: Icons.input_rounded,
+                    label: "Entradas",
+                    value: entradas,
+                    bg: isDark
+                        ? Colors.green.withOpacity(0.14)
+                        : Colors.green.withOpacity(0.08),
+                    fg: isDark
+                        ? Colors.greenAccent.shade200
+                        : Colors.green.shade800,
+                    border: isDark
+                        ? Colors.greenAccent.withOpacity(0.22)
+                        : Colors.green.withOpacity(0.20),
+                    expand: false,
+                  ),
+                  const SizedBox(height: 10),
+                  _pill(
+                    context: context,
+                    icon: Icons.output_rounded,
+                    label: "Saídas",
+                    value: saidas,
+                    bg: isDark
+                        ? Colors.orange.withOpacity(0.14)
+                        : Colors.orange.withOpacity(0.08),
+                    fg: isDark
+                        ? Colors.orangeAccent.shade100
+                        : Colors.orange.shade800,
+                    border: isDark
+                        ? Colors.orangeAccent.withOpacity(0.22)
+                        : Colors.orange.withOpacity(0.20),
+                    expand: false,
+                  ),
+                  const SizedBox(height: 10),
+                  _pill(
+                    context: context,
+                    icon: Icons.inventory_2_outlined,
+                    label: "Total em estoque",
+                    value: total,
+                    bg: isDark
+                        ? const Color(0xFFD4AF37).withOpacity(0.12)
+                        : Colors.black.withOpacity(0.04),
+                    fg: isDark ? const Color(0xFFD4AF37) : Colors.black87,
+                    border: isDark
+                        ? const Color(0xFFD4AF37).withOpacity(0.22)
+                        : Colors.black.withOpacity(0.12),
+                    expand: false,
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                _pill(
+                  context: context,
+                  icon: Icons.input_rounded,
+                  label: "Entradas",
+                  value: entradas,
+                  bg: isDark
+                      ? Colors.green.withOpacity(0.14)
+                      : Colors.green.withOpacity(0.08),
+                  fg: isDark ? Colors.greenAccent.shade200 : Colors.green.shade800,
+                  border: isDark
+                      ? Colors.greenAccent.withOpacity(0.22)
+                      : Colors.green.withOpacity(0.20),
+                ),
+                const SizedBox(width: 10),
+                _pill(
+                  context: context,
+                  icon: Icons.output_rounded,
+                  label: "Saídas",
+                  value: saidas,
+                  bg: isDark
+                      ? Colors.orange.withOpacity(0.14)
+                      : Colors.orange.withOpacity(0.08),
+                  fg: isDark ? Colors.orangeAccent.shade100 : Colors.orange.shade800,
+                  border: isDark
+                      ? Colors.orangeAccent.withOpacity(0.22)
+                      : Colors.orange.withOpacity(0.20),
+                ),
+                const SizedBox(width: 10),
+                _pill(
+                  context: context,
+                  icon: Icons.inventory_2_outlined,
+                  label: "Total em estoque",
+                  value: total,
+                  bg: isDark
+                      ? const Color(0xFFD4AF37).withOpacity(0.12)
+                      : Colors.black.withOpacity(0.04),
+                  fg: isDark ? const Color(0xFFD4AF37) : Colors.black87,
+                  border: isDark
+                      ? const Color(0xFFD4AF37).withOpacity(0.22)
+                      : Colors.black.withOpacity(0.12),
+                ),
+              ],
+            );
+          },
         ),
       ),
     );

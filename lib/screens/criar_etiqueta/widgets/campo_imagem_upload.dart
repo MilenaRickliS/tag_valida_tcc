@@ -109,7 +109,7 @@ class CampoImagemUploadCard extends StatelessWidget {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  icon: Icon(hasImage ? Icons.refresh : Icons.upload),
+                  icon: Icon(hasImage ? Icons.refresh : Icons.upload, color: Colors.white,),
                   label: Text(hasImage ? 'Trocar imagem' : 'Fazer upload'),
                 ),
               ),

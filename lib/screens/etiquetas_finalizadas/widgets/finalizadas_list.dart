@@ -2,7 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../../../data/local/repos/etiquetas_local_repo.dart';
+import '../../../providers/gerar_etiqueta_provider.dart';
 import '../../../models/etiqueta_model.dart';
 import './empty_box.dart';
 import './etiqueta_finalizada_card.dart';
@@ -20,10 +20,10 @@ class FinalizadasList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.read<EtiquetasLocalRepo>();
+    final etiquetasProv = context.read<GerarEtiquetaProvider>();
 
     return FutureBuilder<List<EtiquetaModel>>(
-      future: repo.listByPeriodo(
+      future: etiquetasProv.listByPeriodo(
         uid: uid,
         inicio: DateTime(2000, 1, 1),
         fim: DateTime(2100, 1, 1),

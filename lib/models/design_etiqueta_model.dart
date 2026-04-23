@@ -16,6 +16,7 @@ class CampoDesignEtiquetaModel {
   final CampoDesignTipo tipo;
   final String? labelImpresso;
   final bool obrigatorio;
+  final String? valorExemplo;
 
   bool visivel;
   double fontSize;
@@ -34,6 +35,7 @@ class CampoDesignEtiquetaModel {
     required this.align,
     required this.ordem,
     this.labelImpresso,
+    this.valorExemplo,
   });
 
   factory CampoDesignEtiquetaModel.fromMap(Map<String, dynamic> map) {
@@ -51,6 +53,7 @@ class CampoDesignEtiquetaModel {
       isBold: map['isBold'] ?? false,
       align: _alignFromString(map['align']),
       ordem: map['ordem'] ?? 0,
+      valorExemplo: map['valorExemplo'],
     );
   }
 
@@ -66,6 +69,7 @@ class CampoDesignEtiquetaModel {
       'isBold': isBold,
       'align': align.name,
       'ordem': ordem,
+      'valorExemplo': valorExemplo,
     };
   }
 
@@ -80,6 +84,7 @@ class CampoDesignEtiquetaModel {
     bool? isBold,
     TextAlign? align,
     int? ordem,
+    String? valorExemplo,
   }) {
     return CampoDesignEtiquetaModel(
       id: id ?? this.id,
@@ -92,6 +97,7 @@ class CampoDesignEtiquetaModel {
       isBold: isBold ?? this.isBold,
       align: align ?? this.align,
       ordem: ordem ?? this.ordem,
+      valorExemplo: valorExemplo ?? this.valorExemplo,
     );
   }
 

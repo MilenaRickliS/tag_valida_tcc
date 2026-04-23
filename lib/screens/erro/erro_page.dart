@@ -97,8 +97,12 @@ class ErrorPage extends StatelessWidget {
                     SizedBox(
                       width: double.infinity,
                       child: ElevatedButton.icon(
-                        onPressed: (){
-                          Navigator.pop(context);
+                        onPressed: () {
+                          if (onRetry != null) {
+                            onRetry!();
+                          } else {
+                            Navigator.pop(context);
+                          }
                         },
                         icon: const Icon(Icons.refresh_rounded, color: Colors.white,),
                         label: const Text('Recarregar'),
@@ -122,11 +126,15 @@ class ErrorPage extends StatelessWidget {
                       width: double.infinity,
                       child: OutlinedButton.icon(
                         onPressed: () {
-                          Navigator.pushNamedAndRemoveUntil(
-                            context,
-                            '/home',
-                            (route) => false,
-                          );
+                          if (onGoHome != null) {
+                            onGoHome!();
+                          } else {
+                            Navigator.pushNamedAndRemoveUntil(
+                              context,
+                              '/home',
+                              (route) => false,
+                            );
+                          }
                         },
                         icon: const Icon(Icons.home_rounded, color: Color(0xFF88BE8E),),
                         label: const Text('Ir para início'),

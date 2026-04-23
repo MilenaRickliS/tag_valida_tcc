@@ -589,8 +589,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     final now = DateTime.now();
     final qtdNova = _parseQtdOrThrow();
     final statusWanted = (editingStatusEstoque ?? "ativo").trim().toLowerCase();
-    
-    
+
     final before = await repo.getById(uid: uid, id: editingEtiquetaId!);
     if (before == null) {
       saving = false;
@@ -600,36 +599,33 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
     final oldQtd = before.quantidade;
     final oldRest = before.quantidadeRestante;
-    final oldStatus = (before.statusEstoque).trim().toLowerCase(); 
+    final oldStatus = before.statusEstoque.trim().toLowerCase();
     final oldCancelado = oldStatus == "cancelado";
 
-   
     num restNovo;
-      if (statusWanted == "cancelado") {
-        restNovo = 0;
-      } else if (statusWanted == "vendido") {
-        restNovo = 0;
-      } else {
-        final saiuAntes = (oldQtd - oldRest);
-        restNovo = max<num>(0, qtdNova - saiuAntes);
-      }
+    if (statusWanted == "cancelado") {
+      restNovo = 0;
+    } else if (statusWanted == "vendido") {
+      restNovo = 0;
+    } else {
+      final saiuAntes = (oldQtd - oldRest);
+      restNovo = max<num>(0, qtdNova - saiuAntes);
+    }
 
-      if (oldCancelado && statusWanted != "cancelado") {
-      
-        final voltou = restNovo; 
-        if (voltou > 0) {
-          await mov.registrar(
-            uid: uid,
-            etiquetaId: before.id,
-            tipo: EstoqueMovModel.tipoAjusteEntrada,
-            quantidade: voltou,
-            produtoNome: before.produtoNome,
-            motivo: "Reativação (saindo de cancelado)",
-          );
-        }
+    if (oldCancelado && statusWanted != "cancelado") {
+      final voltou = restNovo;
+      if (voltou > 0) {
+        await mov.registrar(
+          uid: uid,
+          etiquetaId: before.id,
+          tipo: EstoqueMovModel.tipoAjusteEntrada,
+          quantidade: voltou,
+          produtoNome: before.produtoNome,
+          motivo: "Reativação (saindo de cancelado)",
+        );
       }
+    }
 
-    
     if (!oldCancelado && statusWanted == "cancelado" && oldRest > 0) {
       await mov.registrarCancelamento(
         uid: uid,
@@ -641,7 +637,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     }
 
     if (statusWanted == "vendido") {
-      final vendeu = oldRest - restNovo; 
+      final vendeu = oldRest - restNovo;
       if (vendeu > 0) {
         await mov.registrarVenda(
           uid: uid,
@@ -653,7 +649,6 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       }
     }
 
-   
     if (statusWanted != "cancelado" && statusWanted != "vendido") {
       final diff = restNovo - oldRest;
       if (diff > 0) {
@@ -712,9 +707,9 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
     await repo.upsert(uid, etiqueta);
 
-   
     editingQuantidade = qtdNova;
     editingQuantidadeRestante = restNovo;
+    editingStatusEstoque = statusEstoque;
 
     saving = false;
     notifyListeners();

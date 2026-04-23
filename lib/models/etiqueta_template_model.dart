@@ -1,3 +1,4 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import './tabela_nutricional_model.dart';
 
 class EtiquetaTemplateModel {
@@ -39,4 +40,59 @@ class EtiquetaTemplateModel {
     this.createdAt,
     this.updatedAt,
   });
+
+  Map<String, dynamic> toMap() => {
+        'tipoId': tipoId,
+        'tipoNome': tipoNome,
+        'produtoNome': produtoNome,
+        'categoriaId': categoriaId,
+        'categoriaNome': categoriaNome,
+        'setorId': setorId,
+        'setorNome': setorNome,
+        'camposCustomValores': camposCustomValores,
+        'quantidadePadrao': quantidadePadrao,
+        'incluirTabelaNutricional': incluirTabelaNutricional,
+        'tabelaNutricional': tabelaNutricional?.toMap(),
+        'createdAt': createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
+        'updatedAt': FieldValue.serverTimestamp(),
+      };
+
+  factory EtiquetaTemplateModel.fromDoc(DocumentSnapshot doc) {
+    final data = (doc.data() as Map<String, dynamic>? ?? {});
+
+    DateTime? dt(dynamic v) {
+      if (v is Timestamp) return v.toDate();
+      return null;
+    }
+
+    final tabelaMap = data['tabelaNutricional'];
+    final tabela = tabelaMap is Map<String, dynamic>
+        ? TabelaNutricionalModel.fromMap(tabelaMap)
+        : tabelaMap is Map
+            ? TabelaNutricionalModel.fromMap(
+                Map<String, dynamic>.from(tabelaMap),
+              )
+            : null;
+
+    return EtiquetaTemplateModel(
+      id: doc.id,
+      tipoId: (data['tipoId'] ?? '').toString(),
+      tipoNome: (data['tipoNome'] ?? '').toString(),
+      produtoNome: (data['produtoNome'] ?? '').toString(),
+      categoriaId: (data['categoriaId'] ?? '').toString(),
+      categoriaNome: (data['categoriaNome'] ?? '').toString(),
+      setorId: (data['setorId'] ?? '').toString(),
+      setorNome: (data['setorNome'] ?? '').toString(),
+      camposCustomValores: Map<String, dynamic>.from(
+        data['camposCustomValores'] ?? {},
+      ),
+      incluirTabelaNutricional: data['incluirTabelaNutricional'] == true,
+      tabelaNutricional: tabela,
+      quantidadePadrao: (data['quantidadePadrao'] as num?) ?? 1,
+      createdAt: dt(data['createdAt']),
+      updatedAt: dt(data['updatedAt']),
+    );
+  }
 }

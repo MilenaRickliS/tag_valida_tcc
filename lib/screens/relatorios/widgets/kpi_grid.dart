@@ -45,7 +45,20 @@ class KpiGrid extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, c) {
-        final cols = c.maxWidth < 650 ? 2 : 3;
+        int cols;
+        double ratio;
+
+        if (c.maxWidth < 420) {
+          cols = 1;
+          ratio = 2.4;
+        } else if (c.maxWidth < 700) {
+          cols = 2;
+          ratio = 1.7;
+        } else {
+          cols = 3;
+          ratio = 1.9;
+        }
+
         return GridView.builder(
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
@@ -54,11 +67,12 @@ class KpiGrid extends StatelessWidget {
             crossAxisCount: cols,
             mainAxisSpacing: 12,
             crossAxisSpacing: 12,
-            childAspectRatio: 2.6,
+            childAspectRatio: ratio,
           ),
           itemBuilder: (context, i) {
             final e = entries[i];
             final tipo = tipoForLabel(e.key);
+
             return KpiCard(
               label: e.key,
               value: e.value,

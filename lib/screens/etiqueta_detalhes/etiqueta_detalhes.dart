@@ -1,19 +1,21 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/local/repos/etiquetas_local_repo.dart';
 import '../../data/local/repos/design_etiqueta_local_repo.dart';
 import '../../models/etiqueta_model.dart';
 import '../../models/user_model.dart';
 import '../../models/tipo_etiqueta_model.dart';
-import '../../providers/tipos_etiqueta_local_provider.dart';
-import '../../providers/estoque_mov_local_provider.dart';
+import '../../models/design_etiqueta_model.dart';
+import '../../providers/tipos_etiqueta_provider.dart';
+import '../../providers/estoque_mov_provider.dart';
 import '../../providers/printer_config_provider.dart';
+import '../../providers/gerar_etiqueta_provider.dart';
 import '../../services/etiqueta_pdf_service.dart';
 import '../../services/printer_app_service.dart';
 import '../../services/etiqueta_qr_resolver.dart';
@@ -412,86 +414,103 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
     }
   }
 
-  void _abrirPreviewImpressao(
+  Future<void> _abrirPreviewImpressao(
     BuildContext context, {
-    required String produto,
-    required DateTime validade,
-    required String lote,
-    required String quantidade,
+    required TipoEtiquetaModel tipoEtiqueta,
+    required EtiquetaModel etiqueta,
+    required UserModel usuario,
     required String qrData,
-  }) {
-    showDialog(
-      context: context,
-      builder: (_) {
-        final isDark = Theme.of(context).brightness == Brightness.dark;
+  }) async {
+    try {
+      final repo = DesignEtiquetaLocalRepo();
+      final DesignEtiquetaModel design = await repo.loadForTipo(tipoEtiqueta);
+        
 
-        return Dialog(
-          backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(20),
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    'Pré-visualização da etiqueta',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.w900,
-                      color: isDark ? Colors.white : _lightText,
+      if (!context.mounted) return;
+
+      showDialog(
+        context: context,
+        builder: (_) {
+          final isDark = Theme.of(context).brightness == Brightness.dark;
+
+          return Dialog(
+            backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+            insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: Padding(
+              padding: const EdgeInsets.all(20),
+              child: SingleChildScrollView(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Pré-visualização da etiqueta',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                        color: isDark ? Colors.white : _lightText,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Visualização ampliada da etiqueta 60x40 mm',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: isDark
-                          ? const Color(0xFFD6D6D6)
-                          : Colors.black.withOpacity(0.58),
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 8),
+                    Text(
+                      'Visualização com o design salvo deste tipo',
+                      style: TextStyle(
+                        fontSize: 13,
+                        color: isDark
+                            ? const Color(0xFFD6D6D6)
+                            : Colors.black.withOpacity(0.58),
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 18),
-                  EtiquetaPrintPreview(
-                    produto: produto,
-                    validade: DateFormat('dd/MM/yyyy').format(validade),
-                    lote: lote,
-                    quantidade: quantidade,
-                    qrData: qrData,
-                  ),
-                  const SizedBox(height: 18),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: ElevatedButton.icon(
-                      onPressed: () => Navigator.pop(context),
-                      icon: const Icon(Icons.check, color: Colors.black),
-                      label: const Text('Fechar'),
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFF4D58D),
-                        foregroundColor: Colors.black,
-                        elevation: 0,
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 18,
-                          vertical: 14,
-                        ),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(14),
+                    const SizedBox(height: 18),
+                    EtiquetaPrintPreviewDesign(
+                      config: design,
+                      etiqueta: etiqueta,
+                      qrData: qrData,
+                      empresaRazao: usuario.razao,
+                      empresaCnpj: usuario.cnpj,
+                      empresaRua: usuario.rua,
+                      empresaNumero: usuario.numero,
+                      empresaCep: usuario.cep,
+                      empresaCidade: usuario.cidade,
+                      empresaEstado: usuario.estado,
+                    ),
+                    const SizedBox(height: 18),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: ElevatedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.check, color: Colors.black),
+                        label: const Text('Fechar'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFF4D58D),
+                          foregroundColor: Colors.black,
+                          elevation: 0,
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 14,
+                          ),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
                         ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
-          ),
-        );
-      },
-    );
+          );
+        },
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao abrir preview: $e')),
+      );
+    }
   }
 
   Future<int?> _abrirModalQuantidadeEtiquetas(BuildContext context) async {
@@ -615,8 +634,9 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final repo = context.read<EtiquetasLocalRepo>();
-    final tiposProv = context.read<TiposEtiquetaLocalProvider>();
+    final gerar = context.read<GerarEtiquetaProvider>();
+    final etiquetasProv = gerar;
+    final tiposProv = context.read<TiposEtiquetaProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
@@ -643,7 +663,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
       ),
       body: FutureBuilder<List<dynamic>>(
         future: Future.wait([
-          repo.getById(uid: uid, id: etiquetaId),
+          gerar.getEtiquetaById(uid: uid, id: etiquetaId),
           FirebaseFirestore.instance.collection('usuarios').doc(uid).get(),
         ]),
         builder: (context, snap) {
@@ -773,8 +793,8 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                             );
                             if (!ok) return;
 
-                            final mov = context.read<EstoqueMovLocalProvider>();
-                            final before = await repo.getById(uid: uid, id: etiqueta.id);
+                            final mov = context.read<EstoqueMovProvider>();
+                            final before = await etiquetasProv.getEtiquetaById(uid: uid, id: etiqueta.id);
                             if (before == null) return;
 
                             final st = before.statusEstoque.trim().isEmpty
@@ -800,7 +820,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                               motivo: "Exclusão suave",
                             );
 
-                            await repo.deleteSoft(uid, before.id);
+                            await etiquetasProv.deleteSoft(uid, before.id);
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -911,13 +931,14 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                       ),
                       onPreview: () => _abrirPreviewImpressao(
                         context,
-                        produto: produtoNome,
-                        validade: validade,
-                        lote: lotePrefixo ?? loteFormatado ?? '-',
-                        quantidade: _fmtNum(restanteView),
+                        tipoEtiqueta: tipoEtiqueta,
+                        etiqueta: etiqueta,
+                        usuario: usuario,
                         qrData: qrData,
                       ),
-                      onImprimir: () => _imprimirComConfigSalva(
+                     onImprimir: kIsWeb
+                        ? null
+                        : () => _imprimirComConfigSalva(
                         context,
                         uid: uid,
                         etiqueta: etiqueta,

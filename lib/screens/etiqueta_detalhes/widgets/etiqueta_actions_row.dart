@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 
 class EtiquetaActionsRow extends StatelessWidget {
   final bool isDark;
@@ -9,7 +10,7 @@ class EtiquetaActionsRow extends StatelessWidget {
 
   final VoidCallback onSalvarPdf;
   final VoidCallback onPreview;
-  final VoidCallback onImprimir;
+  final VoidCallback? onImprimir;
 
   const EtiquetaActionsRow({
     super.key,
@@ -66,23 +67,25 @@ class EtiquetaActionsRow extends StatelessWidget {
             ),
           ),
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: ElevatedButton.icon(
-            onPressed: onImprimir,
-            icon: const Icon(Icons.print_outlined, color: Colors.black),
-            label: const Text("Imprimir"),
-            style: ElevatedButton.styleFrom(
-              padding: const EdgeInsets.symmetric(vertical: 14),
-              backgroundColor: const Color(0xffF4D58D),
-              foregroundColor: Colors.black,
-              elevation: 0,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(16),
+        if (!kIsWeb) ...[
+          const SizedBox(width: 10),
+          Expanded(
+            child: ElevatedButton.icon(
+              onPressed: onImprimir,
+              icon: const Icon(Icons.print_outlined, color: Colors.black),
+              label: const Text("Imprimir"),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                backgroundColor: const Color(0xffF4D58D),
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ],
     );
   }

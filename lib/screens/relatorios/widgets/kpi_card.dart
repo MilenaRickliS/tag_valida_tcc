@@ -8,7 +8,8 @@ class KpiCard extends StatelessWidget {
   final Color bg;
   final Color fg;
 
-  const KpiCard({super.key, 
+  const KpiCard({
+    super.key,
     required this.label,
     required this.value,
     required this.bg,
@@ -20,59 +21,77 @@ class KpiCard extends StatelessWidget {
     final v =
         (value % 1 == 0) ? value.toInt().toString() : value.toStringAsFixed(2);
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: bg,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: fg.withOpacity(0.18)),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x14000000),
-            blurRadius: 8,
-            offset: Offset(0, 3),
-          )
-        ],
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: fg.withOpacity(0.14),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: Icon(_iconFor(label), color: fg, size: 18),
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final isSmall = constraints.maxWidth < 170;
+
+        return Container(
+          padding: EdgeInsets.all(isSmall ? 12 : 14),
+          decoration: BoxDecoration(
+            color: bg,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(color: fg.withOpacity(0.18)),
+            boxShadow: const [
+              BoxShadow(
+                color: Color(0x14000000),
+                blurRadius: 8,
+                offset: Offset(0, 3),
+              )
+            ],
           ),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Text(
-                  label,
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: fg.withOpacity(0.95),
-                    fontWeight: FontWeight.w800,
-                  ),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Container(
+                width: isSmall ? 32 : 36,
+                height: isSmall ? 32 : 36,
+                decoration: BoxDecoration(
+                  color: fg.withOpacity(0.14),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-                const SizedBox(height: 6),
-                Text(
-                  v,
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w900,
-                    color: fg,
-                  ),
+                child: Icon(
+                  _iconFor(label),
+                  color: fg,
+                  size: isSmall ? 16 : 18,
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      label,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: isSmall ? 12 : 13,
+                        color: fg.withOpacity(0.95),
+                        fontWeight: FontWeight.w800,
+                        height: 1.15,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      v,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: isSmall ? 18 : 20,
+                        fontWeight: FontWeight.w900,
+                        color: fg,
+                        height: 1.0,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ],
-      ),
+        );
+      },
     );
   }
 

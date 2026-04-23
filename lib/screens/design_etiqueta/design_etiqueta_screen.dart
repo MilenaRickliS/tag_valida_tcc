@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../models/design_etiqueta_model.dart';
 import '../../providers/design_etiqueta_provider.dart';
-import '../../providers/tipos_etiqueta_local_provider.dart';
+import '../../providers/tipos_etiqueta_provider.dart';
 import '../../providers/auth_provider.dart';
 import './widgets/tipo_selector.dart';
 import './widgets/empty_tipos_card.dart';
@@ -57,7 +57,7 @@ class _DesignEtiquetaScreenState extends State<DesignEtiquetaScreen> {
 
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       final designProvider = context.read<DesignEtiquetaProvider>();
-      final tiposProvider = context.read<TiposEtiquetaLocalProvider>();
+      final tiposProvider = context.read<TiposEtiquetaProvider>();
       final authProvider = context.read<AuthProvider>();
 
       final uid = authProvider.user?.uid;
@@ -139,7 +139,7 @@ class _DesignEtiquetaScreenState extends State<DesignEtiquetaScreen> {
         ? _gold.withOpacity(0.16)
         : Colors.black.withOpacity(0.08);
 
-    final tiposProvider = context.watch<TiposEtiquetaLocalProvider>();
+    final tiposProvider = context.watch<TiposEtiquetaProvider>();
     final designProvider = context.watch<DesignEtiquetaProvider>();
 
     final tipos = tiposProvider.items;

@@ -1,6 +1,7 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../widgets/menu.dart';
 import '../configuracoes_impressora/impressora_hub/impressora_hub_screen.dart';
 import '../configuracoes/widgets/config_tile.dart';
@@ -98,7 +99,7 @@ class ConfiguracoesScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    "Gerencie cadastros e preferências do sistema. Aqui você organiza categorias, setores, relatórios e ferramentas de backup.",
+                    "Gerencie cadastros e preferências do sistema. Aqui você organiza categorias, setores, relatórios e ferramentas do sistema.",
                     style: TextStyle(color: muted),
                   ),
                   const SizedBox(height: 18),
@@ -133,6 +134,7 @@ class ConfiguracoesScreen extends StatelessWidget {
                             subtitle: "Vendidas e canceladas",
                             onTap: () => Navigator.pushNamed(context, "/etiquetas-finalizadas"),
                           ),
+                         if (!kIsWeb)
                           ConfigTile(
                             icon: Icons.print_outlined,
                             title: "Configurações - Impressora",
@@ -146,12 +148,16 @@ class ConfiguracoesScreen extends StatelessWidget {
                               );
                             },
                           ),
+
+                        if (!kIsWeb)
                           ConfigTile(
                             icon: Icons.cloud_upload_outlined,
                             title: "Backup de dados",
                             subtitle: "Salve e restaure informações",
                             onTap: () => Navigator.pushNamed(context, "/backup"),
                           ),
+                        
+
                           ConfigTile(
                             icon: Icons.bar_chart_outlined,
                             title: "Relatórios",

@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import '../../../models/design_etiqueta_model.dart';
+import '../../../models/tabela_nutricional_model.dart';
 import './empresa_preview.dart';
 import './produto_preview.dart';
 import './tabela_nutricional_design.dart';
@@ -38,37 +39,36 @@ class _PreviewLayout {
   });
 
   factory _PreviewLayout.fromConfig(DesignEtiquetaModel config) {
-    final is60x40 =
-        config.larguraMm <= 60.5 && config.alturaMm <= 40.5;
+    final is60x40 = config.larguraMm <= 60.5 && config.alturaMm <= 40.5;
 
     if (is60x40) {
       return const _PreviewLayout(
-        outerPad: 10,
-        innerPad: 7,
-        qrSize: 72,
-        qrRightSafe: 6,
-        qrGap: 8,
-        empresaBoxHeight: 40,
-        produtoBoxHeight: 44,
-        brandHeight: 14,
-        dividerGap: 6,
-        infoTopGap: 8,
-        infoBottomGap: 6,
+        outerPad: 6,
+        innerPad: 5,
+        qrSize: 56,
+        qrRightSafe: 4,
+        qrGap: 6,
+        empresaBoxHeight: 28,
+        produtoBoxHeight: 30,
+        brandHeight: 10,
+        dividerGap: 3,
+        infoTopGap: 4,
+        infoBottomGap: 3,
       );
     }
 
     return const _PreviewLayout(
-      outerPad: 12,
-      innerPad: 8,
-      qrSize: 92,
-      qrRightSafe: 8,
-      qrGap: 10,
-      empresaBoxHeight: 48,
-      produtoBoxHeight: 52,
-      brandHeight: 16,
-      dividerGap: 6,
-      infoTopGap: 8,
-      infoBottomGap: 8,
+      outerPad: 10,
+      innerPad: 7,
+      qrSize: 84,
+      qrRightSafe: 6,
+      qrGap: 8,
+      empresaBoxHeight: 42,
+      produtoBoxHeight: 44,
+      brandHeight: 14,
+      dividerGap: 5,
+      infoTopGap: 6,
+      infoBottomGap: 6,
     );
   }
 }
@@ -104,10 +104,28 @@ Widget buildEtiquetaPreview(
 
   final layout = _PreviewLayout.fromConfig(config);
   final is60x40 = config.larguraMm <= 60.5 && config.alturaMm <= 40.5;
+  final is100x80 = config.larguraMm >= 95 && config.alturaMm >= 75;
 
   final empresaPreviewScale = is60x40 ? 2.55 : 2.20;
   final produtoPreviewScale = is60x40 ? 2.45 : 2.15;
   final brandFontSize = is60x40 ? 10.0 : 11.0;
+
+  final tabelaExemplo = TabelaNutricionalModel(
+    porcoesPorEmbalagem: 10,
+    porcao: '50',
+    quantidadeMedida: '50g',
+    medidaCaseira: '1 unidade',
+    valorEnergetico: 120,
+    carboidratos: 22,
+    acucaresTotais: 6,
+    acucaresAdicionados: 4,
+    proteinas: 3,
+    gordurasTotais: 2,
+    gordurasSaturadas: 1,
+    gordurasTrans: 0,
+    fibraAlimentar: 1.5,
+    sodio: 140,
+  );
 
   return DefaultTextStyle(
     style: const TextStyle(
@@ -117,40 +135,12 @@ Widget buildEtiquetaPreview(
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        if (isInvalid) ...[
-          Container(
-            width: double.infinity,
-            margin: const EdgeInsets.only(bottom: 10),
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.red.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.red.withOpacity(0.25)),
-            ),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Icon(Icons.error_outline, color: Colors.red),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Text(
-                    errorMessage ?? 'O conteúdo passou do limite da etiqueta.',
-                    style: const TextStyle(
-                      color: Colors.red,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
         LayoutBuilder(
           builder: (context, constraints) {
             final totalWidth = constraints.maxWidth;
 
-          
-            final contentWidth = (totalWidth - (layout.outerPad * 2)).clamp(0.0, totalWidth);
+            final contentWidth =
+                (totalWidth - (layout.outerPad * 2)).clamp(0.0, totalWidth);
 
             final qrColumnWidth = hasQr ? layout.qrSize : 0.0;
 
@@ -283,25 +273,57 @@ Widget buildEtiquetaPreview(
                         : Colors.black.withOpacity(0.62),
                   ),
                   SizedBox(height: layout.infoTopGap),
-                  SizedBox(
-                    width: infoWidth,
-                    child: (imagemCampo != null)
-                        ? buildConteudoComLateral(
-                            infoCampos: infoCampos,
-                            lateral: buildImagemPreviewNovo(imagemCampo),
-                            config: config,
-                          )
-                        : (tabelaCampo != null)
-                            ? buildConteudoComLateral(
-                                infoCampos: infoCampos,
-                                lateral: buildTabelaNutricionalPreview(),
-                                config: config,
-                              )
-                            : buildInfosSomenteLinhas(
-                                infoCampos,
-                                config: config,
-                              ),
-                  ),
+
+                  if (is100x80 && tabelaCampo != null)
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          flex: 42,
+                          child: Padding(
+                            padding: const EdgeInsets.only(left: 6, right: 10),
+                            child: buildInfosSomenteLinhas(
+                              infoCampos,
+                              config: config,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          flex: 58,
+                          child: Align(
+                            alignment: Alignment.topRight,
+                            child: buildTabelaNutricionalPreviewReal(
+                              tabelaExemplo,
+                              width: 200,
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  else
+                    SizedBox(
+                      width: infoWidth,
+                      child: (imagemCampo != null)
+                          ? buildConteudoComLateral(
+                              infoCampos: infoCampos,
+                              lateral: buildImagemPreviewNovo(imagemCampo),
+                              config: config,
+                            )
+                          : (tabelaCampo != null)
+                              ? buildConteudoComLateral(
+                                  infoCampos: infoCampos,
+                                  lateral: buildTabelaNutricionalPreviewReal(
+                                    tabelaExemplo,
+                                    width: 190,
+                                  ),
+                                  config: config,
+                                )
+                              : buildInfosSomenteLinhas(
+                                  infoCampos,
+                                  config: config,
+                                ),
+                    ),
+
                   if (!hasQr && config.mostrarMarcaTagValida) ...[
                     const SizedBox(height: 4),
                     Text(

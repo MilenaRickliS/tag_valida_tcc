@@ -2,15 +2,15 @@
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../../providers/auth_provider.dart';
 import '../../widgets/menu.dart';
 import 'widgets/home_menu_card_v2.dart';
 import 'widgets/camera_fab_card.dart';
 import 'widgets/produtos_status_card.dart';
 import '../../data/sync/sync_service.dart';
-import '../../data/local/repos/etiquetas_local_repo.dart';
 import '../../models/etiqueta_model.dart';
+import '../../providers/gerar_etiqueta_provider.dart';
 import '../../services/sync_status_service.dart';
 import '../../main.dart' show routeObserver;
 
@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   int _qtdAlerta = 0;
 
   DateTime? _lastSync;
-  String _syncStatus = 'pending'; // pending | success | error
+  String _syncStatus = 'pending'; 
 
   @override
   void initState() {
@@ -48,12 +48,20 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     }
 
     if (_syncedOnce) return;
-
     _syncedOnce = true;
 
-    WidgetsBinding.instance.addPostFrameCallback((_) async {
-      await _executarSincronizacaoAutomatica();
-    });
+    final user = context.read<AuthProvider>().user;
+    if (user != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) async {
+        if (!mounted) return;
+
+        await _carregarIndicadores(user.uid);
+
+        if (!kIsWeb) {
+          await _executarSincronizacaoAutomatica();
+        }
+      });
+    }
   }
 
   @override
@@ -68,7 +76,10 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     if (user != null) {
       _carregarIndicadores(user.uid);
     }
-    _executarSincronizacaoAutomatica();
+
+    if (!kIsWeb) {
+      _executarSincronizacaoAutomatica();
+    }
   }
 
   Future<void> _carregarStatusSync() async {
@@ -77,54 +88,53 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     if (!mounted) return;
 
     setState(() {
-      _syncStatus = data['status'] as String? ?? 'pending';
-      _lastSync = data['lastSync'] as DateTime?;
+      _syncStatus = (data['status'] ?? 'pending').toString();
+
+      final last = data['lastSync'];
+      _lastSync = last is DateTime ? last : null;
     });
   }
 
   Future<void> _executarSincronizacaoAutomatica() async {
- 
-  if (!mounted || _syncing) return;
+    if (kIsWeb) return;
 
-  final user = context.read<AuthProvider>().user;
-  if (user == null) return;
+    if (!mounted || _syncing) return;
 
-  setState(() => _syncing = true);
-  await SyncStatusService.setPending();
+    final user = context.read<AuthProvider>().user;
+    if (user == null) return;
 
+    setState(() => _syncing = true);
+    await SyncStatusService.setPending();
 
+    try {
+      // ignore: use_build_context_synchronously
+      await context.read<SyncService>().syncNow(user.uid);
+      await SyncStatusService.setSuccess();
 
-  try {
-    // ignore: use_build_context_synchronously
-    await context.read<SyncService>().syncNow(user.uid);
-    await SyncStatusService.setSuccess();
+      if (mounted) {
+        setState(() {
+          _syncStatus = 'success';
+          _lastSync = DateTime.now();
+        });
+      }
+    } catch (e) {
+      await SyncStatusService.setError();
 
-    if (mounted) {
-      setState(() {
-        _syncStatus = 'success';
-        _lastSync = DateTime.now();
-      });
+      if (mounted) {
+        setState(() {
+          _syncStatus = 'error';
+        });
+      }
+    } finally {
+      if (mounted) {
+        setState(() => _syncing = false);
+      }
     }
-  } catch (e) {
-    // ignore: avoid_print
-    print('Erro ao sincronizar automaticamente: $e');
-    await SyncStatusService.setError();
 
     if (mounted) {
-      setState(() {
-        _syncStatus = 'error';
-      });
-    }
-  } finally {
-    if (mounted) {
-      setState(() => _syncing = false);
+      await _carregarIndicadores(user.uid);
     }
   }
-
-  if (mounted) {
-    await _carregarIndicadores(user.uid);
-  }
-}
 
   DateTime _hojeStart() {
     final now = DateTime.now();
@@ -141,44 +151,55 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     return !val.isBefore(hoje) && val.difference(hoje).inDays <= 3;
   }
 
-  Future<void> _carregarIndicadores(String uid) async {
-    setState(() => _loadingIndicadores = true);
+ Future<void> _carregarIndicadores(String uid) async {
+  setState(() => _loadingIndicadores = true);
 
-    try {
-      final repo = context.read<EtiquetasLocalRepo>();
+  try {
+    final gerar = context.read<GerarEtiquetaProvider>();
 
-      final List<EtiquetaModel> itens = await repo.listByPeriodo(
-        uid: uid,
-        inicio: DateTime(2000, 1, 1),
-        fim: DateTime(2100, 1, 1),
-        status: "ativa",
-        statusEstoque: "ativo",
-      );
+    final List<EtiquetaModel> itens = await gerar.listByPeriodo(
+      uid: uid,
+      inicio: DateTime(2000, 1, 1),
+      fim: DateTime(2100, 1, 1),
+      status: "ativa",
+      statusEstoque: "ativo",
+      tipoId: null,
+    );
 
-      int vencidas = 0;
-      int alerta = 0;
+    int vencidas = 0;
+    int alerta = 0;
 
-      for (final e in itens) {
-        if (e.quantidadeRestante <= 0) continue;
+    for (final e in itens) {
+      if (e.quantidadeRestante <= 0) continue;
 
-        final val = e.dataValidade;
-        if (_isVencida(val)) {
-          vencidas++;
-        } else if (_isAlerta(val)) {
-          alerta++;
-        }
+      final val = e.dataValidade;
+      if (_isVencida(val)) {
+        vencidas++;
+      } else if (_isAlerta(val)) {
+        alerta++;
       }
+    }
 
-      if (!mounted) return;
-      setState(() {
-        _qtdVencidas = vencidas;
-        _qtdAlerta = alerta;
-      });
-    } catch (_) {
-    } finally {
-      if (mounted) setState(() => _loadingIndicadores = false);
+    if (!mounted) return;
+    setState(() {
+      _qtdVencidas = vencidas;
+      _qtdAlerta = alerta;
+    });
+  } catch (e, st) {
+    debugPrint('ERRO ao carregar indicadores HOME: $e');
+    debugPrintStack(stackTrace: st);
+
+    if (!mounted) return;
+    setState(() {
+      _qtdVencidas = 0;
+      _qtdAlerta = 0;
+    });
+  } finally {
+    if (mounted) {
+      setState(() => _loadingIndicadores = false);
     }
   }
+}
 
   int _gridColumns(double w) {
     if (w < 600) return 1;
@@ -359,8 +380,8 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
             final maxW = _contentMaxWidth(w);
 
             final isMobile = w < 600;
-            final titleSize = isMobile ? 26.0 : (w < 1024 ? 30.0 : 34.0);
-            final subtitleSize = isMobile ? 13.0 : 14.0;
+            final titleSize = isMobile ? 22.0 : (w < 1024 ? 24.0 : 26.0);
+            final subtitleSize = isMobile ? 12.0 : 13.0;
 
             return SingleChildScrollView(
               padding: EdgeInsets.symmetric(
@@ -447,12 +468,13 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                           ],
                         ),
                         const SizedBox(height: 16),
-                        if (_syncing) ...[
-                          const LinearProgressIndicator(minHeight: 3),
-                          const SizedBox(height: 12),
-                        ],
-
-                        _buildSyncStatusCard(context),
+                        if (!kIsWeb) ...[
+                            if (_syncing) ...[
+                              const LinearProgressIndicator(minHeight: 3),
+                              const SizedBox(height: 12),
+                            ],
+                            _buildSyncStatusCard(context),
+                          ],
                         
                       ],
                     ),

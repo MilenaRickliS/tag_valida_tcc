@@ -21,21 +21,27 @@ class CategoriaModel {
         "nome": nome,
         "diasVencimento": diasVencimento,
         "ativo": ativo,
-        "createdAt": createdAt != null ? Timestamp.fromDate(createdAt!) : FieldValue.serverTimestamp(),
+        "createdAt": createdAt != null
+            ? Timestamp.fromDate(createdAt!)
+            : FieldValue.serverTimestamp(),
         "updatedAt": FieldValue.serverTimestamp(),
       };
 
   factory CategoriaModel.fromDoc(DocumentSnapshot doc) {
-    final data = doc.data() as Map<String, dynamic>;
-    DateTime? dt(dynamic v) => v is Timestamp ? v.toDate() : null;
+    final data = (doc.data() as Map<String, dynamic>? ?? {});
+
+    DateTime? dt(dynamic v) {
+      if (v is Timestamp) return v.toDate();
+      return null;
+    }
 
     return CategoriaModel(
       id: doc.id,
       nome: (data["nome"] ?? "").toString(),
-      diasVencimento: (data["diasVencimento"] ?? 0) is int
-          ? data["diasVencimento"]
-          : int.tryParse(data["diasVencimento"].toString()) ?? 0,
-      ativo: data["ativo"] ?? true,
+      diasVencimento: data["diasVencimento"] is int
+          ? data["diasVencimento"] as int
+          : int.tryParse(data["diasVencimento"]?.toString() ?? "0") ?? 0,
+      ativo: (data["ativo"] ?? true) == true,
       createdAt: dt(data["createdAt"]),
       updatedAt: dt(data["updatedAt"]),
     );

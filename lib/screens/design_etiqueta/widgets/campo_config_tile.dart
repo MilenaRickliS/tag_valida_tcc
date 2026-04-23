@@ -126,97 +126,67 @@ Widget campoConfigTile({
           ),
           const SizedBox(height: 12),
           if (!ocultarControlesTexto)
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              
-              Expanded(
-                child: miniConfigBox(
-                  isDark: isDark,
-                  title: 'Fonte',
-                  child: Column(
-                    children: [
-                      SliderTheme(
-                        data: SliderTheme.of(context).copyWith(
-                          activeTrackColor: _orange,
-                          inactiveTrackColor: _orange.withOpacity(0.18),
-                          thumbColor: _orange,
-                          overlayColor: _orange.withOpacity(0.12),
-                        ),
-                        child: Slider(
-                          min: 6,
-                          max: maxFont,
-                          divisions: ((maxFont - 6).round()).clamp(1, 100),
-                          value: campo.fontSize.clamp(6, maxFont),
-                          label: campo.fontSize.clamp(6, maxFont).toStringAsFixed(0),
-                          onChanged: (campo.visivel && onFontChanged != null)
-                            ? onFontChanged
-                            : null,
-                        ),
-                      ),
-                      Text(
-                        '${campo.fontSize.toStringAsFixed(0)} pt',
-                        style: TextStyle(
-                          fontWeight: FontWeight.w800,
-                          color: text,
-                        ),
-                      ),
-                    ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isMobile = constraints.maxWidth < 600;
+
+              if (isMobile) {
+                return Column(
+                  children: [
+                    miniConfigBox(
+                      isDark: isDark,
+                      title: 'Fonte',
+                      child: buildFonteControl(context, campo, maxFont, text, onFontChanged),
+                    ),
+                    const SizedBox(height: 10),
+
+                    miniConfigBox(
+                      isDark: isDark,
+                      title: 'Estilo',
+                      child: buildEstiloControl(text, campo, onBoldChanged),
+                    ),
+                    const SizedBox(height: 10),
+
+                    miniConfigBox(
+                      isDark: isDark,
+                      title: 'Alinhamento',
+                      child: buildAlignControl(isDark, campo, onAlignChanged),
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: miniConfigBox(
+                      isDark: isDark,
+                      title: 'Fonte',
+                      child: buildFonteControl(context, campo, maxFont, text, onFontChanged),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: miniConfigBox(
-                  isDark: isDark,
-                  title: 'Estilo',
-                  child: Column(
-                    children: [
-                      SwitchListTile.adaptive(
-                        dense: true,
-                        contentPadding: EdgeInsets.zero,
-                        value: campo.isBold,
-                        activeColor: _orange,
-                        title: Text(
-                          'Negrito',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: text,
-                          ),
-                        ),
-                        onChanged: onBoldChanged,
-                      ),
-                    ],
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: miniConfigBox(
+                      isDark: isDark,
+                      title: 'Estilo',
+                      child: buildEstiloControl(text, campo, onBoldChanged),
+                    ),
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: miniConfigBox(
-                  isDark: isDark,
-                  title: 'Alinhamento',
-                  child: DropdownButtonFormField<TextAlign>(
-                    value: campo.align,
-                    decoration: inputDecoration(isDark),
-                    items: const [
-                      DropdownMenuItem(
-                        value: TextAlign.left,
-                        child: Text('Esquerda'),
-                      ),
-                      DropdownMenuItem(
-                        value: TextAlign.center,
-                        child: Text('Centro'),
-                      ),
-                      DropdownMenuItem(
-                        value: TextAlign.right,
-                        child: Text('Direita'),
-                      ),
-                    ],
-                    onChanged: onAlignChanged,
+                  const SizedBox(width: 10),
+
+                  Expanded(
+                    child: miniConfigBox(
+                      isDark: isDark,
+                      title: 'Alinhamento',
+                      child: buildAlignControl(isDark, campo, onAlignChanged),
+                    ),
                   ),
-                ),
-              ),
-            ],
+                ],
+              );
+            },
           ),
         ],
       ),
@@ -402,4 +372,61 @@ double maxFontForCampo(
   }
 
   return max.clamp(10, 22);
+}
+
+Widget buildFonteControl(
+  BuildContext context,
+  CampoDesignEtiquetaModel campo,
+  double maxFont,
+  Color text,
+  ValueChanged<double>? onFontChanged,
+) {
+  return Column(
+    children: [
+      Slider(
+        min: 6,
+        max: maxFont,
+        value: campo.fontSize.clamp(6, maxFont),
+        onChanged: onFontChanged,
+      ),
+      Text(
+        '${campo.fontSize.toStringAsFixed(0)} pt',
+        style: TextStyle(fontWeight: FontWeight.w800, color: text),
+      ),
+    ],
+  );
+}
+
+Widget buildEstiloControl(
+  Color text,
+  CampoDesignEtiquetaModel campo,
+  ValueChanged<bool>? onBoldChanged,
+) {
+  return SwitchListTile.adaptive(
+    dense: true,
+    contentPadding: EdgeInsets.zero,
+    value: campo.isBold,
+    title: Text(
+      'Negrito',
+      style: TextStyle(fontWeight: FontWeight.w700, color: text),
+    ),
+    onChanged: onBoldChanged,
+  );
+}
+
+Widget buildAlignControl(
+  bool isDark,
+  CampoDesignEtiquetaModel campo,
+  ValueChanged<TextAlign?>? onAlignChanged,
+) {
+  return DropdownButtonFormField<TextAlign>(
+    value: campo.align,
+    decoration: inputDecoration(isDark),
+    items: const [
+      DropdownMenuItem(value: TextAlign.left, child: Text('Esquerda')),
+      DropdownMenuItem(value: TextAlign.center, child: Text('Centro')),
+      DropdownMenuItem(value: TextAlign.right, child: Text('Direita')),
+    ],
+    onChanged: onAlignChanged,
+  );
 }

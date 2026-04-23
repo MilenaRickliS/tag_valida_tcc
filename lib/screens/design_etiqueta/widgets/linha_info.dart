@@ -80,19 +80,30 @@ double _previewFontForCampo(
     return userFont * 2.25;
   }
 
+ 
   if (campo.id == 'validade') {
-    return userFont * 2.1;
+    return userFont * 1.15;
   }
 
-  return userFont * 2.0;
+  if (campo.id == 'observacao' ||
+      campo.id == 'ingredientes' ||
+      campo.id == 'alergenicos') {
+    return userFont * 1.35;
+  }
+
+  return userFont * 1.35;
 }
 
 int _maxLinesForCampo(CampoDesignEtiquetaModel campo) {
   if (campo.id == 'ingredientes' ||
-      campo.id == 'alergenicos' ||
-      campo.id == 'observacao') {
-    return 2;
+      campo.id == 'alergenicos') {
+    return 4;
   }
+
+  if (campo.id == 'observacao') {
+    return 3;
+  }
+
   return 1;
 }
 

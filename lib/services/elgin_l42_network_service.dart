@@ -184,6 +184,7 @@ PRINT $qtdCopias,1
 
     final campos = [...design.campos]..sort((a, b) => a.ordem.compareTo(b.ordem));
     final visiveis = campos.where((c) => c.visivel).toList();
+    
 
     final empresaCampo = visiveis
         .where((c) => c.id == 'empresa')
@@ -844,10 +845,10 @@ PRINT $qtdCopias,1
   const leftColX = outerLeft + padding;
   const leftColW = 246;
 
-  const separatorX = 384;
+  const separatorX = 378;
 
-  const rightColX = 404;
-  const rightColW = 360;
+  const rightColX = 380;
+  const rightColW = 420;
 
   _addMultiLineTextStyled(
     sb: sb,
@@ -980,69 +981,69 @@ PRINT $qtdCopias,1
     }
   }
 
-  if (ingredientes != null &&
-      ingredientes.trim().isNotEmpty &&
-      y + 38 < limiteInferiorEsquerda) {
-    y += 6;
-    _writeText(
-      sb: sb,
-      x: leftColX,
-      y: y,
-      spec: const _TsplFontSpec(font: '2', xMul: 1, yMul: 1),
-      text: 'INGREDIENTES',
-      isBold: true,
-    );
-    y += 20;
+ if (ingredientes != null &&
+    ingredientes.trim().isNotEmpty &&
+    y + 38 < limiteInferiorEsquerda) {
+  y += 6;
+  _writeText(
+    sb: sb,
+    x: leftColX,
+    y: y,
+    spec: const _TsplFontSpec(font: '2', xMul: 1, yMul: 1),
+    text: 'INGREDIENTES',
+    isBold: true,
+  );
+  y += 20;
 
-    final novoY = _addMultiLineTextStyled(
-      sb: sb,
-      text: ingredientes,
-      xBase: leftColX,
-      y: y,
-      maxWidth: leftColW,
-      spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
-      align: TextAlign.left,
-      isBold: false,
-      maxLines: 3,
-      hardRightLimit: leftColX + leftColW,
-    );
+  final novoY = _addMultiLineTextStyled(
+    sb: sb,
+    text: ingredientes,
+    xBase: leftColX,
+    y: y,
+    maxWidth: leftColW - 18,
+    spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+    align: TextAlign.left,
+    isBold: false,
+    maxLines: 5,
+    hardRightLimit: separatorX - 10,
+  );
 
-    if (novoY <= limiteInferiorEsquerda) {
-      y = novoY;
-    }
+  if (novoY <= limiteInferiorEsquerda) {
+    y = novoY;
   }
+}
 
   if (alergenicos != null &&
-      alergenicos.trim().isNotEmpty &&
-      y + 38 < limiteInferiorEsquerda) {
-    y += 8;
-    _writeText(
-      sb: sb,
-      x: leftColX,
-      y: y,
-      spec: const _TsplFontSpec(font: '2', xMul: 1, yMul: 1),
-      text: 'ALERGENICOS',
-      isBold: true,
-    );
-    y += 20;
+    alergenicos.trim().isNotEmpty &&
+    y + 38 < limiteInferiorEsquerda) {
+  y += 8;
+  _writeText(
+    sb: sb,
+    x: leftColX,
+    y: y,
+    spec: const _TsplFontSpec(font: '2', xMul: 1, yMul: 1),
+    text: 'ALERGENICOS',
+    isBold: true,
+  );
+  y += 20;
 
-    final novoY = _addMultiLineTextStyled(
-      sb: sb,
-      text: alergenicos,
-      xBase: leftColX,
-      y: y,
-      maxWidth: leftColW,
-      spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
-      align: TextAlign.left,
-      isBold: false,
-      maxLines: 2,
-      hardRightLimit: leftColX + leftColW,
-    );
+  final novoY = _addMultiLineTextStyled(
+    sb: sb,
+    text: alergenicos,
+    xBase: leftColX,
+    y: y,
+    maxWidth: leftColW - 18,
+    spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
+    align: TextAlign.left,
+    isBold: false,
+    maxLines: 4,
+    hardRightLimit: separatorX - 10,
+  );
 
-    if (novoY <= limiteInferiorEsquerda) {
-      y = novoY;
-    }
+  if (novoY <= limiteInferiorEsquerda) {
+    y = novoY;
   }
+}
 
   _printTabelaNutricional100x80(
     sb: sb,
@@ -1084,63 +1085,83 @@ PRINT $qtdCopias,1
       required int width,
       required TabelaNutricionalModel tabela,
     }) {
-      const titleFont = _TsplFontSpec(font: '2', xMul: 1, yMul: 1);
+      const titleFont = _TsplFontSpec(font: '1', xMul: 1, yMul: 1);
       const bodyFont = _TsplFontSpec(font: '1', xMul: 1, yMul: 1);
 
       final porcaoLabel = '${tabela.porcao}g';
       final medidaCaseira =
           '${tabela.quantidadeMedida} ${tabela.medidaCaseira}'.trim();
 
-      final tableLeft = x + 2;
+      final tableLeft = x;
       final tableTop = y;
-      final tableWidth = width - 4;
+      final tableWidth = width;
       const tableHeight = 560;
 
       final tableRight = tableLeft + tableWidth;
       final tableBottom = tableTop + tableHeight;
 
+  
       final col1 = tableLeft + 8;
-      final col2 = tableLeft + 198;
-      final col3 = tableLeft + 262;
-      final col4 = tableLeft + 322;
+      final col2 = tableLeft + 200;
+      final col3 = tableLeft + 300;
+      final col4 = tableLeft + 390;
+
+      final tituloY = y + 5;
+      final tituloDividerY = y + 24;
+      final info1Y = y + 30;
+      final info2Y = y + 46;
+      final infoDividerY = y + 64;
+      final headerY = y + 70;
+      int rowY = y + 88;
+      
 
       sb.writeln('BOX $tableLeft,$tableTop,$tableRight,$tableBottom,1');
 
-      _writeText(
-        sb: sb,
-        x: tableLeft + 12,
-        y: y + 8,
+     final titulo = 'INFORMACAO NUTRICIONAL';
+
+      final tituloX = _resolveAlignedX(
+        align: TextAlign.center,
+        xBase: tableLeft,
+        containerWidth: tableWidth,
+        text: titulo,
         spec: titleFont,
-        text: 'INFORMACAO NUTRICIONAL',
-        isBold: true,
-      );
-
-      sb.writeln('BAR ${tableLeft + 4},${y + 34},${tableRight - tableLeft - 8},1');
-
-      _writeText(
-        sb: sb,
-        x: tableLeft + 8,
-        y: y + 42,
-        spec: bodyFont,
-        text: 'Porcoes por emb.: ${tabela.porcoesPorEmbalagem}',
-        isBold: true,
       );
 
       _writeText(
         sb: sb,
+        x: tituloX,
+        y: tituloY,
+        spec: titleFont,
+        text: titulo,
+        isBold: true,
+      );
+
+      sb.writeln('BAR ${tableLeft + 4},$tituloDividerY,${tableRight - tableLeft - 8},1');
+
+      _writeText(
+        sb: sb,
         x: tableLeft + 8,
-        y: y + 60,
+        y: info1Y,
         spec: bodyFont,
         text: 'Porcao: $porcaoLabel ($medidaCaseira)',
         isBold: true,
       );
 
-      sb.writeln('BAR ${tableLeft + 4},${y + 84},${tableRight - tableLeft - 8},2');
-
       _writeText(
         sb: sb,
+        x: tableLeft + 8,
+        y: info2Y,
+        spec: bodyFont,
+        text: 'Porcoes por emb.: ${tabela.porcoesPorEmbalagem}',
+        isBold: true,
+      );
+
+      sb.writeln('BAR ${tableLeft + 4},$infoDividerY,${tableRight - tableLeft - 8},2');
+
+     _writeText(
+        sb: sb,
         x: col2,
-        y: y + 92,
+        y: headerY,
         spec: bodyFont,
         text: '100g',
         isBold: true,
@@ -1148,7 +1169,7 @@ PRINT $qtdCopias,1
       _writeText(
         sb: sb,
         x: col3,
-        y: y + 92,
+        y: headerY,
         spec: bodyFont,
         text: porcaoLabel,
         isBold: true,
@@ -1156,13 +1177,11 @@ PRINT $qtdCopias,1
       _writeText(
         sb: sb,
         x: col4,
-        y: y + 92,
+        y: headerY,
         spec: bodyFont,
         text: '%VD',
         isBold: true,
       );
-
-      int rowY = y + 115;
 
       rowY = _printNutriRow(
         sb: sb,
@@ -1171,10 +1190,11 @@ PRINT $qtdCopias,1
         c100X: col2,
         porcaoX: col3,
         vdX: col4,
-        label: 'Valor energetico',
+        label: 'Valor energético',
         valorPorcao: tabela.valorEnergetico,
         vdRef: 2000,
         porcaoBase: tabela.porcao,
+        unidade: 'kcal',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1190,6 +1210,7 @@ PRINT $qtdCopias,1
         valorPorcao: tabela.carboidratos,
         vdRef: 300,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1201,10 +1222,11 @@ PRINT $qtdCopias,1
         c100X: col2,
         porcaoX: col3,
         vdX: col4,
-        label: 'Acucares totais',
+        label: 'Açúcares totais',
         valorPorcao: tabela.acucaresTotais,
         vdRef: 50,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1216,10 +1238,11 @@ PRINT $qtdCopias,1
         c100X: col2,
         porcaoX: col3,
         vdX: col4,
-        label: 'Acuc. adicionados',
+        label: 'Açúc. adicionados',
         valorPorcao: tabela.acucaresAdicionados,
         vdRef: 50,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1231,10 +1254,11 @@ PRINT $qtdCopias,1
         c100X: col2,
         porcaoX: col3,
         vdX: col4,
-        label: 'Proteinas',
+        label: 'Proteínas',
         valorPorcao: tabela.proteinas,
         vdRef: 50,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1250,6 +1274,7 @@ PRINT $qtdCopias,1
         valorPorcao: tabela.gordurasTotais,
         vdRef: 55,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1265,6 +1290,7 @@ PRINT $qtdCopias,1
         valorPorcao: tabela.gordurasSaturadas,
         vdRef: 22,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1280,6 +1306,7 @@ PRINT $qtdCopias,1
         valorPorcao: tabela.gordurasTrans,
         vdRef: 2,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1291,10 +1318,11 @@ PRINT $qtdCopias,1
         c100X: col2,
         porcaoX: col3,
         vdX: col4,
-        label: 'Fibras',
+        label: 'Fibras alimentares',
         valorPorcao: tabela.fibraAlimentar,
         vdRef: 25,
         porcaoBase: tabela.porcao,
+        unidade: 'g',
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
       );
@@ -1306,10 +1334,11 @@ PRINT $qtdCopias,1
         c100X: col2,
         porcaoX: col3,
         vdX: col4,
-        label: 'Sodio',
+        label: 'Sódio',
         valorPorcao: tabela.sodio,
         vdRef: 2000,
         porcaoBase: tabela.porcao,
+        unidade: 'mg',
         linhaFinalGrossa: true,
         lineStartX: tableLeft + 2,
         lineWidth: tableWidth - 4,
@@ -1318,37 +1347,49 @@ PRINT $qtdCopias,1
       final verticalTop = y + 88;
       final verticalHeight = (rowY - 6) - verticalTop;
 
-      sb.writeln('BAR ${tableLeft + 188},$verticalTop,1,$verticalHeight');
-      sb.writeln('BAR ${tableLeft + 254},$verticalTop,1,$verticalHeight');
-      sb.writeln('BAR ${tableLeft + 314},$verticalTop,1,$verticalHeight');
+      sb.writeln('BAR ${tableLeft + 190},$verticalTop,1,$verticalHeight');
+      sb.writeln('BAR ${tableLeft + 290},$verticalTop,1,$verticalHeight');
+      sb.writeln('BAR ${tableLeft + 380},$verticalTop,1,$verticalHeight');
 
-      _writeText(
+     
+
+      _addMultiLineTextStyled(
         sb: sb,
-        x: tableLeft + 8,
-        y: rowY + 10,
+        text: '* Percentual de valores diarios fornecidos por porcao, com base em uma dieta de 2000 kcal. Seus valores podem ser diferentes dependendo de suas necessidades energeticas.',
+        xBase: tableLeft + 6,
+        y: rowY + 8,
+        maxWidth: tableWidth - 130,
         spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
-        text: '* Valores diarios por porcao.',
+        align: TextAlign.left,
         isBold: false,
+        maxLines: 12,
+        hardRightLimit: tableRight - 8,
       );
     }
 
-   int _printNutriRow({
-      required StringBuffer sb,
-      required int y,
-      required int labelX,
-      required int c100X,
-      required int porcaoX,
-      required int vdX,
-      required String label,
-      required double valorPorcao,
-      required double vdRef,
-      required String porcaoBase,
-      required int lineStartX,
-      required int lineWidth,
-      bool linhaFinalGrossa = false,
-    }) {
+  int _printNutriRow({
+    required StringBuffer sb,
+    required int y,
+    required int labelX,
+    required int c100X,
+    required int porcaoX,
+    required int vdX,
+    required String label,
+    required double valorPorcao,
+    required double vdRef,
+    required String porcaoBase,
+    required String unidade,
+    required int lineStartX,
+    required int lineWidth,
+    bool linhaFinalGrossa = false,
+  }) {
       final valor100 = _calcPor100(valorPorcao, porcaoBase);
       final vd = _calcVD(valorPorcao, vdRef);
+
+      final labelLower = label.toLowerCase();
+      final mostrarTracoNoVd =
+          labelLower.contains('açúc. adicionados') ||
+          labelLower.contains('gord. trans');
 
       _writeText(
         sb: sb,
@@ -1364,7 +1405,7 @@ PRINT $qtdCopias,1
         x: c100X,
         y: y,
         spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
-        text: _fmtNutri(valor100),
+        text: _fmtNutriComUnidade(valor100, unidade),
         isBold: false,
       );
 
@@ -1373,7 +1414,7 @@ PRINT $qtdCopias,1
         x: porcaoX,
         y: y,
         spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
-        text: _fmtNutri(valorPorcao),
+        text: _fmtNutriComUnidade(valorPorcao, unidade),
         isBold: false,
       );
 
@@ -1382,11 +1423,11 @@ PRINT $qtdCopias,1
         x: vdX,
         y: y,
         spec: const _TsplFontSpec(font: '1', xMul: 1, yMul: 1),
-        text: '${vd.round()}%',
+        text: (mostrarTracoNoVd && vd <= 0) ? '-' : '${vd.round()}%',
         isBold: false,
       );
 
-      final nextY = y + 22;
+      final nextY = y + 18;
       sb.writeln('BAR $lineStartX,$nextY,$lineWidth,${linhaFinalGrossa ? 2 : 1}');
       return nextY + 6;
     }
@@ -1405,5 +1446,9 @@ PRINT $qtdCopias,1
     String _fmtNutri(num v) {
       if (v % 1 == 0) return v.toInt().toString();
       return v.toStringAsFixed(1).replaceAll('.', ',');
+    }
+
+    String _fmtNutriComUnidade(num v, String unidade) {
+      return '${_fmtNutri(v)} $unidade';
     }
 }

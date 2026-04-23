@@ -1,61 +1,93 @@
-// ignore_for_file: deprecated_member_use, use_build_context_synchronously
-
-import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:open_filex/open_filex.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
 
+import '../utils/pdf_download_stub.dart'
+    if (dart.library.html) '../utils/pdf_download_web.dart';
+import '../utils/pdf_open_stub.dart'
+    if (dart.library.io) '../utils/pdf_open_io.dart';
+import '../utils/pdf_temp_file_stub.dart'
+    if (dart.library.io) '../utils/pdf_temp_file_io.dart';
+
 class ResultadoPrevisaoPdfService {
-  static Future<File> salvarPdf({
+  static Future<void> salvarPdf({
     required String imagemPath,
+    Uint8List? imagemBytes,
     required Map<String, dynamic> resultado,
   }) async {
+    debugPrint('--- SALVAR PDF SERVICE ---');
+    debugPrint('kIsWeb: $kIsWeb');
+    debugPrint('imagemPath: $imagemPath');
+    debugPrint(
+      'imagemBytes: ${imagemBytes == null ? 'null' : '${imagemBytes.length} bytes'}',
+    );
+    debugPrint('resultado keys: ${resultado.keys.toList()}');
+
     final bytes = await gerarPdfBytes(
       imagemPath: imagemPath,
+      imagemBytes: imagemBytes,
       resultado: resultado,
     );
 
-    final dir = await getTemporaryDirectory();
+    debugPrint('PDF bytes gerados: ${bytes.length}');
+
     final nomeArquivo =
         'resultado_previsao_${DateFormat('yyyyMMdd_HHmmss').format(DateTime.now())}.pdf';
-    final file = File('${dir.path}/$nomeArquivo');
 
-    await file.writeAsBytes(bytes, flush: true);
+    if (kIsWeb) {
+      debugPrint('Iniciando download web: $nomeArquivo');
+      downloadPdfWeb(bytes, nomeArquivo);
+      debugPrint('Download web disparado');
+      return;
+    }
 
-    await OpenFilex.open(file.path);
-    return file;
+    final file = await savePdfTempFile(bytes, nomeArquivo);
+    debugPrint('Arquivo salvo em: ${file.path}');
+    await openPdfFile(file.path);
+    debugPrint('Arquivo aberto');
   }
 
   static Future<Uint8List> gerarPdfBytes({
     required String imagemPath,
+    Uint8List? imagemBytes,
     required Map<String, dynamic> resultado,
   }) async {
     final pdf = pw.Document();
 
-    final root = resultado;
-    final data = ((root['data'] is Map<String, dynamic>)
-        ? root['data'] as Map<String, dynamic>
-        : root);
+    final root = Map<String, dynamic>.from(resultado);
+    final rawData = root['data'];
+
+    final data = rawData is Map
+        ? Map<String, dynamic>.from(rawData)
+        : root;
 
     final success = root['success'] ?? true;
     final message = (root['message'] ?? '').toString();
     final quantidadeDetectada =
         (data['quantidade_detectada'] as num?)?.toInt() ?? 0;
-    final items = (data['items'] as List?) ?? [];
+
+    final itemsRaw = data['items'];
+    final items = itemsRaw is List ? itemsRaw : [];
 
     final estadoGeral = _estadoDominante(items);
     final confiancaMedia = _confiancaMedia(items);
     final produtoPrincipal = _produtoPrincipal(items);
+
     pw.MemoryImage? imagemMemoria;
 
-    if (imagemPath.isNotEmpty && File(imagemPath).existsSync()) {
-      final bytes = await File(imagemPath).readAsBytes();
-      imagemMemoria = pw.MemoryImage(bytes);
+    if (imagemBytes != null && imagemBytes.isNotEmpty) {
+      imagemMemoria = pw.MemoryImage(imagemBytes);
+    } else if (!kIsWeb && imagemPath.isNotEmpty) {
+      final localBytes = await readLocalFileBytes(imagemPath);
+      if (localBytes != null && localBytes.isNotEmpty) {
+        imagemMemoria = pw.MemoryImage(localBytes);
+      }
     }
+
     final corPrincipal = _estadoPdfColor(estadoGeral);
     final tituloEstado = _tituloEstadoHero(estadoGeral);
     final acaoTitulo = _acaoTitulo(estadoGeral);
@@ -154,7 +186,9 @@ class ResultadoPrevisaoPdfService {
 
           if (items.isNotEmpty)
             ...items.map((item) {
-              final map = Map<String, dynamic>.from(item as Map);
+              if (item is! Map) return pw.SizedBox();
+
+              final map = Map<String, dynamic>.from(item);
               final produto = _formatarNomeProduto(
                 (map['produto'] ?? 'Produto').toString(),
               );
@@ -218,61 +252,61 @@ class ResultadoPrevisaoPdfService {
     return pdf.save();
   }
 
- static pw.Widget _buildItemDetectadoCompactoPdf({
-  required String produto,
-  required String estado,
-  required double produtoConf,
-  required double estadoConf,
-}) {
-  final corItem = _estadoPdfColor(estado);
-  final confianca = _mediaConfianca(produtoConf, estadoConf);
+  static pw.Widget _buildItemDetectadoCompactoPdf({
+    required String produto,
+    required String estado,
+    required double produtoConf,
+    required double estadoConf,
+  }) {
+    final corItem = _estadoPdfColor(estado);
+    final confianca = _mediaConfianca(produtoConf, estadoConf);
 
-  return pw.Container(
-    width: double.infinity,
-    margin: const pw.EdgeInsets.only(bottom: 6),
-    padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
-    decoration: pw.BoxDecoration(
-      border: pw.Border(
-        bottom: pw.BorderSide(
-          color: PdfColor.fromHex('#EAEAEA'),
-          width: 0.8,
+    return pw.Container(
+      width: double.infinity,
+      margin: const pw.EdgeInsets.only(bottom: 6),
+      padding: const pw.EdgeInsets.symmetric(horizontal: 8, vertical: 7),
+      decoration: pw.BoxDecoration(
+        border: pw.Border(
+          bottom: pw.BorderSide(
+            color: PdfColor.fromHex('#EAEAEA'),
+            width: 0.8,
+          ),
         ),
       ),
-    ),
-    child: pw.Row(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Expanded(
-          child: pw.Text(
-            produto,
-            style: _textStyle(
-              fontSize: 11.5,
-              fontWeight: pw.FontWeight.bold,
-              color: PdfColor.fromHex('#1F2937'),
+      child: pw.Row(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Expanded(
+            child: pw.Text(
+              produto,
+              style: _textStyle(
+                fontSize: 11.5,
+                fontWeight: pw.FontWeight.bold,
+                color: PdfColor.fromHex('#1F2937'),
+              ),
             ),
           ),
-        ),
-        pw.SizedBox(width: 8),
-        pw.Text(
-          estado.toUpperCase(),
-          style: _textStyle(
-            fontSize: 9.5,
-            fontWeight: pw.FontWeight.bold,
-            color: corItem,
+          pw.SizedBox(width: 8),
+          pw.Text(
+            estado.toUpperCase(),
+            style: _textStyle(
+              fontSize: 9.5,
+              fontWeight: pw.FontWeight.bold,
+              color: corItem,
+            ),
           ),
-        ),
-        pw.SizedBox(width: 8),
-        pw.Text(
-          '${confianca.toStringAsFixed(0)}%',
-          style: _textStyle(
-            fontSize: 9.5,
-            color: PdfColor.fromHex('#6B7280'),
+          pw.SizedBox(width: 8),
+          pw.Text(
+            '${confianca.toStringAsFixed(0)}%',
+            style: _textStyle(
+              fontSize: 9.5,
+              color: PdfColor.fromHex('#6B7280'),
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   static pw.Widget _buildHeader({
     required String titulo,
@@ -317,79 +351,79 @@ class ResultadoPrevisaoPdfService {
   }
 
   static pw.Widget _buildHeroResultadoPdf({
-  required bool success,
-  required String tituloEstado,
-  required String produtoPrincipal,
-  required String descricao,
-  required int quantidadeDetectada,
-  required double confiancaMedia,
-  required String acaoTitulo,
-  required PdfColor corPrincipal,
-}) {
-  final subtitulo = produtoPrincipal.isNotEmpty
-      ? '$produtoPrincipal em análise'
-      : 'Resultado geral da inspeção';
+    required bool success,
+    required String tituloEstado,
+    required String produtoPrincipal,
+    required String descricao,
+    required int quantidadeDetectada,
+    required double confiancaMedia,
+    required String acaoTitulo,
+    required PdfColor corPrincipal,
+  }) {
+    final subtitulo = produtoPrincipal.isNotEmpty
+        ? '$produtoPrincipal em análise'
+        : 'Resultado geral da inspeção';
 
-  return pw.Container(
-    width: double.infinity,
-    padding: const pw.EdgeInsets.all(14),
-    decoration: pw.BoxDecoration(
-      color: _lighten(corPrincipal, 0.93),
-      borderRadius: pw.BorderRadius.circular(12),
-      border: pw.Border.all(
-        color: _lighten(corPrincipal, 0.70),
+    return pw.Container(
+      width: double.infinity,
+      padding: const pw.EdgeInsets.all(14),
+      decoration: pw.BoxDecoration(
+        color: _lighten(corPrincipal, 0.93),
+        borderRadius: pw.BorderRadius.circular(12),
+        border: pw.Border.all(
+          color: _lighten(corPrincipal, 0.70),
+        ),
       ),
-    ),
-    child: pw.Column(
-      crossAxisAlignment: pw.CrossAxisAlignment.start,
-      children: [
-        pw.Text(
-          success ? 'Análise concluída' : 'Falha na análise',
-          style: _textStyle(
-            fontSize: 10,
-            fontWeight: pw.FontWeight.bold,
-            color: corPrincipal,
+      child: pw.Column(
+        crossAxisAlignment: pw.CrossAxisAlignment.start,
+        children: [
+          pw.Text(
+            success ? 'Análise concluída' : 'Falha na análise',
+            style: _textStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: corPrincipal,
+            ),
           ),
-        ),
-        pw.SizedBox(height: 6),
-        pw.Text(
-          tituloEstado,
-          style: _textStyle(
-            fontSize: 16,
-            fontWeight: pw.FontWeight.bold,
-            color: PdfColor.fromHex('#1F2937'),
+          pw.SizedBox(height: 6),
+          pw.Text(
+            tituloEstado,
+            style: _textStyle(
+              fontSize: 16,
+              fontWeight: pw.FontWeight.bold,
+              color: PdfColor.fromHex('#1F2937'),
+            ),
           ),
-        ),
-        pw.SizedBox(height: 4),
-        pw.Text(
-          subtitulo,
-          style: _textStyle(
-            fontSize: 11,
-            color: PdfColor.fromHex('#4B5563'),
+          pw.SizedBox(height: 4),
+          pw.Text(
+            subtitulo,
+            style: _textStyle(
+              fontSize: 11,
+              color: PdfColor.fromHex('#4B5563'),
+            ),
           ),
-        ),
-        pw.SizedBox(height: 8),
-        pw.Text(
-          descricao,
-          style: _textStyle(
-            fontSize: 10.5,
-            lineSpacing: 2.5,
-            color: PdfColor.fromHex('#374151'),
+          pw.SizedBox(height: 8),
+          pw.Text(
+            descricao,
+            style: _textStyle(
+              fontSize: 10.5,
+              lineSpacing: 2.5,
+              color: PdfColor.fromHex('#374151'),
+            ),
           ),
-        ),
-        pw.SizedBox(height: 8),
-        pw.Text(
-          'Itens detectados: $quantidadeDetectada   -  Confiança média: ${confiancaMedia.toStringAsFixed(0)}%   -   Ação: $acaoTitulo',
-          style: _textStyle(
-            fontSize: 10,
-            fontWeight: pw.FontWeight.bold,
-            color: corPrincipal,
+          pw.SizedBox(height: 8),
+          pw.Text(
+            'Itens detectados: $quantidadeDetectada   -  Confiança média: ${confiancaMedia.toStringAsFixed(0)}%   -   Ação: $acaoTitulo',
+            style: _textStyle(
+              fontSize: 10,
+              fontWeight: pw.FontWeight.bold,
+              color: corPrincipal,
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   static pw.Widget _buildResumoAnalisePdf({
     required int quantidadeDetectada,

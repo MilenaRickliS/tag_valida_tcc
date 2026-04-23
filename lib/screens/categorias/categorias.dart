@@ -5,7 +5,7 @@ import 'package:provider/provider.dart';
 import 'package:flutter/services.dart';
 
 import '../../providers/auth_provider.dart';
-import '../../providers/categorias_local_provider.dart';
+import '../../providers/categorias_provider.dart';
 import '../../models/categoria_model.dart';
 import '../../widgets/menu.dart';
 import '../categorias/widgets/categoria_card.dart';
@@ -122,7 +122,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        context.read<CategoriasLocalProvider>().fetch(uid);
+        context.read<CategoriasProvider>().fetch(uid);
       });
     }
   }
@@ -133,7 +133,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
     final compact = w < 835;
 
     final uid = context.watch<AuthProvider>().user?.uid;
-    final prov = context.watch<CategoriasLocalProvider>();
+    final prov = context.watch<CategoriasProvider>();
 
     final bg = _bg(context);
     final text = _text(context);
@@ -391,7 +391,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
     );
 
     if (ok == true && context.mounted) {
-      await context.read<CategoriasLocalProvider>().softDelete(uid, c.id);
+      await context.read<CategoriasProvider>().softDelete(uid, c.id);
     }
   }
 
@@ -607,7 +607,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                 return;
               }
 
-              final prov = context.read<CategoriasLocalProvider>();
+              final prov = context.read<CategoriasProvider>();
 
               if (isEdit) {
                 await prov.update(

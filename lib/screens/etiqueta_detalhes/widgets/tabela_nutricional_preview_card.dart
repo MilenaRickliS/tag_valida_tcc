@@ -25,6 +25,10 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
     return v.toStringAsFixed(casas).replaceAll('.', ',');
   }
 
+  String _fmtValorComUnidade(num v, String unidade, {int casas = 1}) {
+    return '${_fmtNum(v, casas: casas)} $unidade';
+  }
+
   double _porcaoEmGramas() {
     final raw = tabela.porcao.trim().replaceAll(',', '.');
     return double.tryParse(raw) ?? 0;
@@ -41,8 +45,10 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
     return (valorNaPorcao / vdReferencia) * 100;
   }
 
-  String _fmtVd(double v) {
-    if (v <= 0) return '0%';
+  String _fmtVd(double v, {bool mostrarTracoQuandoZero = false}) {
+    if (v <= 0) {
+      return mostrarTracoQuandoZero ? '-' : '0%';
+    }
     return '${v.round()}%';
   }
 
@@ -96,10 +102,16 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
     required String label,
     required double valorPorcao,
     required double vdReferencia,
+    required String unidade,
     bool indentado = false,
   }) {
     final valor100 = _calc100g(valorPorcao);
     final vd = _calcVD(valorPorcao, vdReferencia);
+
+    final labelLower = label.toLowerCase();
+    final mostrarTracoNoVd =
+        labelLower.contains('açúcares adicionados') ||
+        labelLower.contains('gorduras trans');
 
     Widget cell(
       String text, {
@@ -132,15 +144,15 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
           ),
         ),
         cell(
-          _fmtNum(valor100),
+          _fmtValorComUnidade(valor100, unidade),
           align: TextAlign.center,
         ),
         cell(
-          _fmtNum(valorPorcao),
+          _fmtValorComUnidade(valorPorcao, unidade),
           align: TextAlign.center,
         ),
         cell(
-          _fmtVd(vd),
+          _fmtVd(vd, mostrarTracoQuandoZero: mostrarTracoNoVd),
           align: TextAlign.center,
         ),
       ],
@@ -195,12 +207,12 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Porções por embalagem: ${tabela.porcoesPorEmbalagem}',
+                        'Porção: $porcaoLabel ($medidaCaseiraCompleta)',
                         style: _infoStyle(),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Porção: $porcaoLabel ($medidaCaseiraCompleta)',
+                        'Porções por embalagem: ${tabela.porcoesPorEmbalagem}',
                         style: _infoStyle(),
                       ),
                     ],
@@ -251,60 +263,70 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
                     2: FlexColumnWidth(0.9),
                     3: FlexColumnWidth(0.7),
                   },
-                  children: [
+                 children: [
                     _dataRow(
-                      label: 'Valor energético (kcal)',
+                      label: 'Valor energético',
                       valorPorcao: tabela.valorEnergetico,
                       vdReferencia: 2000,
+                      unidade: 'kcal',
                     ),
                     _dataRow(
-                      label: 'Carboidratos totais (g)',
+                      label: 'Carboidratos totais',
                       valorPorcao: tabela.carboidratos,
                       vdReferencia: 300,
+                      unidade: 'g',
                     ),
                     _dataRow(
-                      label: 'Açúcares totais (g)',
+                      label: 'Açúcares totais',
                       valorPorcao: tabela.acucaresTotais,
                       vdReferencia: 50,
+                      unidade: 'g',
                       indentado: true,
                     ),
                     _dataRow(
-                      label: 'Açúcares adicionados (g)',
+                      label: 'Açúcares adicionados',
                       valorPorcao: tabela.acucaresAdicionados,
                       vdReferencia: 50,
+                      unidade: 'g',
                       indentado: true,
                     ),
                     _dataRow(
-                      label: 'Proteínas (g)',
+                      label: 'Proteínas',
                       valorPorcao: tabela.proteinas,
                       vdReferencia: 50,
+                      unidade: 'g',
                     ),
                     _dataRow(
-                      label: 'Gorduras totais (g)',
+                      label: 'Gorduras totais',
                       valorPorcao: tabela.gordurasTotais,
                       vdReferencia: 55,
+                      unidade: 'g',
                     ),
                     _dataRow(
-                      label: 'Gorduras saturadas (g)',
+                      label: 'Gorduras saturadas',
                       valorPorcao: tabela.gordurasSaturadas,
                       vdReferencia: 22,
+                      unidade: 'g',
                       indentado: true,
                     ),
                     _dataRow(
-                      label: 'Gorduras trans (g)',
+                      label: 'Gorduras trans',
                       valorPorcao: tabela.gordurasTrans,
                       vdReferencia: 2,
+                      unidade: 'g',
                       indentado: true,
                     ),
                     _dataRow(
-                      label: 'Fibras alimentares (g)',
+                      label: 'Fibras alimentares',
                       valorPorcao: tabela.fibraAlimentar,
                       vdReferencia: 25,
+                      unidade: 'g',
                     ),
                     _dataRow(
-                      label: 'Sódio (mg)',
+                      label: 'Sódio',
                       valorPorcao: tabela.sodio,
                       vdReferencia: 2000,
+                      unidade: 'mg',
                     ),
                   ],
                 ),
@@ -322,7 +344,7 @@ class TabelaNutricionalPreviewCard extends StatelessWidget {
                     compacta ? 7 : 8,
                   ),
                   child: Text(
-                    '* Percentual de valores diários fornecidos pela porção.',
+                    '* Percentual de valores diários fornecidos por porção, com base em uma dieta de 2000 kcal. Seus valores podem ser diferentes dependendo de suas necessidades energéticas.',
                     style: TextStyle(
                       color: _black,
                       fontSize: compacta ? 8.8 : 9.8,

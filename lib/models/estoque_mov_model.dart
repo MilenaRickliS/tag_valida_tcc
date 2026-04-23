@@ -30,6 +30,16 @@ class EstoqueMovModel {
     this.motivo,
   });
 
+  Map<String, dynamic> toMap() => {
+        "id": id,
+        "etiquetaId": etiquetaId,
+        "produtoNome": produtoNome,
+        "tipo": tipo,
+        "quantidade": quantidade,
+        "motivo": motivo,
+        "createdAt": Timestamp.fromDate(createdAt),
+        "updatedAt": Timestamp.fromDate(updatedAt),
+      };
 
   static DateTime _parseDate(dynamic v) {
     if (v == null) return DateTime.now();

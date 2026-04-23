@@ -3,7 +3,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
-import '../../providers/tipos_etiqueta_local_provider.dart';
+import '../../providers/tipos_etiqueta_provider.dart';
 import '../../models/tipo_etiqueta_model.dart';
 import '../../widgets/menu.dart';
 import './widgets/empty_box.dart';
@@ -32,19 +32,22 @@ class _EtiquetasAtivasScreenState extends State<EtiquetasAtivasScreen> {
     super.didChangeDependencies();
     if (_loaded) return;
 
-    final uid = context.read<AuthProvider>().user?.uid;
-    if (uid != null) {
-      context.read<TiposEtiquetaLocalProvider>().fetch(uid);
-      _loaded = true;
-    }
-
     final args = ModalRoute.of(context)?.settings.arguments;
     if (args is Map) {
       _statusFiltro = args["statusFiltro"]?.toString();
     }
 
-    _loaded = true;
-  
+    final uid = context.read<AuthProvider>().user?.uid;
+    if (uid != null) {
+      _loaded = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<TiposEtiquetaProvider>().fetch(uid);
+      });
+    } else {
+      _loaded = true;
+    }
   }
 
   
@@ -74,7 +77,7 @@ class _EtiquetasAtivasScreenState extends State<EtiquetasAtivasScreen> {
       );
     }
 
-    final tiposProv = context.watch<TiposEtiquetaLocalProvider>();
+    final tiposProv = context.watch<TiposEtiquetaProvider>();
     final tipos = tiposProv.items;
 
     if (_tipoSelecionadoId == null && tipos.isNotEmpty) {
@@ -140,7 +143,7 @@ class _EtiquetasAtivasScreenState extends State<EtiquetasAtivasScreen> {
                       tooltip: "Atualizar tipos",
                       onPressed: tiposProv.loading
                           ? null
-                          : () => context.read<TiposEtiquetaLocalProvider>().fetch(uid),
+                          : () => context.read<TiposEtiquetaProvider>().fetch(uid),
                       icon: tiposProv.loading
                           ? const SizedBox(
                               width: 18,

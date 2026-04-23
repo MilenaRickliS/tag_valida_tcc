@@ -1,124 +1,429 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
-import 'package:qr_flutter/qr_flutter.dart';
+import 'package:intl/intl.dart';
+import '../../../models/design_etiqueta_model.dart';
+import '../../../models/etiqueta_model.dart';
+import '../../design_etiqueta/widgets/imagem_design.dart';
+import '../../design_etiqueta/widgets/qr_design.dart';
+import '../../design_etiqueta/widgets/tabela_nutricional_design.dart';
 
-class EtiquetaPrintPreview extends StatelessWidget {
-  final String produto;
-  final String validade;
-  final String lote;
-  final String quantidade;
+class EtiquetaPrintPreviewDesign extends StatelessWidget {
+  final DesignEtiquetaModel config;
+  final EtiquetaModel etiqueta;
   final String qrData;
+  final String empresaRazao;
+  final String empresaCnpj;
+  final String empresaRua;
+  final String empresaNumero;
+  final String empresaCep;
+  final String empresaCidade;
+  final String empresaEstado;
 
-  const EtiquetaPrintPreview({
+  const EtiquetaPrintPreviewDesign({
     super.key,
-    required this.produto,
-    required this.validade,
-    required this.lote,
-    required this.quantidade,
+    required this.config,
+    required this.etiqueta,
     required this.qrData,
+    required this.empresaRazao,
+    required this.empresaCnpj,
+    required this.empresaRua,
+    required this.empresaNumero,
+    required this.empresaCep,
+    required this.empresaCidade,
+    required this.empresaEstado,
   });
+
+  bool get _is60x40 => config.larguraMm <= 60.5 && config.alturaMm <= 40.5;
+
+  String _fmtDate(DateTime d) => DateFormat('dd/MM/yyyy').format(d);
+
+  String _fmtNum(num v) {
+    if (v % 1 == 0) return v.toInt().toString();
+    return v.toStringAsFixed(2).replaceAll('.', ',');
+  }
+
+  String _empresaCompleta() {
+    final ruaNumero = [
+      empresaRua.trim(),
+      empresaNumero.trim(),
+    ].where((e) => e.isNotEmpty).join(', ');
+
+    final cidadeEstado = [
+      empresaCidade.trim(),
+      empresaEstado.trim(),
+    ].where((e) => e.isNotEmpty).join('-');
+
+    final parts = [
+      empresaRazao.trim(),
+      if (empresaCnpj.trim().isNotEmpty) 'CNPJ: $empresaCnpj',
+      if (ruaNumero.isNotEmpty) ruaNumero,
+      if (empresaCep.trim().isNotEmpty) 'CEP: $empresaCep',
+      if (cidadeEstado.isNotEmpty) cidadeEstado,
+    ];
+
+    return parts.where((e) => e.isNotEmpty).join('\n');
+  }
+
+  String _buildLote() {
+    final custom = Map<String, dynamic>.from(etiqueta.camposCustomValores);
+    final loteRaw = custom['lote'];
+
+    if (loteRaw is Map) {
+      final v = loteRaw['value']?.toString().trim();
+      if (v != null && v.isNotEmpty) return v;
+    }
+
+    return '-';
+  }
+
+  String _valorCampo(CampoDesignEtiquetaModel campo) {
+    final custom = Map<String, dynamic>.from(etiqueta.camposCustomValores);
+
+    switch (campo.id) {
+      case 'empresa':
+        return _empresaCompleta();
+      case 'produto':
+        return etiqueta.produtoNome;
+      case 'fabricacao':
+        return _fmtDate(etiqueta.dataFabricacao);
+      case 'validade':
+        return _fmtDate(etiqueta.dataValidade);
+      case 'categoria':
+        return etiqueta.categoriaNome;
+      case 'setor':
+        return etiqueta.setorNome;
+      case 'quantidade':
+        return _fmtNum(etiqueta.quantidadeRestante);
+      case 'lote':
+        return _buildLote();
+      case 'tabela_nutricional':
+        return 'Tabela nutricional';
+      default:
+        final raw = custom[campo.id];
+
+        if (raw is Map) {
+          final value = raw['value'];
+          if (value == null) return '';
+
+          if (value is int) {
+            final isCampoData =
+                campo.id.toLowerCase().contains('data') ||
+                campo.nome.toLowerCase().contains('data');
+
+            if (isCampoData) {
+              return _fmtDate(DateTime.fromMillisecondsSinceEpoch(value));
+            }
+          }
+
+          return value.toString();
+        }
+
+        if (raw == null) return '';
+        return raw.toString();
+    }
+  }
+
+  CampoDesignEtiquetaModel? _findCampo(List<CampoDesignEtiquetaModel> campos, String id) {
+    try {
+      return campos.firstWhere((c) => c.id == id);
+    } catch (_) {
+      return null;
+    }
+  }
+
+  Alignment _toAlignment(TextAlign align) {
+    switch (align) {
+      case TextAlign.center:
+        return Alignment.center;
+      case TextAlign.right:
+        return Alignment.centerRight;
+      case TextAlign.left:
+      default:
+        return Alignment.centerLeft;
+    }
+  }
+
+  double _scaleFont(CampoDesignEtiquetaModel campo) {
+    if (campo.tipo == CampoDesignTipo.produto) {
+      return campo.fontSize * (_is60x40 ? 2.0 : 2.2);
+    }
+
+    if (campo.tipo == CampoDesignTipo.blocoEmpresa) {
+      return campo.fontSize * 1.4;
+    }
+
+    return campo.fontSize * (_is60x40 ? 1.5 : 1.7);
+  }
+
+  TextAlign _safeAlign(TextAlign align) => align;
+
+  FontWeight _safeWeight(bool bold) =>
+      bold ? FontWeight.w800 : FontWeight.w500;
+
+  Widget _buildTextoCampo(
+    CampoDesignEtiquetaModel campo,
+    String valor, {
+    int? maxLines,
+  }) {
+    return Align(
+      alignment: _toAlignment(campo.align),
+      child: Text(
+        valor,
+        textAlign: _safeAlign(campo.align),
+        maxLines: maxLines,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(
+          fontFamily: 'RobotoMono',
+          fontSize: _scaleFont(campo),
+          fontWeight: _safeWeight(campo.isBold),
+          color: Colors.black,
+          height: 1.05,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildLinhaInfo(CampoDesignEtiquetaModel campo) {
+    final valor = _valorCampo(campo).trim();
+    if (valor.isEmpty) return const SizedBox.shrink();
+
+    final prefixo = (campo.labelImpresso ?? campo.nome).trim();
+    final texto = prefixo.isEmpty ? valor : '$prefixo: $valor';
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 3),
+      child: Align(
+        alignment: _toAlignment(campo.align),
+        child: Text(
+          texto,
+          textAlign: campo.align,
+          maxLines: 2,
+          overflow: TextOverflow.ellipsis,
+          style: TextStyle(
+            fontFamily: 'RobotoMono',
+            fontSize: _scaleFont(campo),
+            fontWeight: campo.isBold ? FontWeight.w800 : FontWeight.w500,
+            color: Colors.black,
+            height: 1.05,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfosReais(List<CampoDesignEtiquetaModel> campos) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: campos.map(_buildLinhaInfo).toList(),
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final camposOrdenados = [...config.campos]
+      ..sort((a, b) => a.ordem.compareTo(b.ordem));
 
-    const previewWidth = 420.0;
-    const ratio = 60 / 40;
-    final previewHeight = previewWidth / ratio;
+    final camposPreview = camposOrdenados.where((c) => c.visivel).toList();
+
+    final empresaCampo = _findCampo(camposPreview, 'empresa');
+    final produtoCampo = _findCampo(camposPreview, 'produto');
+    final tabelaCampo = _findCampo(camposPreview, 'tabela_nutricional');
+
+    final hasQr = camposPreview.any((e) => e.tipo == CampoDesignTipo.qrcode);
+
+    final imagemCampo = camposPreview.any((e) => e.tipo == CampoDesignTipo.imagem)
+        ? camposPreview.firstWhere((e) => e.tipo == CampoDesignTipo.imagem)
+        : null;
+
+    final infoCampos = camposPreview.where((campo) {
+      if (campo.tipo == CampoDesignTipo.qrcode) return false;
+      if (campo.tipo == CampoDesignTipo.blocoEmpresa) return false;
+      if (campo.tipo == CampoDesignTipo.produto) return false;
+      if (campo.tipo == CampoDesignTipo.imagem) return false;
+      if (campo.id == 'tabela_nutricional') return false;
+      return true;
+    }).toList();
+
+    final previewWidth = 420.0;
+    final ratio = config.larguraMm / config.alturaMm;
+    final previewHeight = previewWidth / ratio.clamp(0.3, 10.0);
+
+    final qrSize = _is60x40 ? 70.0 : 100.0;
+    final outerPad = _is60x40 ? 6.0 : 10.0;
+    final innerPad = _is60x40 ? 5.0 : 7.0;
+    final qrGap = _is60x40 ? 6.0 : 8.0;
+    final empresaBoxHeight = _is60x40 ? 28.0 : 42.0;
+    final produtoBoxHeight = _is60x40 ? 30.0 : 44.0;
+    final brandHeight = _is60x40 ? 14.0 : 16.0;
+    final dividerGap = _is60x40 ? 3.0 : 5.0;
+    final infoTopGap = _is60x40 ? 4.0 : 6.0;
+    final infoBottomGap = _is60x40 ? 3.0 : 6.0;
+    final brandFontSize = _is60x40 ? 9.0 : 11.0;
 
     return Center(
       child: Container(
         width: previewWidth,
         height: previewHeight,
-        padding: const EdgeInsets.all(14),
+        padding: EdgeInsets.fromLTRB(
+          outerPad,
+          8,
+          outerPad,
+          infoBottomGap,
+        ),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
-          border: Border.all(
-            color: isDark
-                ? const Color(0xFFD4AF37).withOpacity(0.16)
-                : Colors.black.withOpacity(0.10),
-          ),
+          color: Colors.white,
           borderRadius: BorderRadius.circular(16),
+          border: Border.all(color: Colors.black.withOpacity(0.08)),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 14,
-              offset: const Offset(0, 6),
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 12,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              flex: 6,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final totalWidth = constraints.maxWidth;
+            final contentWidth =
+                (totalWidth - (outerPad * 2)).clamp(0.0, totalWidth);
+
+            final qrColumnWidth = hasQr ? qrSize : 0.0;
+
+            final dividerWidth = hasQr
+                ? (contentWidth - qrColumnWidth - 6).clamp(60.0, contentWidth)
+                : contentWidth;
+
+            final infoWidth = hasQr
+                ? (contentWidth - qrColumnWidth - qrGap - innerPad)
+                    .clamp(80.0, contentWidth)
+                : (contentWidth - innerPad).clamp(0.0, contentWidth);
+
+            return DefaultTextStyle(
+              style: const TextStyle(
+                fontFamily: 'RobotoMono',
+                color: Colors.black,
+              ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(
-                    produto,
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w900,
-                      height: 1.05,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            if (empresaCampo != null)
+                              SizedBox(
+                                height: empresaBoxHeight,
+                                child: Align(
+                                  alignment: _toAlignment(empresaCampo.align),
+                                  child: _buildTextoCampo(
+                                    empresaCampo,
+                                    _valorCampo(empresaCampo),
+                                    maxLines: 3,
+                                  ),
+                                ),
+                              ),
+                            const SizedBox(height: 2),
+                            if (produtoCampo != null)
+                              SizedBox(
+                                height: produtoBoxHeight,
+                                child: Align(
+                                  alignment: _toAlignment(produtoCampo.align),
+                                  child: _buildTextoCampo(
+                                    produtoCampo,
+                                    _valorCampo(produtoCampo),
+                                    maxLines: 2,
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      ),
+                      if (hasQr) ...[
+                        SizedBox(width: qrGap),
+                        SizedBox(
+                          width: qrColumnWidth,
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (config.mostrarMarcaTagValida)
+                                SizedBox(
+                                  height: brandHeight,
+                                  child: Center(
+                                    child: Text(
+                                      'TagValida',
+                                      style: TextStyle(
+                                        fontFamily: 'RobotoMono',
+                                        fontSize: brandFontSize,
+                                        fontWeight: FontWeight.w700,
+                                        color: Colors.black.withOpacity(0.78),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              SizedBox(
+                                width: qrSize,
+                                height: qrSize,
+                                child: buildQrPreviewNovoComData(qrData),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
                   ),
-                  const Spacer(),
-                  Text(
-                    'Val: $validade',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
+                  SizedBox(height: dividerGap),
+                  Container(
+                    width: dividerWidth,
+                    height: 0.9,
+                    color: Colors.black.withOpacity(0.62),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Lote: $lote',
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : Colors.black,
-                    ),
+                  SizedBox(height: infoTopGap),
+                  SizedBox(
+                    width: infoWidth,
+                    child: imagemCampo != null
+                      ? Row(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Expanded(child: _buildInfosReais(infoCampos)),
+                            const SizedBox(width: 8),
+                            SizedBox(width: 110, child: buildImagemPreviewNovo(imagemCampo)),
+                          ],
+                        )
+                      : tabelaCampo != null && etiqueta.incluirTabelaNutricional
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(child: _buildInfosReais(infoCampos)),
+                                const SizedBox(width: 8),
+                                buildTabelaNutricionalPreviewReal(etiqueta.tabelaNutricional),
+                              ],
+                            )
+                          : _buildInfosReais(infoCampos),
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    'Qtd: $quantidade',
-                    style: TextStyle(
-                      fontSize: 15,
-                      fontWeight: FontWeight.w800,
-                      color: isDark ? Colors.white : Colors.black,
+                  if (!hasQr && config.mostrarMarcaTagValida) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      'TagValida',
+                      style: TextStyle(
+                        fontFamily: 'RobotoMono',
+                        fontSize: brandFontSize,
+                        fontWeight: FontWeight.w700,
+                        color: Colors.black.withOpacity(0.78),
+                      ),
                     ),
-                  ),
+                  ],
                 ],
               ),
-            ),
-            const SizedBox(width: 14),
-            Expanded(
-              flex: 4,
-              child: Center(
-                child: Container(
-                  padding: const EdgeInsets.all(6),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: QrImageView(
-                    data: qrData,
-                    size: 125,
-                  ),
-                ),
-              ),
-            ),
-          ],
+            );
+          },
         ),
       ),
     );
   }
 }
+

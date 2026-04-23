@@ -4,21 +4,18 @@ import 'package:image_picker/image_picker.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import '../../providers/auth_provider.dart';
-import '../../providers/categorias_local_provider.dart';
-import '../../providers/setores_local_provider.dart';
-import '../../providers/tipos_etiqueta_local_provider.dart';
-import '../../providers/gerar_etiqueta_local_provider.dart';
+import '../../providers/categorias_provider.dart';
+import '../../providers/setores_provider.dart';
+import '../../providers/tipos_etiqueta_provider.dart';
+import '../../providers/gerar_etiqueta_provider.dart';
 
 import '../../models/tipo_etiqueta_model.dart';
 import '../../models/categoria_model.dart';
 import '../../models/setor_model.dart';
 import '../../models/etiqueta_model.dart';
-
-import '../../data/local/repos/etiquetas_local_repo.dart';
-import '../../data/local/repos/etiqueta_template_local_repo.dart';
-
 
 import '../etiqueta_detalhes/etiqueta_detalhes.dart';
 import 'package:flutter/services.dart';
@@ -148,64 +145,83 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
 
     final uid = context.read<AuthProvider>().user?.uid;
     if (uid != null) {
-      context.read<CategoriasLocalProvider>().fetch(uid);
-      context.read<SetoresLocalProvider>().fetch(uid);
-      context.read<TiposEtiquetaLocalProvider>().fetch(uid);
+      _loaded = true;
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        context.read<CategoriasProvider>().fetch(uid);
+        context.read<SetoresProvider>().fetch(uid);
+        context.read<TiposEtiquetaProvider>().fetch(uid);
+      });
+    } else {
       _loaded = true;
     }
   }
 
   Future<void> _tryLoadEditIfNeeded({
-    required String uid,
-    required List<CategoriaModel> cats,
-    required List<SetorModel> sets,
-    required List<TipoEtiquetaModel> tipos,
-  }) async {
-    if (_loadedEdit) return;
+  required String uid,
+  required List<CategoriaModel> cats,
+  required List<SetorModel> sets,
+  required List<TipoEtiquetaModel> tipos,
+}) async {
+  if (_loadedEdit) return;
 
-    if (widget.editarEtiquetaId == null) {
-      _loadedEdit = true;
-      return;
-    }
-
-    if (cats.isEmpty || sets.isEmpty || tipos.isEmpty) return;
-
-    final repo = context.read<EtiquetasLocalRepo>();
-    final gerar = context.read<GerarEtiquetaLocalProvider>();
-
-    final e = await repo.getById(uid: uid, id: widget.editarEtiquetaId!);
-
-    if (e == null) {
-      _loadedEdit = true;
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Etiqueta para edição não encontrada.")),
-      );
-      Navigator.pop(context);
-      return;
-    }
-
-    final categoriaObj = cats.any((c) => c.id == e.categoriaId)
-        ? cats.firstWhere((c) => c.id == e.categoriaId)
-        : null;
-
-    final setorObj = sets.any((s) => s.id == e.setorId)
-        ? sets.firstWhere((s) => s.id == e.setorId)
-        : null;
-
-    final tipoAtual = tipos.any((t) => t.id == e.tipoId)
-        ? tipos.firstWhere((t) => t.id == e.tipoId)
-        : null;
-
-    gerar.loadFromEtiqueta(
-      e: e,
-      categoriaObj: categoriaObj,
-      setorObj: setorObj,
-      tipoAtual: tipoAtual,
-    );
-
+  if (widget.editarEtiquetaId == null) {
     _loadedEdit = true;
+    return;
   }
+
+  if (cats.isEmpty || sets.isEmpty || tipos.isEmpty) {
+    debugPrint(
+      "Aguardando dados para editar | cats=${cats.length} sets=${sets.length} tipos=${tipos.length}",
+    );
+    return;
+  }
+
+  final gerar = context.read<GerarEtiquetaProvider>();
+  final e = await gerar.getEtiquetaById(uid: uid, id: widget.editarEtiquetaId!);
+
+  if (e == null) {
+    _loadedEdit = true;
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text("Etiqueta para edição não encontrada.")),
+    );
+    Navigator.pop(context);
+    return;
+  }
+
+  debugPrint("Etiqueta carregada para edição:");
+  debugPrint("categoriaId=${e.categoriaId} | setorId=${e.setorId}");
+  debugPrint("setores carregados: ${sets.map((s) => "${s.id}:${s.nome}").toList()}");
+
+  final categoriaObj = cats.cast<CategoriaModel?>().firstWhere(
+    (c) => c?.id == e.categoriaId,
+    orElse: () => null,
+  );
+
+  final setorObj = sets.cast<SetorModel?>().firstWhere(
+    (s) => s?.id == e.setorId,
+    orElse: () => null,
+  );
+
+  final tipoAtual = tipos.cast<TipoEtiquetaModel?>().firstWhere(
+    (t) => t?.id == e.tipoId,
+    orElse: () => null,
+  );
+
+  debugPrint("categoriaObj=${categoriaObj?.nome}");
+  debugPrint("setorObj=${setorObj?.nome}");
+
+  gerar.loadFromEtiqueta(
+    e: e,
+    categoriaObj: categoriaObj,
+    setorObj: setorObj,
+    tipoAtual: tipoAtual,
+  );
+
+  _loadedEdit = true;
+}
 
   Future<void> _tryLoadTemplateIfNeeded({
     required String uid,
@@ -228,10 +244,9 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
 
     if (cats.isEmpty || sets.isEmpty || tipos.isEmpty) return;
 
-    final tplRepo = context.read<EtiquetasTemplatesLocalRepo>();
-    final gerar = context.read<GerarEtiquetaLocalProvider>();
-
-    final t = await tplRepo.getById(uid: uid, id: widget.templateId!);
+    final gerar = context.read<GerarEtiquetaProvider>();
+    final t = await gerar.getTemplateById(uid: uid, id: widget.templateId!);
+        
 
     if (t == null) {
       _loadedTemplate = true;
@@ -410,8 +425,9 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
 
       if (picked == null) return null;
 
-      final file = File(picked.path);
-      final ext = picked.path.split('.').last.toLowerCase();
+      final ext = picked.name.contains('.')
+        ? picked.name.split('.').last.toLowerCase()
+        : 'jpg';
       final fileName =
           '${DateTime.now().millisecondsSinceEpoch}_$campoKey.${ext.isEmpty ? 'jpg' : ext}';
 
@@ -423,7 +439,15 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
         contentType: _contentTypeFromExt(ext),
       );
 
-      await ref.putFile(file, metadata);
+      if (kIsWeb) {
+      final bytes = await picked.readAsBytes();
+        await ref.putData(bytes, metadata);
+      } else {
+        final file = File(picked.path);
+        await ref.putFile(file, metadata);
+      }
+
+      
       final url = await ref.getDownloadURL();
       return url;
     } catch (e) {
@@ -449,9 +473,7 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
   }
 
   @override
-Widget build(BuildContext context) {
-  debugPrint("templateId: ${widget.templateId} | editarEtiquetaId: ${widget.editarEtiquetaId}");
-
+  Widget build(BuildContext context) {
   final theme = Theme.of(context);
   final isDark = theme.brightness == Brightness.dark;
 
@@ -481,17 +503,31 @@ Widget build(BuildContext context) {
     );
   }
 
-  final cats = context.watch<CategoriasLocalProvider>().items;
-  final sets = context.watch<SetoresLocalProvider>().items;
-  final tipos = context.watch<TiposEtiquetaLocalProvider>().items;
-  final gerar = context.watch<GerarEtiquetaLocalProvider>();
+  final cats = context.watch<CategoriasProvider>().items;
+  final sets = context.watch<SetoresProvider>().items;
+  final tipos = context.watch<TiposEtiquetaProvider>().items;
+  final gerar = context.watch<GerarEtiquetaProvider>();
 
-  if (widget.editarEtiquetaId != null) {
-    _tryLoadEditIfNeeded(uid: uid, cats: cats, sets: sets, tipos: tipos);
-    _loadedTemplate = true;
-  } else {
-    _tryLoadTemplateIfNeeded(uid: uid, cats: cats, sets: sets, tipos: tipos);
-  }
+  WidgetsBinding.instance.addPostFrameCallback((_) async {
+    if (!mounted) return;
+
+    if (widget.editarEtiquetaId != null && !_loadedEdit) {
+      await _tryLoadEditIfNeeded(
+        uid: uid,
+        cats: cats,
+        sets: sets,
+        tipos: tipos,
+      );
+      _loadedTemplate = true;
+    } else if (widget.templateId != null && !_loadedTemplate) {
+      await _tryLoadTemplateIfNeeded(
+        uid: uid,
+        cats: cats,
+        sets: sets,
+        tipos: tipos,
+      );
+    }
+});
 
   final bool isEditing = widget.editarEtiquetaId != null;
 
@@ -594,7 +630,7 @@ Widget build(BuildContext context) {
                         onChanged: (id) {
                           if (id == null) return;
                           final novoTipo = tipos.firstWhere((t) => t.id == id);
-                          context.read<GerarEtiquetaLocalProvider>().setTipoId(
+                          context.read<GerarEtiquetaProvider>().setTipoId(
                                 id,
                                 tipoAtual: novoTipo,
                               );
@@ -697,34 +733,68 @@ Widget build(BuildContext context) {
                           ),
                         ],
                         onChanged: (v) => context
-                            .read<GerarEtiquetaLocalProvider>()
+                            .read<GerarEtiquetaProvider>()
                             .setStatusEstoqueEdicao(v),
                         decoration: appInputDecoration("Status do estoque"),
                       ),
 
                     const SizedBox(height: 12),
 
-                    Dropdown<CategoriaModel>(
-                      label: "Categoria",
-                      value: gerar.categoria,
-                      items: cats,
-                      getLabel: (c) => c.nome,
-                      onChanged: (c) => context
-                          .read<GerarEtiquetaLocalProvider>()
-                          .setCategoria(c, tipoAtual: tipoAtual),
-                      emptyHint: "Cadastre categorias na tela Categorias.",
+                    DropdownButtonFormField<String>(
+                      value: (gerar.categoriaIdSelecionada != null &&
+                              cats.any((c) => c.id == gerar.categoriaIdSelecionada))
+                          ? gerar.categoriaIdSelecionada
+                          : null,
+                      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      style: TextStyle(color: text),
+                      decoration: appInputDecoration("Categoria"),
+                      items: cats.map((c) {
+                        return DropdownMenuItem<String>(
+                          value: c.id,
+                          child: Text(
+                            c.nome,
+                            style: TextStyle(color: text),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (id) {
+                        final categoriaSelecionada = (id == null)
+                            ? null
+                            : cats.firstWhere((c) => c.id == id);
+
+                        context.read<GerarEtiquetaProvider>().setCategoria(
+                              categoriaSelecionada,
+                              tipoAtual: tipoAtual,
+                            );
+                      },
                     ),
 
                     const SizedBox(height: 12),
 
-                    Dropdown<SetorModel>(
-                      label: "Setor/Responsável",
-                      value: gerar.setor,
-                      items: sets,
-                      getLabel: (s) => s.nome,
-                      onChanged: (s) =>
-                          context.read<GerarEtiquetaLocalProvider>().setSetor(s),
-                      emptyHint: "Cadastre setores na tela Setores.",
+                    DropdownButtonFormField<String>(
+                      value: (gerar.setorIdSelecionado != null &&
+                              sets.any((s) => s.id == gerar.setorIdSelecionado))
+                          ? gerar.setorIdSelecionado
+                          : null,
+                      dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                      style: TextStyle(color: text),
+                      decoration: appInputDecoration("Setor/Responsável"),
+                      items: sets.map((s) {
+                        return DropdownMenuItem<String>(
+                          value: s.id,
+                          child: Text(
+                            s.nome,
+                            style: TextStyle(color: text),
+                          ),
+                        );
+                      }).toList(),
+                      onChanged: (id) {
+                        final setorSelecionado = (id == null)
+                            ? null
+                            : sets.firstWhere((s) => s.id == id);
+
+                        context.read<GerarEtiquetaProvider>().setSetor(setorSelecionado);
+                      },
                     ),
 
                     const SizedBox(height: 12),
@@ -736,7 +806,7 @@ Widget build(BuildContext context) {
                             label: "Fabricação",
                             value: gerar.fabricacao,
                             onPick: (d) => context
-                                .read<GerarEtiquetaLocalProvider>()
+                                .read<GerarEtiquetaProvider>()
                                 .setFabricacao(d, tipoAtual: tipoAtual),
                           ),
                         ),
@@ -746,7 +816,7 @@ Widget build(BuildContext context) {
                             label: "Validade",
                             value: gerar.validade,
                             onPick: (d) => context
-                                .read<GerarEtiquetaLocalProvider>()
+                                .read<GerarEtiquetaProvider>()
                                 .setValidadeManual(d),
                           ),
                         ),
@@ -771,14 +841,14 @@ Widget build(BuildContext context) {
                       LoteReadOnlyCard(
                         lote: (gerar.camposValores["lote"]?["value"] ?? "").toString(),
                         onRegenerate: () {
-                          context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                          context.read<GerarEtiquetaProvider>().setCampoValor(
                                 key: "lote",
                                 label: "Lote",
                                 value: "",
                                 tipo: CampoTipo.text,
                               );
                           context
-                              .read<GerarEtiquetaLocalProvider>()
+                              .read<GerarEtiquetaProvider>()
                               .ensureLoteAuto(tipoAtual: tipoAtual!);
                         },
                       ),
@@ -867,7 +937,7 @@ Widget build(BuildContext context) {
                                   if (!go) return;
                                 }
 
-                                final prov = context.read<GerarEtiquetaLocalProvider>();
+                                final prov = context.read<GerarEtiquetaProvider>();
 
                                 final TipoEtiquetaModel? tipoParaSalvar = tipoAtual;
                                 if (tipoParaSalvar == null) {
@@ -968,7 +1038,7 @@ Widget build(BuildContext context) {
 
   Widget _buildCampoDinamico(
     BuildContext context,
-    GerarEtiquetaLocalProvider gerar,
+    GerarEtiquetaProvider gerar,
     CampoCustomModel campo,
   ) {
     final label = campo.obrigatorio ? "${campo.label} *" : campo.label;
@@ -988,7 +1058,7 @@ Widget build(BuildContext context) {
             if (campo.obrigatorio && (v ?? "").trim().isEmpty) return "Campo obrigatório.";
             return null;
           },
-          onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+          onChanged: (v) => context.read<GerarEtiquetaProvider>().setCampoValor(
             key: campo.key, label: campo.label, value: v, tipo: campo.tipo,
           ),
         );
@@ -1059,7 +1129,7 @@ Widget build(BuildContext context) {
                 final parsed = num.tryParse(v.replaceAll(",", "."));
 
                 if (campo.tipo == CampoTipo.priceMode) {
-                  context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                  context.read<GerarEtiquetaProvider>().setCampoValor(
                     key: campo.key,
                     label: campo.label,
                     value: {
@@ -1072,7 +1142,7 @@ Widget build(BuildContext context) {
                     casasDecimais: campo.casasDecimais,
                   );
                 } else {
-                  context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                  context.read<GerarEtiquetaProvider>().setCampoValor(
                     key: campo.key,
                     label: campo.label,
                     value: parsed,
@@ -1108,7 +1178,7 @@ Widget build(BuildContext context) {
                     ctrl.text.replaceAll(",", "."),
                   );
 
-                  context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                  context.read<GerarEtiquetaProvider>().setCampoValor(
                     key: campo.key,
                     label: campo.label,
                     value: {
@@ -1142,7 +1212,7 @@ Widget build(BuildContext context) {
             checkColor: Colors.white,
             title: Text(label),
             controlAffinity: ListTileControlAffinity.leading,
-            onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+            onChanged: (v) => context.read<GerarEtiquetaProvider>().setCampoValor(
               key: campo.key,
               label: campo.label,
               value: v ?? false,
@@ -1160,7 +1230,7 @@ Widget build(BuildContext context) {
         return DateField(
           label: label,
           value: dt,
-          onPick: (d) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+          onPick: (d) => context.read<GerarEtiquetaProvider>().setCampoValor(
             key: campo.key,
             label: campo.label,
             value: d.millisecondsSinceEpoch,
@@ -1189,7 +1259,7 @@ Widget build(BuildContext context) {
             if (s.length > 40) return "Máximo de 40 caracteres.";
             return null;
           },
-          onChanged: (v) => context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+          onChanged: (v) => context.read<GerarEtiquetaProvider>().setCampoValor(
             key: campo.key, label: campo.label, value: v,  tipo: campo.tipo,
           ),
         );
@@ -1230,7 +1300,7 @@ Widget build(BuildContext context) {
 
                     if (url == null) return;
 
-                    context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                    context.read<GerarEtiquetaProvider>().setCampoValor(
                       key: campo.key,
                       label: campo.label,
                       value: url,
@@ -1245,7 +1315,7 @@ Widget build(BuildContext context) {
                     }
                   },
                   onRemove: () {
-                    context.read<GerarEtiquetaLocalProvider>().setCampoValor(
+                    context.read<GerarEtiquetaProvider>().setCampoValor(
                       key: campo.key,
                       label: campo.label,
                       value: "",

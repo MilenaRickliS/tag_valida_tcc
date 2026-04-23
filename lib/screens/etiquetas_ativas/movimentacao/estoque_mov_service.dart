@@ -3,13 +3,13 @@ import 'package:uuid/uuid.dart';
 
 import '../../../models/etiqueta_model.dart';
 import '../../../models/estoque_mov_model.dart';
-import '../../../data/local/repos/etiquetas_local_repo.dart';
-import '../../../data/local/repos/estoque_mov_local_repo.dart';
+import '../../../providers/gerar_etiqueta_provider.dart';
+import '../../../providers/estoque_mov_provider.dart';
 import 'movimentar_estoque_modal.dart';
 
 class EstoqueMovService {
-  final EtiquetasLocalRepo etiquetasRepo;
-  final EstoqueMovLocalRepo movRepo;
+  final GerarEtiquetaProvider etiquetasRepo;
+  final EstoqueMovProvider movRepo;
 
   EstoqueMovService({
     required this.etiquetasRepo,
@@ -23,7 +23,7 @@ class EstoqueMovService {
   }) async {
     final agora = DateTime.now();
 
-    final atual = await etiquetasRepo.getById(
+    final atual = await etiquetasRepo.getEtiquetaById(
       uid: uid,
       id: etiqueta.id,
     );
@@ -143,28 +143,49 @@ class EstoqueMovService {
 
     novoRestante = math.max(0, novoRestante);
 
-    final mov = EstoqueMovModel(
-      id: const Uuid().v4(),
-      etiquetaId: atual.id,
+     final atualizado = EtiquetaModel(
+      id: atual.id,
+      tipoId: atual.tipoId,
+      tipoNome: atual.tipoNome,
       produtoNome: atual.produtoNome,
-      tipo: tipoMov,
-      quantidade: quantidadeMov,
-      motivo: motivo,
-      createdAt: agora,
-      updatedAt: agora,
+      categoriaId: atual.categoriaId,
+      categoriaNome: atual.categoriaNome,
+      setorId: atual.setorId,
+      setorNome: atual.setorNome,
+      dataFabricacao: atual.dataFabricacao,
+      dataValidade: atual.dataValidade,
+      camposCustomValores: atual.camposCustomValores,
+      status: atual.status,
+      lote: atual.lote,
+      incluirTabelaNutricional: atual.incluirTabelaNutricional,
+      tabelaNutricional: atual.tabelaNutricional,
+      quantidade: atual.quantidade,
+      quantidadeRestante: novoRestante,
+      statusEstoque: novoStatusEstoque,
+      soldAt: novoStatusEstoque == 'vendido' ? agora : atual.soldAt,
+      createdAt: atual.createdAt,
     );
 
-    final etiquetaAtualizada = atual.copyWith(
-        quantidadeRestante: novoRestante,
-        statusEstoque: novoStatusEstoque,
-        soldAt: novoStatusEstoque == 'vendido' ? agora : atual.soldAt,
-      );
+    await etiquetasRepo.salvarEtiquetaAtualizada(
+      uid: uid,
+      etiqueta: atualizado,
+    );
 
-      await movRepo.insert(uid, mov);
-
-      await etiquetasRepo.update(uid, etiquetaAtualizada);
-    }
-
+    await movRepo.registrarMovimento(
+      uid: uid,
+      mov: EstoqueMovModel(
+        id: const Uuid().v4(),
+        etiquetaId: atual.id,
+        produtoNome: atual.produtoNome,
+        tipo: tipoMov,
+        quantidade: quantidadeMov,
+        motivo: motivo,
+        createdAt: agora,
+        updatedAt: agora,
+      ),
+    );
+  }
+  
   String _joinMotivo(String prefixo, String? motivo) {
     if (motivo == null || motivo.trim().isEmpty) return prefixo;
     return '$prefixo - ${motivo.trim()}';

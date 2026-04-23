@@ -4,6 +4,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'firebase_options.dart';
 import 'services/firestore_paths.dart';
@@ -19,11 +20,11 @@ import 'data/local/repos/etiqueta_template_local_repo.dart';
 import 'data/local/repos/printer_config_local_repo.dart';
 import 'data/local/repos/design_etiqueta_local_repo.dart';
 
-import 'providers/categorias_local_provider.dart';
-import 'providers/setores_local_provider.dart';
-import 'providers/tipos_etiqueta_local_provider.dart';
-import 'providers/estoque_mov_local_provider.dart';
-import 'providers/gerar_etiqueta_local_provider.dart';
+import 'providers/categorias_provider.dart';
+import 'providers/setores_provider.dart';
+import 'providers/tipos_etiqueta_provider.dart';
+import 'providers/estoque_mov_provider.dart';
+import 'providers/gerar_etiqueta_provider.dart';
 import 'providers/templates_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/printer_config_provider.dart';
@@ -74,68 +75,90 @@ void main() async {
         Provider<FirestorePaths>(
           create: (_) => FirestorePaths(FirebaseFirestore.instance),
         ),
-        ChangeNotifierProvider(create: (_) => AuthProvider()),
 
-        Provider<CategoriasLocalRepo>(create: (_) => CategoriasLocalRepo()),
-        Provider<SetoresLocalRepo>(create: (_) => SetoresLocalRepo()),
-        Provider<TiposEtiquetaLocalRepo>(create: (_) => TiposEtiquetaLocalRepo()),
-        Provider<EtiquetasLocalRepo>(create: (_) => EtiquetasLocalRepo()),
-        Provider<EstoqueMovLocalRepo>(create: (_) => EstoqueMovLocalRepo()),
+        ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
+
+        
+        Provider<CategoriasLocalRepo>(
+          create: (_) => CategoriasLocalRepo(),
+        ),
+        Provider<SetoresLocalRepo>(
+          create: (_) => SetoresLocalRepo(),
+        ),
+        Provider<TiposEtiquetaLocalRepo>(
+          create: (_) => TiposEtiquetaLocalRepo(),
+        ),
+        Provider<EstoqueMovLocalRepo>(
+          create: (_) => EstoqueMovLocalRepo(),
+        ),
+        Provider<EtiquetasLocalRepo>(
+          create: (_) => EtiquetasLocalRepo(),
+        ),
         Provider<EtiquetasTemplatesLocalRepo>(
           create: (_) => EtiquetasTemplatesLocalRepo(),
         ),
 
+       
         ChangeNotifierProvider(
-          create: (ctx) => CategoriasLocalProvider(
-            repo: ctx.read<CategoriasLocalRepo>(),
+          create: (ctx) => CategoriasProvider(
+            firestore: FirebaseFirestore.instance,
+            localRepo: kIsWeb ? null : ctx.read<CategoriasLocalRepo>(),
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => SetoresLocalProvider(
-            repo: ctx.read<SetoresLocalRepo>(),
+          create: (ctx) => SetoresProvider(
+            firestore: FirebaseFirestore.instance,
+            localRepo: kIsWeb ? null : ctx.read<SetoresLocalRepo>(),
           ),
         ),
         ChangeNotifierProvider(
-          create: (ctx) => TiposEtiquetaLocalProvider(
-            repo: ctx.read<TiposEtiquetaLocalRepo>(),
+          create: (ctx) => TiposEtiquetaProvider(
+            firestore: FirebaseFirestore.instance,
+            localRepo: kIsWeb ? null : ctx.read<TiposEtiquetaLocalRepo>(),
           ),
         ),
-        ChangeNotifierProvider<EstoqueMovLocalProvider>(
-          create: (ctx) => EstoqueMovLocalProvider(
-            repo: ctx.read<EstoqueMovLocalRepo>(),
+        ChangeNotifierProvider<EstoqueMovProvider>(
+          create: (ctx) => EstoqueMovProvider(
+            firestore: FirebaseFirestore.instance,
+            repo: kIsWeb ? null : ctx.read<EstoqueMovLocalRepo>(),
           ),
         ),
         ChangeNotifierProvider(
           create: (ctx) => TemplatesProvider(
-            repo: ctx.read<EtiquetasTemplatesLocalRepo>(),
-          ),
-        ),
-        ChangeNotifierProvider<GerarEtiquetaLocalProvider>(
-          create: (ctx) => GerarEtiquetaLocalProvider(
-            repo: ctx.read<EtiquetasLocalRepo>(),
-            mov: ctx.read<EstoqueMovLocalProvider>(),
-            templateRepo: ctx.read<EtiquetasTemplatesLocalRepo>(),
+            firestore: FirebaseFirestore.instance,
+            repo: kIsWeb ? null : ctx.read<EtiquetasTemplatesLocalRepo>(),
           ),
         ),
 
-        Provider(
-          create: (_) => SyncService(FirebaseFirestore.instance),
+     
+        ChangeNotifierProvider<GerarEtiquetaProvider>(
+          create: (ctx) => GerarEtiquetaProvider(
+            firestore: FirebaseFirestore.instance,
+            repo: kIsWeb ? null : ctx.read<EtiquetasLocalRepo>(),
+            mov: ctx.read<EstoqueMovProvider>(),
+            templateRepo: kIsWeb ? null : ctx.read<EtiquetasTemplatesLocalRepo>(),
+          ),
         ),
-        ChangeNotifierProvider(create: (_) => ThemeProvider()),
 
-        Provider<PrinterConfigLocalRepo>(
-          create: (_) => PrinterConfigLocalRepo(),
-        ),
-        ChangeNotifierProvider<PrinterConfigProvider>(
-          create: (context) => PrinterConfigProvider(
-            context.read<PrinterConfigLocalRepo>(),
+        if (!kIsWeb) ...[
+          Provider(
+            create: (_) => SyncService(FirebaseFirestore.instance),
           ),
-        ),
-        ChangeNotifierProvider(
-          create: (_) => DesignEtiquetaProvider(
-            repo: DesignEtiquetaLocalRepo(),
+          Provider<PrinterConfigLocalRepo>(
+            create: (_) => PrinterConfigLocalRepo(),
           ),
-        ),
+          ChangeNotifierProvider<PrinterConfigProvider>(
+            create: (context) => PrinterConfigProvider(
+              context.read<PrinterConfigLocalRepo>(),
+            ),
+          ),
+          ChangeNotifierProvider(
+            create: (_) => DesignEtiquetaProvider(
+              repo: DesignEtiquetaLocalRepo(),
+            ),
+          ),
+        ],
       ],
       child: const MyApp(),
     ),
@@ -172,7 +195,6 @@ class MyApp extends StatelessWidget {
         '/login': (context) => const LoginScreen(),
         '/cadastro': (context) => const CadastroScreen(),
         '/home': (context) => const HomeScreen(),
-        '/erro': (context) => const ErrorPage(),
         '/perfil': (context) => const PerfilScreen(),
         '/ajuda': (context) => const AjudaScreen(),
         '/scanner': (_) => const ScannerEtiquetaScreen(),
@@ -183,7 +205,6 @@ class MyApp extends StatelessWidget {
         '/etiquetas-diarias': (context) => const EtiquetasDiariasScreen(),
         '/etiquetas-finalizadas': (context) => const EtiquetasFinalizadasScreen(),
         '/configuracoes': (context) => const ConfiguracoesScreen(),
-        '/configuracoes-impressora': (_) => const ConfiguracoesImpressoraScreen(),
         '/categorias': (context) => const CategoriasScreen(),
         '/setores': (context) => const SetoresScreen(),
         '/historico': (context) => const HistoricoScreen(),
@@ -194,22 +215,27 @@ class MyApp extends StatelessWidget {
           if (user == null) return const LoginScreen();
           return RelatoriosScreen(uid: user.uid);
         },
-        '/backup': (context) {
-          final user = fb_auth.FirebaseAuth.instance.currentUser;
+        if (!kIsWeb)
+          '/configuracoes-impressora': (_) =>
+              const ConfiguracoesImpressoraScreen(),
+        if (!kIsWeb)
+          '/backup': (context) {
+            final user = fb_auth.FirebaseAuth.instance.currentUser;
+            if (user == null) return const LoginScreen();
 
-          if (user == null) return const LoginScreen();
-
-          return BackupScreen(
-            uid: user.uid,
-            syncService: context.read<SyncService>(),
-          );
-        },
+            return BackupScreen(
+              uid: user.uid,
+              syncService: context.read<SyncService>(),
+            );
+          },
       },
       builder: (context, child) {
         ErrorWidget.builder = (FlutterErrorDetails details) {
+          FlutterError.dumpErrorToConsole(details);
+
           return ErrorPage(
             title: 'Erro na interface',
-            message: details.exception.toString(),
+            message: '${details.exception}\n\n${details.stack}',
           );
         };
         return child!;
@@ -221,20 +247,32 @@ class MyApp extends StatelessWidget {
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => CriarEtiquetaScreen(
-              templateId: args['templateId'] as String?,
-              editarEtiquetaId: args['editarEtiquetaId'] as String?,
+              templateId: args['templateId']?.toString(),
+              editarEtiquetaId: args['editarEtiquetaId']?.toString(),
             ),
           );
         }
 
         if (settings.name == '/resultado-previsao') {
-          final args = settings.arguments as Map<String, dynamic>;
+          final args = (settings.arguments as Map?) ?? {};
 
           return MaterialPageRoute(
             settings: settings,
             builder: (_) => ResultadoPrevisaoScreen(
-              imagemPath: args['imagemPath'] as String,
-              resultado: args['resultado'] as Map<String, dynamic>,
+              imagemPath: (args['imagemPath'] ?? '').toString(),
+              resultado: Map<String, dynamic>.from(args['resultado'] ?? {}),
+            ),
+          );
+        }
+
+        if (settings.name == '/erro') {
+          final args = (settings.arguments as Map?) ?? {};
+
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => ErrorPage(
+              title: args['title']?.toString(),
+              message: args['message']?.toString(),
             ),
           );
         }
