@@ -20,7 +20,6 @@ import '../../models/etiqueta_model.dart';
 import '../etiqueta_detalhes/etiqueta_detalhes.dart';
 import 'package:flutter/services.dart';
 import '../../widgets/menu.dart';
-import './widgets/app_dropdown.dart';
 import './widgets/date_field.dart';
 import './widgets/lote_read_only_card.dart';
 import './widgets/gerenciar_tipos_card.dart';
