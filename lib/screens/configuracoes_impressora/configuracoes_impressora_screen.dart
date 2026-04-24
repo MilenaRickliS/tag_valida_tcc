@@ -7,7 +7,7 @@ import 'package:tag_valida/screens/configuracoes_impressora/widgets/status_pill.
 
 import '../../models/printer_config_model.dart';
 import '../../providers/printer_config_provider.dart';
-import '../../services/elgin_l42_network_service.dart';
+import '../../services/printer/elgin_l42_network_service.dart';
 import './widgets/resumo_card.dart';
 import './widgets/config_card.dart';
 

@@ -17,7 +17,7 @@ import '../../providers/estoque_mov_provider.dart';
 import '../../providers/printer_config_provider.dart';
 import '../../providers/gerar_etiqueta_provider.dart';
 import '../../services/etiqueta_pdf_service.dart';
-import '../../services/printer_app_service.dart';
+import '../../services/printer/printer_app_service.dart';
 import '../../services/etiqueta_qr_resolver.dart';
 import '../../utils/formatar_lote.dart';
 import '../criar_etiqueta/criar_etiqueta.dart';

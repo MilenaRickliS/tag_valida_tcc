@@ -1,6 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../models/etiqueta_model.dart';
-import '../models/tabela_nutricional_model.dart';
+import '../../models/etiqueta_model.dart';
+import '../../models/tabela_nutricional_model.dart';
 
 class EtiquetaFirebaseService {
   Future<EtiquetaModel?> getById({

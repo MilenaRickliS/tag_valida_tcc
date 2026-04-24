@@ -6,6 +6,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 
 import '../../widgets/menu.dart';
+import './widgets/action_button.dart';
+import './widgets/info_box.dart';
+import './widgets/status_card.dart';
 import '../../data/local/app_db.dart';
 import '../../data/sync/sync_service.dart';
 import '../../data/sync/backup_service.dart';
@@ -239,7 +242,7 @@ class _BackupScreenState extends State<BackupScreen> {
                   ),
                   const SizedBox(height: 20),
 
-                  _statusCard(
+                  statusCard(
                     context,
                     icon: Icons.cloud_done_outlined,
                     title: "Backup automático em nuvem",
@@ -250,7 +253,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
                   const SizedBox(height: 14),
 
-                  _infoBox(
+                  infoBox(
                     context,
                     title: "Banco local",
                     value: _dbPath ?? "Carregando...",
@@ -258,7 +261,7 @@ class _BackupScreenState extends State<BackupScreen> {
 
                   const SizedBox(height: 12),
 
-                  _infoBox(
+                  infoBox(
                     context,
                     title: "Último caminho de backup",
                     value: _lastBackupPath ?? "Nenhum backup gerado ainda",
@@ -270,7 +273,7 @@ class _BackupScreenState extends State<BackupScreen> {
                     spacing: 12,
                     runSpacing: 12,
                     children: [
-                      _actionButton(
+                      actionButton(
                         context,
                         icon: Icons.save_alt_outlined,
                         label: _loadingBackup
@@ -279,7 +282,7 @@ class _BackupScreenState extends State<BackupScreen> {
                         color: _brand,
                         onTap: _loadingBackup ? null : _fazerBackup,
                       ),
-                      _actionButton(
+                      actionButton(
                         context,
                         icon: Icons.restore_outlined,
                         label: _loadingRestore
@@ -288,7 +291,7 @@ class _BackupScreenState extends State<BackupScreen> {
                         color: _danger,
                         onTap: _loadingRestore ? null : _restaurarBackup,
                       ),
-                      _actionButton(
+                      actionButton(
                         context,
                         icon: Icons.sync_outlined,
                         label: _loadingSync
@@ -344,126 +347,4 @@ class _BackupScreenState extends State<BackupScreen> {
       ),
     );
   }
-
-  Widget _statusCard(
-    BuildContext context, {
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required Color color,
-  }) {
-    final text = _text(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: color.withOpacity(0.10),
-        borderRadius: BorderRadius.circular(16),
-        border: Border.all(color: color.withOpacity(0.24)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: 22,
-            backgroundColor: color.withOpacity(0.16),
-            child: Icon(icon, color: color),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  style: TextStyle(
-                    color: text,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 16,
-                  ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  subtitle,
-                  style: TextStyle(
-                    color: text.withOpacity(0.75),
-                    height: 1.45,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoBox(BuildContext context, {
-    required String title,
-    required String value,
-  }) {
-    final text = _text(context);
-    final muted = _muted(context);
-    final border = _border(context);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: border),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(title,
-              style: TextStyle(
-                color: muted,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-              )),
-          const SizedBox(height: 6),
-          Text(
-            value,
-            style: TextStyle(
-              color: text,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _actionButton(
-    BuildContext context, {
-    required IconData icon,
-    required String label,
-    required Color color,
-    required VoidCallback? onTap,
-  }) {
-    return ElevatedButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, color: Colors.white),
-      label: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        child: Text(
-          label,
-          style: const TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
-          ),
-        ),
-      ),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: color,
-        disabledBackgroundColor: color.withOpacity(0.55),
-        padding: const EdgeInsets.symmetric(horizontal: 18),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-        elevation: 0,
-      ),
-    );
-  }
-}
+}  

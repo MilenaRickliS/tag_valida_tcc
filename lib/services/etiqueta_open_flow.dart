@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../data/local/repos/etiquetas_local_repo.dart';
 import '../models/etiqueta_model.dart';
-import 'etiqueta_firebase_service.dart';
+import 'firebase/etiqueta_firebase_service.dart';
 import '../screens/etiqueta_detalhes/etiqueta_detalhes.dart';
 
 Future<void> openEtiquetaPdfFlow(

@@ -7,7 +7,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/foundation.dart' show kIsWeb;
 
 import 'firebase_options.dart';
-import 'services/firestore_paths.dart';
+import 'services/firebase/firestore_paths.dart';
 
 import 'providers/auth_provider.dart';
 

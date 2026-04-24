@@ -1,11 +1,11 @@
 import 'dart:async';
 
-import '../data/local/repos/design_etiqueta_local_repo.dart';
-import '../models/etiqueta_model.dart';
-import '../models/printer_config_model.dart';
-import '../models/user_model.dart';
-import '../services/elgin_l42_network_service.dart';
-import '../models/design_limite_model.dart';
+import '../../data/local/repos/design_etiqueta_local_repo.dart';
+import '../../models/etiqueta_model.dart';
+import '../../models/printer_config_model.dart';
+import '../../models/user_model.dart';
+import 'elgin_l42_network_service.dart';
+import '../../models/design_limite_model.dart';
 
 class PrinterAppService {
   final DesignEtiquetaLocalRepo designRepo;
