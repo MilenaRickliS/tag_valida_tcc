@@ -421,7 +421,7 @@ class _SetoresScreenState extends State<SetoresScreen> {
                 inputFormatters: [
                   const TitleCaseEachWordFormatter(),
                   _nomeDeny,
-                  LengthLimitingTextInputFormatter(40),
+                  LengthLimitingTextInputFormatter(SetorLimits.nomeMax),
                 ],
                 decoration: appInputDecoration(
                   label: "Nome",
@@ -434,6 +434,9 @@ class _SetoresScreenState extends State<SetoresScreen> {
                 textCapitalization: TextCapitalization.sentences,
                 maxLines: 2,
                 style: TextStyle(color: text),
+                inputFormatters: [
+                  LengthLimitingTextInputFormatter(SetorLimits.descMax),
+                ],
                 decoration: appInputDecoration(
                   label: "Descrição (opcional)",
                   hint: "Ex: Responsável pelo freezer",
@@ -469,6 +472,22 @@ class _SetoresScreenState extends State<SetoresScreen> {
                 return;
               }
 
+              if (nome.length < SetorLimits.nomeMin) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text("Nome muito curto.")),
+                );
+                return;
+              }
+
+              if (nome.length > SetorLimits.nomeMax) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Nome muito longo (máx. ${SetorLimits.nomeMax})."),
+                  ),
+                );
+                return;
+              }
+
               final nomeOk = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÇç0-9 ]+$").hasMatch(nome);
               if (!nomeOk) {
                 ScaffoldMessenger.of(context).showSnackBar(
@@ -482,6 +501,29 @@ class _SetoresScreenState extends State<SetoresScreen> {
               }
 
               final prov = context.read<SetoresProvider>();
+
+              final existe = prov.items.any((s) =>
+                  s.nome.trim().toLowerCase() == nome.toLowerCase() &&
+                  s.id != setor?.id);
+
+              if (existe) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text("Já existe um setor com esse nome."),
+                  ),
+                );
+                return;
+              }
+
+              if (desc.length > SetorLimits.descMax) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("Descrição muito longa (máx. ${SetorLimits.descMax})."),
+                  ),
+                );
+                return;
+              }
+
 
               if (isEdit) {
                 await prov.update(
@@ -522,4 +564,9 @@ class _SetoresScreenState extends State<SetoresScreen> {
     );
   }
 }
+class SetorLimits {
+  static const nomeMin = 2;
+  static const nomeMax = 40;
 
+  static const descMax = 120;
+}

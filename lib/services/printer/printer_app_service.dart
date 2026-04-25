@@ -76,6 +76,7 @@ class PrinterAppService {
 
     if (usarTabelaNutricional) {
       await service.printEtiqueta100x80ComTabelaNutricional(
+        design: design,
         etiqueta: etiqueta,
         usuario: usuario,
         qrData: qrData,

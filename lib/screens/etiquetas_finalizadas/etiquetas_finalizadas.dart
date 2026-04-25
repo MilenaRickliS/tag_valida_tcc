@@ -1,5 +1,5 @@
 // ignore_for_file: deprecated_member_use
-
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -20,6 +20,7 @@ class _EtiquetasFinalizadasScreenState
     extends State<EtiquetasFinalizadasScreen>
     with SingleTickerProviderStateMixin {
   late final TabController _tabCtrl;
+  Timer? _searchDebounce;
 
   final _searchCtrl = TextEditingController();
   String _q = "";
@@ -50,7 +51,22 @@ class _EtiquetasFinalizadasScreenState
   void initState() {
     super.initState();
     _tabCtrl = TabController(length: 3, vsync: this);
-    _searchCtrl.addListener(() => setState(() => _q = _searchCtrl.text));
+
+    _searchCtrl.addListener(() {
+      _searchDebounce?.cancel();
+
+      _searchDebounce = Timer(const Duration(milliseconds: 400), () {
+        if (!mounted) return;
+
+        final value = _searchCtrl.text.trim();
+
+        if (value != _q) {
+          setState(() {
+            _q = value;
+          });
+        }
+      });
+    });
   }
 
   @override
@@ -76,6 +92,7 @@ class _EtiquetasFinalizadasScreenState
 
   @override
   void dispose() {
+    _searchDebounce?.cancel();
     _tabCtrl.dispose();
     _searchCtrl.dispose();
     super.dispose();
@@ -141,9 +158,12 @@ class _EtiquetasFinalizadasScreenState
                 children: [
                   const HeaderTitle(),
                   const SizedBox(height: 12),
-                  SearchBox(
+                 SearchBox(
                     controller: _searchCtrl,
-                    onClear: () => _searchCtrl.clear(),
+                    onClear: () {
+                      _searchCtrl.clear();
+                      setState(() => _q = "");
+                    },
                   ),
                   const SizedBox(height: 12),
                   Container(

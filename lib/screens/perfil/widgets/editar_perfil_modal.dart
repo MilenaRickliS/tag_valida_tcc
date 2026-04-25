@@ -11,6 +11,37 @@ import 'package:tag_valida/screens/perfil/widgets/profile_form_field.dart';
 import '../../../providers/auth_provider.dart'; 
 
 
+class FieldLimits {
+  static const nomeMin = 3;
+  static const nomeMax = 60;
+
+  static const razaoMin = 5;
+  static const razaoMax = 100;
+
+  static const emailMin = 5;
+  static const emailMax = 100;
+
+  static const senhaMin = 6;
+  static const senhaMax = 20;
+
+  static const ruaMin = 3;
+  static const ruaMax = 80;
+
+  static const numeroMin = 1;
+  static const numeroMax = 6;
+
+  static const bairroMin = 2;
+  static const bairroMax = 60;
+
+  static const complementoMax = 60;
+
+  static const cidadeMin = 2;
+  static const cidadeMax = 60;
+
+  static const responsavelMin = 3;
+  static const responsavelMax = 80;
+}
+
 class EditarPerfilModal extends StatefulWidget {
   const EditarPerfilModal({super.key});
 
@@ -149,11 +180,26 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     super.dispose();
   }
 
+  final List<String> dominiosPermitidos = [
+    'gmail.com',
+    'hotmail.com',
+    'outlook.com',
+    'yahoo.com',
+    'yahoo.com.br',
+    'icloud.com'
+  ];
 
 
-  String? _vNome(String? v) {
+
+ String? _vNome(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Nome não pode ser vazio.";
+    if (s.length < FieldLimits.nomeMin) {
+      return "Nome muito curto (mín. ${FieldLimits.nomeMin}).";
+    }
+    if (s.length > FieldLimits.nomeMax) {
+      return "Nome muito longo (máx. ${FieldLimits.nomeMax}).";
+    }
     if (!_lettersAccentsAndNumbers.hasMatch(s)) {
       return "Nome só pode conter letras, acentos, ç e números.";
     }
@@ -163,39 +209,58 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
   String? _vRazao(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Razão social não pode ser vazia.";
+    if (s.length < FieldLimits.razaoMin) {
+      return "Razão muito curta (mín. ${FieldLimits.razaoMin}).";
+    }
+    if (s.length > FieldLimits.razaoMax) {
+      return "Razão muito longa (máx. ${FieldLimits.razaoMax}).";
+    }
     if (!_lettersAccentsAndNumbers.hasMatch(s)) {
       return "Razão social só pode conter letras, acentos, ç e números.";
     }
     return null;
   }
 
-  String? _vTelefone(String? _) {
-    final digits = _digits(telefone.text);
+  String? _vTelefone(String? v) {
+    final digits = _digits(v ?? telefone.text);
+
     if (digits.isEmpty) return "Telefone não pode ser vazio.";
     if (digits.length != 11) return "Telefone inválido. Use: (xx) xxxxx-xxxx";
+    if (!_onlyDigits.hasMatch(digits)) {
+      return "Telefone deve conter apenas números.";
+    }
+
     return null;
   }
-
 
   String? _vResponsavel(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Responsável não pode ser vazio.";
+    if (s.length < FieldLimits.responsavelMin) return "Nome muito curto (min. ${FieldLimits.responsavelMin}).";
+    if (s.length > FieldLimits.responsavelMax) return "Nome muito longo (máx. ${FieldLimits.responsavelMax}).";
     if (!_lettersAccentsOnly.hasMatch(s)) {
       return "Responsável só pode conter letras, acentos e ç.";
     }
     return null;
   }
 
-  String? _vCep(String? _) {
-    final digits = _digits(cep.text);
+  String? _vCep(String? v) {
+    final digits = _digits(v ?? cep.text);
+
     if (digits.isEmpty) return "CEP não pode ser vazio.";
     if (digits.length != 8) return "CEP inválido. Use: xx.xxx-xxx";
+    if (!_onlyDigits.hasMatch(digits)) {
+      return "CEP deve conter apenas números.";
+    }
+
     return null;
   }
-
+  
   String? _vRua(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Rua não pode ser vazia.";
+    if (s.length < FieldLimits.ruaMin) return "Rua muito curta (min. ${FieldLimits.ruaMin}).";
+    if (s.length > FieldLimits.ruaMax) return "Rua muito longa (máx. ${FieldLimits.ruaMax}).";
     if (!_lettersAccentsAndNumbers.hasMatch(s)) {
       return "Rua só pode conter letras, acentos, ç e números.";
     }
@@ -205,6 +270,8 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
   String? _vNumero(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Número não pode ser vazio.";
+    if (s.length < FieldLimits.numeroMin) return "Número inválido (min. ${FieldLimits.numeroMin}).";
+    if (s.length > FieldLimits.numeroMax) return "Número muito longo (máx. ${FieldLimits.numeroMax}).";
     if (!_onlyDigits.hasMatch(s)) return "Número deve conter apenas números.";
     return null;
   }
@@ -212,12 +279,16 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
   String? _vBairro(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Bairro não pode ser vazio.";
+    if (s.length < FieldLimits.bairroMin) return "Bairro muito curto (min. ${FieldLimits.bairroMin}).";
+    if (s.length > FieldLimits.bairroMax) return "Bairro muito longo (máx. ${FieldLimits.bairroMax}).";
     return null;
   }
 
   String? _vCidade(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Cidade não pode ser vazia.";
+    if (s.length < FieldLimits.cidadeMin) return "Cidade muito curta (min. ${FieldLimits.cidadeMin}).";
+    if (s.length > FieldLimits.cidadeMax) return "Cidade muito longa (máx. ${FieldLimits.cidadeMax}).";
     if (!_lettersAccentsOnly.hasMatch(s)) {
       return "Cidade só pode conter letras, acentos e ç.";
     }
@@ -230,7 +301,16 @@ class _EditarPerfilModalState extends State<EditarPerfilModal> {
     if (!_lettersAccentsOnly.hasMatch(s)) {
       return "Estado só pode conter letras, acentos e ç.";
     }
-    if (s.length != 2) return "UF deve ter 2 letras.";
+    return null;
+  }
+
+  String? _vComplemento(String? v) {
+    final s = (v ?? '').trim();
+
+    if (s.length > FieldLimits.complementoMax) {
+      return "Complemento muito longo (máx. ${FieldLimits.complementoMax}).";
+    }
+
     return null;
   }
 
@@ -648,7 +728,7 @@ Widget _fallbackAvatar(Color text) {
                           ProfileFormField(
                             controller: complemento,
                             label: "Complemento (opcional)",
-                            validator: (_) => null,
+                            validator: _vComplemento,
                             prefixIcon: const Icon(Icons.add_location_alt_outlined),
                             isDark: isDark,
                             textColor: text,

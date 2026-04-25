@@ -4,6 +4,7 @@ import 'package:intl/intl.dart';
 import '../../../models/etiqueta_model.dart';
 import '../../../models/user_model.dart';
 import '../../../models/tabela_nutricional_model.dart';
+import '../../../models/design_etiqueta_model.dart';
 
 import '../tspl_writer.dart';
 import '../tspl_font_spec.dart';
@@ -11,6 +12,7 @@ import '../tspl_text_utils.dart';
 
 class Etiqueta100x80Layout {
   String build({
+    required DesignEtiquetaModel design,
     required EtiquetaModel etiqueta,
     required UserModel usuario,
     required String qrData,
@@ -18,9 +20,7 @@ class Etiqueta100x80Layout {
   }) {
     final tabela = etiqueta.tabelaNutricional;
 
-    if (tabela == null) {
-      throw Exception('Tabela nutricional não informada.');
-    }
+    final temTabela = tabela != null;
 
     final w = TsplWriter();
 
@@ -54,7 +54,7 @@ class Etiqueta100x80Layout {
     const contentHeight = contentBottom - contentTop;
 
     const leftColX = outerLeft + padding;
-    const leftColW = 246;
+    final leftColW = temTabela ? 246 : 600;
 
     const separatorX = 378;
 
@@ -109,12 +109,14 @@ class Etiqueta100x80Layout {
       height: 2,
     );
 
-    w.bar(
-      x: separatorX,
-      y: contentTop,
-      width: 2,
-      height: contentHeight,
-    );
+    if (temTabela) {
+      w.bar(
+        x: separatorX,
+        y: contentTop,
+        width: 2,
+        height: contentHeight,
+      );
+    }
 
     int y = contentTop + 10;
     final limiteInferiorEsquerda = contentBottom - 8;
@@ -274,13 +276,15 @@ class Etiqueta100x80Layout {
       }
     }
 
-    _printTabelaNutricional100x80(
-      w: w,
-      x: rightColX,
-      y: contentTop + 2,
-      width: rightColW,
-      tabela: tabela,
-    );
+    if (temTabela) {
+      _printTabelaNutricional100x80(
+        w: w,
+        x: rightColX,
+        y: contentTop + 2,
+        width: rightColW,
+        tabela: tabela,
+      );
+    }
 
     w.print(copias: qtdCopias);
 

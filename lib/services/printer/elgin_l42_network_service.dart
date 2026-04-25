@@ -159,12 +159,14 @@ PRINT $qtdCopias,1
   }
 
   Future<void> printEtiqueta100x80ComTabelaNutricional({
+    required DesignEtiquetaModel design,
     required EtiquetaModel etiqueta,
     required UserModel usuario,
     required String qrData,
     int copias = 1,
   }) async {
     final command = Etiqueta100x80Layout().build(
+      design: design,
       etiqueta: etiqueta,
       usuario: usuario,
       qrData: qrData,

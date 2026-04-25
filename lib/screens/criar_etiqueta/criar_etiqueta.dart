@@ -68,6 +68,40 @@ class TitleCaseFormatter extends TextInputFormatter {
   }
 }
 
+class DecimalTextInputFormatter extends TextInputFormatter {
+  DecimalTextInputFormatter({this.decimalRange = 2});
+
+  final int decimalRange;
+
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    var text = newValue.text.replaceAll(',', '.');
+
+    if (text.isEmpty) return newValue;
+
+    if (!RegExp(r'^\d*\.?\d*$').hasMatch(text)) {
+      return oldValue;
+    }
+
+    if (text.contains('.')) {
+      final parts = text.split('.');
+
+      if (parts.length > 2) return oldValue;
+      if (parts[1].length > decimalRange) return oldValue;
+    }
+
+    return newValue.copyWith(
+      text: text.replaceAll('.', ','),
+      selection: TextSelection.collapsed(
+        offset: text.replaceAll('.', ',').length,
+      ),
+    );
+  }
+}
+
 class CriarEtiquetaScreen extends StatefulWidget {
   final String? editarEtiquetaId;
   final String? templateId;
@@ -88,6 +122,8 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
   bool _loadedTemplate = false;
   final _formKey = GlobalKey<FormState>();
   final _allowedBasic = RegExp(r"^[0-9A-Za-zÀ-ÿçÇ\s]+$");
+  String? _fabricacaoError;
+  String? _validadeError;
   
 
   String? _validateDates(DateTime? fab, DateTime? val) {
@@ -535,7 +571,6 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
       : (tipos.any((t) => t.id == gerar.tipoId)
           ? tipos.firstWhere((t) => t.id == gerar.tipoId)
           : null);
-
   
 
   return Scaffold(
@@ -615,6 +650,12 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                         value: (gerar.tipoId != null && tipos.any((t) => t.id == gerar.tipoId))
                             ? gerar.tipoId
                             : null,
+                        validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return "Selecione o tipo de etiqueta.";
+                          }
+                          return null;
+                        },
                         dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                         style: TextStyle(color: text),
                         items: tipos
@@ -651,11 +692,15 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                       ],
                       validator: (v) {
                         final s = (v ?? "").trim();
+
                         if (s.isEmpty) return "Informe o nome do produto.";
+                        if (s.length < 3) return "Nome deve ter no mínimo 3 caracteres.";
+                        if (s.length > 40) return "Nome deve ter no máximo 40 caracteres.";
+
                         if (!_allowedBasic.hasMatch(s)) {
                           return "Use apenas letras, números, espaços, acentos e ç.";
                         }
-                        if (s.length > 40) return "Máximo de 40 caracteres.";
+
                         return null;
                       },
                     ),
@@ -744,6 +789,12 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                               cats.any((c) => c.id == gerar.categoriaIdSelecionada))
                           ? gerar.categoriaIdSelecionada
                           : null,
+                      validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return "Selecione a categoria.";
+                          }
+                          return null;
+                        },
                       dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                       style: TextStyle(color: text),
                       decoration: appInputDecoration("Categoria"),
@@ -775,6 +826,12 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                               sets.any((s) => s.id == gerar.setorIdSelecionado))
                           ? gerar.setorIdSelecionado
                           : null,
+                      validator: (v) {
+                        if (v == null || v.trim().isEmpty) {
+                          return "Selecione o setor/responsável.";
+                        }
+                        return null;
+                      },
                       dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
                       style: TextStyle(color: text),
                       decoration: appInputDecoration("Setor/Responsável"),
@@ -804,9 +861,18 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                           child: DateField(
                             label: "Fabricação",
                             value: gerar.fabricacao,
-                            onPick: (d) => context
-                                .read<GerarEtiquetaProvider>()
-                                .setFabricacao(d, tipoAtual: tipoAtual),
+                            errorText: _fabricacaoError,
+                            onPick: (d) {
+                              context.read<GerarEtiquetaProvider>().setFabricacao(
+                                d,
+                                tipoAtual: tipoAtual,
+                              );
+
+                              setState(() {
+                                _fabricacaoError = null;
+                                _validadeError = null;
+                              });
+                            },
                           ),
                         ),
                         const SizedBox(width: 12),
@@ -814,9 +880,14 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                           child: DateField(
                             label: "Validade",
                             value: gerar.validade,
-                            onPick: (d) => context
-                                .read<GerarEtiquetaProvider>()
-                                .setValidadeManual(d),
+                            errorText: _validadeError,
+                            onPick: (d) {
+                              context.read<GerarEtiquetaProvider>().setValidadeManual(d);
+
+                              setState(() {
+                                _validadeError = null;
+                              });
+                            },
                           ),
                         ),
                       ],
@@ -903,12 +974,29 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                                 final okForm = _formKey.currentState?.validate() ?? false;
                                 if (!okForm) return;
 
-                                final dateErr =
-                                    _validateDates(gerar.fabricacao, gerar.validade);
-                                if (dateErr != null) {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(content: Text(dateErr)),
-                                  );
+                                setState(() {
+                                  _fabricacaoError = null;
+                                  _validadeError = null;
+                                });
+
+                                if (gerar.fabricacao == null) {
+                                  setState(() {
+                                    _fabricacaoError = "Selecione a data de fabricação.";
+                                  });
+                                  return;
+                                }
+
+                                if (gerar.validade == null) {
+                                  setState(() {
+                                    _validadeError = "Selecione a data de validade.";
+                                  });
+                                  return;
+                                }
+
+                                if (gerar.validade!.isBefore(gerar.fabricacao!)) {
+                                  setState(() {
+                                    _validadeError = "Validade deve ser igual ou após a fabricação.";
+                                  });
                                   return;
                                 }
 
@@ -1043,7 +1131,7 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
     final label = campo.obrigatorio ? "${campo.label} *" : campo.label;
 
     switch (campo.tipo) {
-      case CampoTipo.multiline: {
+     case CampoTipo.multiline: {
         final ctrl = gerar.ctrlFor(
           campo.key,
           initial: (gerar.camposValores[campo.key]?["value"] ?? "").toString(),
@@ -1052,13 +1140,26 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
         return TextFormField(
           controller: ctrl,
           maxLines: 3,
+          maxLength: 280,
           decoration: appInputDecoration(label),
           validator: (v) {
-            if (campo.obrigatorio && (v ?? "").trim().isEmpty) return "Campo obrigatório.";
+            final s = (v ?? "").trim();
+
+            if (campo.obrigatorio && s.isEmpty) {
+              return "Campo obrigatório.";
+            }
+
+            if (s.length > 280) {
+              return "Máximo de 280 caracteres.";
+            }
+
             return null;
           },
           onChanged: (v) => context.read<GerarEtiquetaProvider>().setCampoValor(
-            key: campo.key, label: campo.label, value: v, tipo: campo.tipo,
+            key: campo.key,
+            label: campo.label,
+            value: v,
+            tipo: campo.tipo,
           ),
         );
       }
@@ -1088,44 +1189,67 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
           modoPreco = (raw["modo"] ?? modoPreco).toString();
         }
 
+        final isInteger = campo.tipo == CampoTipo.integer;
+        final isDecimal = campo.tipo == CampoTipo.decimal;
+        final isMoney = campo.tipo == CampoTipo.currency;
+        final isPrice = campo.tipo == CampoTipo.priceMode;
+
         return Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             TextFormField(
               controller: ctrl,
-              keyboardType: const TextInputType.numberWithOptions(decimal: true),
+              keyboardType: TextInputType.numberWithOptions(decimal: !isInteger),
               decoration: appInputDecoration(label).copyWith(
                 prefixText: (campo.prefixo ?? "").isNotEmpty ? campo.prefixo : null,
                 suffixText: (campo.sufixo ?? "").isNotEmpty ? campo.sufixo : null,
-                prefixStyle: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : const Color(0xFF2B2B2B),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
-                suffixStyle: TextStyle(
-                  color: Theme.of(context).brightness == Brightness.dark
-                      ? Colors.white
-                      : const Color(0xFF2B2B2B),
-                  fontWeight: FontWeight.w700,
-                  fontSize: 15,
-                ),
               ),
+              inputFormatters: isInteger
+                  ? [
+                      FilteringTextInputFormatter.digitsOnly,
+                      LengthLimitingTextInputFormatter(6),
+                    ]
+                  : [
+                      DecimalTextInputFormatter(
+                        decimalRange: campo.casasDecimais <= 0
+                            ? 2
+                            : campo.casasDecimais,
+                      ),
+                      LengthLimitingTextInputFormatter(10),
+                    ],
               validator: (v) {
-                if (campo.obrigatorio && (v ?? "").trim().isEmpty) {
+                final s = (v ?? "").trim();
+
+                if (campo.obrigatorio && s.isEmpty) {
                   return "Campo obrigatório.";
                 }
 
-                final s = (v ?? "").trim().replaceAll(",", ".");
-                if (s.isNotEmpty && num.tryParse(s) == null) {
-                  return "Número inválido.";
+                if (s.isEmpty) return null;
+
+                if (isInteger && (s.contains(",") || s.contains("."))) {
+                  return "Número inteiro não pode ter vírgula ou ponto.";
                 }
+
+                if ((isMoney || isPrice) && ",".allMatches(s).length > 1) {
+                  return "Use apenas uma vírgula.";
+                }
+
+                if ((isMoney || isPrice) && ".".allMatches(s).length > 1) {
+                  return "Use apenas um ponto.";
+                }
+
+                final normalized = s.replaceAll(",", ".");
+                final n = num.tryParse(normalized);
+
+                if (n == null) return "Número inválido.";
+                if (n < 0) return "Valor não pode ser negativo.";
 
                 return null;
               },
               onChanged: (v) {
-                final parsed = num.tryParse(v.replaceAll(",", "."));
+                var textValue = v.replaceAll(",", ".");
+
+                final parsed = num.tryParse(textValue);
 
                 if (campo.tipo == CampoTipo.priceMode) {
                   context.read<GerarEtiquetaProvider>().setCampoValor(
@@ -1151,6 +1275,16 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                     casasDecimais: campo.casasDecimais,
                   );
                 }
+              },
+              onEditingComplete: () {
+                if (isInteger) return;
+
+                final parsed = num.tryParse(ctrl.text.replaceAll(",", "."));
+                if (parsed == null) return;
+
+                final casas = campo.casasDecimais <= 0 ? 2 : campo.casasDecimais;
+                ctrl.text = parsed.toStringAsFixed(casas).replaceAll(".", ",");
+                ctrl.selection = TextSelection.collapsed(offset: ctrl.text.length);
               },
             ),
 
@@ -1196,46 +1330,111 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
         );
       }
 
-      case CampoTipo.boolType:
+      case CampoTipo.boolType: {
         final obj = gerar.camposValores[campo.key];
-        final bool boolVal = (obj?["value"] as bool?) ?? false;
+        final bool? boolVal = obj?["value"] as bool?;
 
-        return Container(
-          decoration: BoxDecoration(
-            border: Border.all(color: Colors.black.withOpacity(0.12)),
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: CheckboxListTile(
-            value: boolVal,
-            activeColor: const Color(0xFF428e2e),
-            checkColor: Colors.white,
-            title: Text(label),
-            controlAffinity: ListTileControlAffinity.leading,
-            onChanged: (v) => context.read<GerarEtiquetaProvider>().setCampoValor(
-              key: campo.key,
-              label: campo.label,
-              value: v ?? false,
-              tipo: campo.tipo,
-            ),
-          ),
+        return FormField<bool>(
+          initialValue: boolVal,
+          validator: (_) {
+            if (campo.obrigatorio && boolVal == null) {
+              return "Campo obrigatório.";
+            }
+            return null;
+          },
+          builder: (field) {
+            return Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Container(
+                  decoration: BoxDecoration(
+                    border: Border.all(
+                      color: field.hasError
+                          ? Colors.red
+                          : Colors.black.withOpacity(0.12),
+                    ),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: CheckboxListTile(
+                    value: field.value ?? false,
+                    activeColor: const Color(0xFF428e2e),
+                    checkColor: Colors.white,
+                    title: Text(label),
+                    controlAffinity: ListTileControlAffinity.leading,
+                    onChanged: (v) {
+                      context.read<GerarEtiquetaProvider>().setCampoValor(
+                            key: campo.key,
+                            label: campo.label,
+                            value: v,
+                            tipo: campo.tipo,
+                          );
+
+                      field.didChange(v);
+                    },
+                  ),
+                ),
+                if (field.hasError) ...[
+                  const SizedBox(height: 6),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 4),
+                    child: Text(
+                      field.errorText!,
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ],
+              ],
+            );
+          },
         );
+      }
 
-      case CampoTipo.date:
-        final val = gerar.camposValores[campo.key]?["value"];
-        DateTime? dt;
-        if (val is DateTime) dt = val;
-        if (val is int) dt = DateTime.fromMillisecondsSinceEpoch(val);
+     case CampoTipo.date: {
+      final val = gerar.camposValores[campo.key]?["value"];
 
-        return DateField(
-          label: label,
-          value: dt,
-          onPick: (d) => context.read<GerarEtiquetaProvider>().setCampoValor(
-            key: campo.key,
-            label: campo.label,
-            value: d.millisecondsSinceEpoch,
-            tipo: campo.tipo,
-          ),
-        );
+      DateTime? dt;
+      if (val is DateTime) dt = val;
+      if (val is int) dt = DateTime.fromMillisecondsSinceEpoch(val);
+
+      return FormField<DateTime>(
+        initialValue: dt,
+        validator: (_) {
+          final atual = gerar.camposValores[campo.key]?["value"];
+
+          if (campo.obrigatorio && atual == null) {
+            return "Campo obrigatório.";
+          }
+
+          return null;
+        },
+        builder: (field) {
+          return Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              DateField(
+                label: label,
+                value: dt,
+                errorText: field.errorText,
+                onPick: (d) {
+                  context.read<GerarEtiquetaProvider>().setCampoValor(
+                        key: campo.key,
+                        label: campo.label,
+                        value: d.millisecondsSinceEpoch,
+                        tipo: campo.tipo,
+                      );
+
+                  field.didChange(d);
+                },
+              ),
+            ],
+          );
+        },
+      );
+    }
 
       case CampoTipo.text: {
         final ctrl = gerar.ctrlFor(

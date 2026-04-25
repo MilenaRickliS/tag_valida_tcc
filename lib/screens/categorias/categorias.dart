@@ -506,7 +506,7 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
                 inputFormatters: [
                   const TitleCaseEachWordFormatter(),
                   _nomeDeny,
-                  LengthLimitingTextInputFormatter(40),
+                  LengthLimitingTextInputFormatter(CategoriaLimits.nomeMax),
                 ],
                 decoration: appInputDecoration(
                   label: "Nome",
@@ -562,71 +562,114 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
             ),
           ),
           ElevatedButton(
-            onPressed: () async {
-              final rawNome = nomeCtrl.text;
-              final nome = rawNome.trim().replaceAll(RegExp(r"\s+"), " ");
-              final diasStr = diasCtrl.text.trim();
+           onPressed: () async {
+            final rawNome = nomeCtrl.text;
+            final nome = rawNome.trim().replaceAll(RegExp(r"\s+"), " ");
+            final diasStr = diasCtrl.text.trim();
 
-              if (nome.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text("Informe o nome da categoria.")),
-                );
-                return;
-              }
+            if (nome.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Informe o nome da categoria.")),
+              );
+              return;
+            }
 
-              final nomeOk = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÇç0-9 ]+$").hasMatch(nome);
-              if (!nomeOk) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      "Nome inválido. Use apenas letras, números e espaços.",
-                    ),
+            if (nome.length < CategoriaLimits.nomeMin) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(content: Text("Nome da categoria muito curto.")),
+              );
+              return;
+            }
+
+            if (nome.length > CategoriaLimits.nomeMax) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Nome da categoria muito longo (máx. ${CategoriaLimits.nomeMax} caracteres).",
                   ),
-                );
-                return;
-              }
+                ),
+              );
+              return;
+            }
 
-              if (diasStr.isEmpty) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text("Informe os dias de vencimento (0 ou mais)."),
+            final nomeOk = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÇç0-9 ]+$").hasMatch(nome);
+            if (!nomeOk) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Nome inválido. Use apenas letras, números e espaços."),
+                ),
+              );
+              return;
+            }
+
+            if (diasStr.isEmpty) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Informe os dias de vencimento (0 ou mais)."),
+                ),
+              );
+              return;
+            }
+
+            final dias = int.tryParse(diasStr);
+
+            if (dias == null || dias < 0) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Dias inválidos. Use apenas números (0 ou mais)."),
+                ),
+              );
+              return;
+            }
+
+            if (dias > CategoriaLimits.diasMax) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                SnackBar(
+                  content: Text(
+                    "Dias muito alto (máx. ${CategoriaLimits.diasMax}).",
                   ),
-                );
-                return;
-              }
+                ),
+              );
+              return;
+            }
 
-              final dias = int.tryParse(diasStr);
-              if (dias == null || dias < 0) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text(
-                      "Dias inválidos. Use apenas números (0 ou mais).",
-                    ),
-                  ),
-                );
-                return;
-              }
+            final prov = context.read<CategoriasProvider>();
 
-              final prov = context.read<CategoriasProvider>();
+            final existe = prov.items.any((c) =>
+                c.nome.trim().toLowerCase() == nome.toLowerCase() &&
+                c.id != categoria?.id);
 
-              if (isEdit) {
-                await prov.update(
-                  uid,
-                  CategoriaModel(
-                    id: categoria.id,
-                    nome: nome,
-                    diasVencimento: dias,
-                    ativo: true,
-                    createdAt: categoria.createdAt,
-                    updatedAt: categoria.updatedAt,
-                  ),
-                );
-              } else {
-                await prov.create(uid, nome: nome, diasVencimento: dias);
-              }
+            if (existe) {
+              ScaffoldMessenger.of(context).showSnackBar(
+                const SnackBar(
+                  content: Text("Já existe uma categoria com esse nome."),
+                ),
+              );
+              return;
+            }
 
-              if (context.mounted) Navigator.pop(context);
-            },
+            if (isEdit) {
+              await prov.update(
+                uid,
+                CategoriaModel(
+                  id: categoria.id,
+                  nome: nome,
+                  diasVencimento: dias,
+                  ativo: true,
+                  createdAt: categoria.createdAt,
+                  updatedAt: DateTime.now(),
+                ),
+              );
+            } else {
+              await prov.create(
+                uid,
+                nome: nome,
+                diasVencimento: dias,
+              );
+            }
+
+            if (context.mounted) Navigator.pop(context);
+          },
             style: ElevatedButton.styleFrom(
               backgroundColor: brand,
               foregroundColor: isDark ? Colors.black : Colors.white,
@@ -645,3 +688,8 @@ class _CategoriasScreenState extends State<CategoriasScreen> {
   }
 }
 
+class CategoriaLimits {
+  static const nomeMin = 2;
+  static const nomeMax = 40;
+  static const diasMax = 3650;
+}

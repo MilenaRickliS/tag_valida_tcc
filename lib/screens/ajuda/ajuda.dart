@@ -47,9 +47,9 @@ class AjudaScreen extends StatelessWidget {
             "Abra a etiqueta, toque em Visualizar e depois em Imprimir/Reimprimir. Se existir QR Code, ele será gerado novamente automaticamente com os mesmos dados.",
       ),
       _FaqItem(
-        question: "Como atualizar a data de um grupo de etiquetas?",
+        question: "Como realizar o inventário?",
         answer:
-            "Use a opção de Edição em lote (quando disponível): selecione várias etiquetas e escolha Atualizar validade/fabricação. Se ainda não tiver essa função, posso te montar esse fluxo com seleção múltipla.",
+            "Vá na página de Etiquetas Ativas e clique no botão 'Inventário'. Escaneie os QrCodes a sua escolha e depois clique em 'Finalizar inventário' ao final. Assim, receberá um relatório automático da quantidade de cada produto em seu estoque.",
       ),
     ];
 
@@ -156,11 +156,11 @@ class AjudaScreen extends StatelessWidget {
                         children: [
                           ContactPill(
                             icon: Icons.phone_rounded,
-                            text: "(42) 99999-0000",
+                            text: "(42) 99952-1562",
                           ),
                           ContactPill(
                             icon: Icons.email_rounded,
-                            text: "suporte@gmail.com",
+                            text: "milena.silverio2506@gmail.com",
                           ),
                         ],
                       ),

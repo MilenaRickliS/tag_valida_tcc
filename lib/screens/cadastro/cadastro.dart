@@ -13,6 +13,37 @@ import '../../providers/theme_provider.dart';
 import './widgets/build_logo_upload.dart';
 import './widgets/form_field.dart';
 
+class FieldLimits {
+  static const nomeMin = 3;
+  static const nomeMax = 60;
+
+  static const razaoMin = 5;
+  static const razaoMax = 100;
+
+  static const emailMin = 5;
+  static const emailMax = 100;
+
+  static const senhaMin = 6;
+  static const senhaMax = 20;
+
+  static const ruaMin = 3;
+  static const ruaMax = 80;
+
+  static const numeroMin = 1;
+  static const numeroMax = 6;
+
+  static const bairroMin = 2;
+  static const bairroMax = 60;
+
+  static const complementoMax = 60;
+
+  static const cidadeMin = 2;
+  static const cidadeMax = 60;
+
+  static const responsavelMin = 3;
+  static const responsavelMax = 80;
+}
+
 
 class CadastroScreen extends StatefulWidget {
   const CadastroScreen({super.key});
@@ -68,6 +99,17 @@ class _CadastroScreenState extends State<CadastroScreen> {
 
   bool _loading = false;
   bool _obscure = true;
+  double _forcaSenha = 0;
+  String _nivelSenha = "";
+
+  final List<String> dominiosPermitidos = [
+    'gmail.com',
+    'hotmail.com',
+    'outlook.com',
+    'yahoo.com',
+    'yahoo.com.br',
+    'icloud.com'
+  ];
 
   @override
   void dispose() {
@@ -88,10 +130,17 @@ class _CadastroScreenState extends State<CadastroScreen> {
     responsavel.dispose();
     super.dispose();
   }
+  
 
   String? _vNome(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Nome não pode ser vazio.";
+    if (s.length < FieldLimits.nomeMin) {
+      return "Nome muito curto (mín. ${FieldLimits.nomeMin}).";
+    }
+    if (s.length > FieldLimits.nomeMax) {
+      return "Nome muito longo (máx. ${FieldLimits.nomeMax}).";
+    }
     if (!_lettersAccentsAndNumbers.hasMatch(s)) {
       return "Nome só pode conter letras, acentos, ç e números.";
     }
@@ -101,6 +150,12 @@ class _CadastroScreenState extends State<CadastroScreen> {
   String? _vRazao(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Razão social não pode ser vazia.";
+    if (s.length < FieldLimits.razaoMin) {
+      return "Razão muito curta (mín. ${FieldLimits.razaoMin}).";
+    }
+    if (s.length > FieldLimits.razaoMax) {
+      return "Razão muito longa (máx. ${FieldLimits.razaoMax}).";
+    }
     if (!_lettersAccentsAndNumbers.hasMatch(s)) {
       return "Razão social só pode conter letras, acentos, ç e números.";
     }
@@ -108,17 +163,47 @@ class _CadastroScreenState extends State<CadastroScreen> {
   }
 
   String? _vEmail(String? v) {
-    final s = (v ?? '').trim();
+    final s = (v ?? '').trim().toLowerCase();
+
     if (s.isEmpty) return "E-mail não pode ser vazio.";
-    if (!_emailRegex.hasMatch(s)) return "E-mail inválido. Ex: x@x.com";
+    if (s.length < FieldLimits.emailMin) return "E-mail muito curto.";
+    if (s.length > FieldLimits.emailMax) return "E-mail muito longo.";
+
+    if (!_emailRegex.hasMatch(s)) return "E-mail inválido.";
+
+    final dominio = s.split('@').last;
+
+    if (!dominiosPermitidos.contains(dominio)) {
+      return "Use um e-mail válido (gmail, outlook, etc).";
+    }
+
     return null;
   }
 
   String? _vSenha(String? v) {
     final s = (v ?? '');
     if (s.isEmpty) return "Senha não pode ser vazia.";
-    if (s.length < 6) return "Senha deve ter mais de 6 caracteres.";
+    if (s.length < FieldLimits.senhaMin) {
+      return "Senha muito curta (mín. ${FieldLimits.senhaMin}).";
+    }
+    if (s.length > FieldLimits.senhaMax) {
+      return "Senha muito longa (máx. ${FieldLimits.senhaMax}).";
+    }
+    if (s.contains(' ')) {
+      return "Senha não pode conter espaços.";
+    }
     return null;
+  }
+
+  int _calcularForcaSenha(String senha) {
+    int score = 0;
+
+    if (RegExp(r'[a-z]').hasMatch(senha)) score++;
+    if (RegExp(r'[A-Z]').hasMatch(senha)) score++;
+    if (RegExp(r'[0-9]').hasMatch(senha)) score++;
+    if (RegExp(r'[!@#\$&*~_%\-]').hasMatch(senha)) score++;
+
+    return score;
   }
 
   String? _vCnpj(String? v) {
@@ -140,6 +225,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
   String? _vResponsavel(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Responsável não pode ser vazio.";
+    if (s.length < FieldLimits.responsavelMin) return "Nome muito curto (min. ${FieldLimits.responsavelMin}).";
+    if (s.length > FieldLimits.responsavelMax) return "Nome muito longo (máx. ${FieldLimits.responsavelMax}).";
     if (!_lettersAccentsOnly.hasMatch(s)) {
       return "Responsável só pode conter letras, acentos e ç.";
     }
@@ -157,6 +244,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
   String? _vRua(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Rua não pode ser vazia.";
+    if (s.length < FieldLimits.ruaMin) return "Rua muito curta (min. ${FieldLimits.ruaMin}).";
+    if (s.length > FieldLimits.ruaMax) return "Rua muito longa (máx. ${FieldLimits.ruaMax}).";
     if (!_lettersAccentsAndNumbers.hasMatch(s)) {
       return "Rua só pode conter letras, acentos, ç e números.";
     }
@@ -166,6 +255,8 @@ class _CadastroScreenState extends State<CadastroScreen> {
   String? _vNumero(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Número não pode ser vazio.";
+    if (s.length < FieldLimits.numeroMin) return "Número inválido (min. ${FieldLimits.numeroMin}).";
+    if (s.length > FieldLimits.numeroMax) return "Número muito longo (máx. ${FieldLimits.numeroMax}).";
     if (!_onlyDigits.hasMatch(s)) return "Número deve conter apenas números.";
     return null;
   }
@@ -173,12 +264,16 @@ class _CadastroScreenState extends State<CadastroScreen> {
   String? _vBairro(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Bairro não pode ser vazio.";
+    if (s.length < FieldLimits.bairroMin) return "Bairro muito curto (min. ${FieldLimits.bairroMin}).";
+    if (s.length > FieldLimits.bairroMax) return "Bairro muito longo (máx. ${FieldLimits.bairroMax}).";
     return null;
   }
 
   String? _vCidade(String? v) {
     final s = (v ?? '').trim();
     if (s.isEmpty) return "Cidade não pode ser vazia.";
+    if (s.length < FieldLimits.cidadeMin) return "Cidade muito curta (min. ${FieldLimits.cidadeMin}).";
+    if (s.length > FieldLimits.cidadeMax) return "Cidade muito longa (máx. ${FieldLimits.cidadeMax}).";
     if (!_lettersAccentsOnly.hasMatch(s)) {
       return "Cidade só pode conter letras, acentos e ç.";
     }
@@ -191,6 +286,16 @@ class _CadastroScreenState extends State<CadastroScreen> {
     if (!_lettersAccentsOnly.hasMatch(s)) {
       return "Estado só pode conter letras, acentos e ç.";
     }
+    return null;
+  }
+
+  String? _vComplemento(String? v) {
+    final s = (v ?? '').trim();
+
+    if (s.length > FieldLimits.complementoMax) {
+      return "Complemento muito longo (máx. ${FieldLimits.complementoMax}).";
+    }
+
     return null;
   }
 
@@ -466,8 +571,79 @@ class _CadastroScreenState extends State<CadastroScreen> {
                                 color: colorScheme.onSurface.withOpacity(0.75),
                               ),
                             ),
+                            onChanged: (value) {
+                              final score = _calcularForcaSenha(value);
+
+                              setState(() {
+                                _forcaSenha = score / 4;
+
+                                if (score <= 1) {
+                                  _nivelSenha = "Fraca";
+                                } else if (score <= 3) {
+                                  _nivelSenha = "Média";
+                                } else {
+                                  _nivelSenha = "Forte";
+                                }
+                              });
+                            },
                           ),
 
+                         Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(8),
+                                child: LinearProgressIndicator(
+                                  value: _forcaSenha,
+                                  minHeight: 8,
+                                  backgroundColor: Colors.grey.shade300,
+                                  valueColor: AlwaysStoppedAnimation<Color>(
+                                    _forcaSenha <= 0.25
+                                        ? Colors.red.shade400
+                                        : _forcaSenha <= 0.75
+                                            ? Colors.orange.shade400
+                                            : Colors.green.shade500,
+                                  ),
+                                ),
+                              ),
+
+                              const SizedBox(height: 6),
+
+                              Row(
+                                children: [
+                                  Icon(
+                                    _forcaSenha <= 0.25
+                                        ? Icons.warning_amber_rounded
+                                        : _forcaSenha <= 0.75
+                                            ? Icons.info_outline
+                                            : Icons.check_circle,
+                                    size: 18,
+                                    color: _forcaSenha <= 0.25
+                                        ? Colors.red.shade400
+                                        : _forcaSenha <= 0.75
+                                            ? Colors.orange.shade400
+                                            : Colors.green.shade500,
+                                  ),
+
+                                  const SizedBox(width: 6),
+
+                                  Text(
+                                    _nivelSenha,
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      fontSize: 13,
+                                      color: _forcaSenha <= 0.25
+                                          ? Colors.red.shade400
+                                          : _forcaSenha <= 0.75
+                                              ? Colors.orange.shade400
+                                              : Colors.green.shade500,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ],
+                          ),
+                          
                           Divider(
                             height: 24,
                             color: theme.dividerColor.withOpacity(0.35),
@@ -581,7 +757,7 @@ class _CadastroScreenState extends State<CadastroScreen> {
                           AppFormField(
                             controller: complemento,
                             label: "Complemento (opcional)",
-                            validator: (_) => null,
+                            validator: _vComplemento,
                             prefixIcon: Icon(
                               Icons.add_location_alt_outlined,
                               color: colorScheme.onSurface.withOpacity(0.75),

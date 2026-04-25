@@ -1,6 +1,18 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class PrinterLimits {
+  static const nomeMin = 3;
+  static const nomeMax = 50;
+
+  static const modeloMin = 2;
+  static const modeloMax = 40;
+
+  static const portaMin = 1;
+  static const portaMax = 65535;
+}
 
 class ConfigCard extends StatelessWidget {
   final TextEditingController nomeCtrl;
@@ -18,7 +30,7 @@ class ConfigCard extends StatelessWidget {
   final void Function(bool) onAtivoChanged;
   final void Function(bool) onPadraoChanged;
 
-  const ConfigCard({
+  ConfigCard({
     super.key,
     required this.nomeCtrl,
     required this.modeloCtrl,
@@ -59,6 +71,102 @@ class ConfigCard extends StatelessWidget {
 
   Color _iconColor(BuildContext context) =>
       _isDark(context) ? const Color(0xFFD4AF37) : Colors.black54;
+
+  final RegExp _nomePrinterRegex =
+      RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÇç0-9\- ]+$");
+
+    final RegExp _modeloPrinterRegex =
+        RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÇç0-9\- ]+$");
+
+    final RegExp _onlyDigits = RegExp(r"^[0-9]+$");
+
+    String? _vNomeImpressora(String? v) {
+      final s = (v ?? '').trim();
+
+      if (s.isEmpty) return "Nome da impressora não pode ser vazio.";
+      if (s.length < PrinterLimits.nomeMin) {
+        return "Nome muito curto (mín. ${PrinterLimits.nomeMin}).";
+      }
+      if (s.length > PrinterLimits.nomeMax) {
+        return "Nome muito longo (máx. ${PrinterLimits.nomeMax}).";
+      }
+      if (!_nomePrinterRegex.hasMatch(s)) {
+        return "Use apenas letras, números, acentos, espaços e hífen.";
+      }
+
+      return null;
+    }
+
+    String? _vModeloImpressora(String? v) {
+      final s = (v ?? '').trim();
+
+      if (s.isEmpty) return "Modelo não pode ser vazio.";
+      if (s.length < PrinterLimits.modeloMin) {
+        return "Modelo muito curto (mín. ${PrinterLimits.modeloMin}).";
+      }
+      if (s.length > PrinterLimits.modeloMax) {
+        return "Modelo muito longo (máx. ${PrinterLimits.modeloMax}).";
+      }
+      if (!_modeloPrinterRegex.hasMatch(s)) {
+        return "Use apenas letras, números, acentos, espaços e hífen.";
+      }
+
+      return null;
+    }
+
+    String? _vTipoConexao(String? v) {
+      final s = (v ?? '').trim();
+
+      if (s.isEmpty) return "Tipo de conexão não pode ser vazio.";
+
+      return null;
+    }
+
+    String? _vIp(String? v) {
+      final s = (v ?? '').trim();
+
+      if (s.isEmpty) return "IP não pode ser vazio.";
+
+      final partes = s.split('.');
+      if (partes.length != 4) {
+        return "IP inválido. Use o formato 192.168.0.100";
+      }
+
+      for (final parte in partes) {
+        if (parte.isEmpty) return "IP inválido.";
+        if (!_onlyDigits.hasMatch(parte)) return "IP deve conter apenas números.";
+        final n = int.tryParse(parte);
+        if (n == null || n < 0 || n > 255) {
+          return "IP inválido. Cada parte deve ir de 0 a 255.";
+        }
+      }
+
+      return null;
+    }
+
+    String? _vPorta(String? v) {
+      final s = (v ?? '').trim();
+
+      if (s.isEmpty) return "Porta não pode ser vazia.";
+      if (!_onlyDigits.hasMatch(s)) return "Porta deve conter apenas números.";
+
+      final porta = int.tryParse(s);
+      if (porta == null) return "Porta inválida.";
+      if (porta < PrinterLimits.portaMin || porta > PrinterLimits.portaMax) {
+        return "Porta deve estar entre ${PrinterLimits.portaMin} e ${PrinterLimits.portaMax}.";
+      }
+
+      return null;
+    }
+
+    String? _vTamanhoEtiqueta(String? v) {
+      final s = (v ?? '').trim();
+
+      if (s.isEmpty) return "Tamanho da etiqueta não pode ser vazio.";
+
+      return null;
+    }
+
 
   InputDecoration _inputDecoration(
     BuildContext context, {
@@ -145,8 +253,13 @@ class ConfigCard extends StatelessWidget {
               label: 'Nome da impressora',
               icon: Icons.drive_file_rename_outline,
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Informe o nome' : null,
+           validator: _vNomeImpressora,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(
+                RegExp(r"[A-Za-zÀ-ÖØ-öø-ÿÇç0-9\- ]"),
+              ),
+              LengthLimitingTextInputFormatter(PrinterLimits.nomeMax),
+            ],
           ),
           const SizedBox(height: 12),
           TextFormField(
@@ -157,8 +270,13 @@ class ConfigCard extends StatelessWidget {
               label: 'Modelo',
               icon: Icons.print_outlined,
             ),
-            validator: (v) =>
-                (v == null || v.trim().isEmpty) ? 'Informe o modelo' : null,
+            validator: _vModeloImpressora,
+            inputFormatters: [
+              FilteringTextInputFormatter.allow(
+                RegExp(r"[A-Za-zÀ-ÖØ-öø-ÿÇç0-9\- ]"),
+              ),
+              LengthLimitingTextInputFormatter(PrinterLimits.modeloMax),
+            ],
           ),
           const SizedBox(height: 12),
           DropdownButtonFormField<String>(
@@ -170,6 +288,7 @@ class ConfigCard extends StatelessWidget {
               label: 'Tipo de conexão',
               icon: Icons.settings_ethernet_rounded,
             ),
+            validator: _vTipoConexao,
             items: const [
               DropdownMenuItem(
                 value: 'network',
@@ -185,7 +304,7 @@ class ConfigCard extends StatelessWidget {
                 flex: 7,
                 child: TextFormField(
                   controller: ipCtrl,
-                  keyboardType: TextInputType.number,
+                  keyboardType: TextInputType.numberWithOptions(decimal: true),
                   style: TextStyle(color: _text(context)),
                   decoration: _inputDecoration(
                     context,
@@ -193,8 +312,11 @@ class ConfigCard extends StatelessWidget {
                     hint: 'Ex.: 192.168.0.120',
                     icon: Icons.language_rounded,
                   ),
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'Informe o IP' : null,
+                  validator: _vIp,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
+                    LengthLimitingTextInputFormatter(15),
+                  ],
                 ),
               ),
               const SizedBox(width: 12),
@@ -209,12 +331,11 @@ class ConfigCard extends StatelessWidget {
                     label: 'Porta',
                     icon: Icons.numbers_rounded,
                   ),
-                  validator: (v) {
-                    if (v == null || v.trim().isEmpty) return 'Informe a porta';
-                    final p = int.tryParse(v.trim());
-                    if (p == null || p <= 0) return 'Inválida';
-                    return null;
-                  },
+                  validator: _vPorta,
+                  inputFormatters: [
+                    FilteringTextInputFormatter.digitsOnly,
+                    LengthLimitingTextInputFormatter(5),
+                  ],
                 ),
               ),
             ],
@@ -229,12 +350,22 @@ class ConfigCard extends StatelessWidget {
               label: 'Tamanho da etiqueta',
               icon: Icons.straighten_rounded,
             ),
+            validator: _vTamanhoEtiqueta,
             items: const [
+              DropdownMenuItem(
+                value: '50x40',
+                child: Text('50x40 mm'),
+              ),
               DropdownMenuItem(
                 value: '60x40',
                 child: Text('60x40 mm'),
               ),
+              DropdownMenuItem(
+                value: '100x80',
+                child: Text('100x80 mm'),
+              ),
             ],
+
             onChanged: onTamanhoEtiquetaChanged,
           ),
           const SizedBox(height: 8),
