@@ -43,6 +43,7 @@ class EtiquetaDetailsCard extends StatelessWidget {
 
   final bool incluirTabelaNutricional;
   final TabelaNutricionalModel? tabelaNutricional;
+  final VoidCallback onOuvirEtiqueta;
 
   const EtiquetaDetailsCard({
     super.key,
@@ -73,6 +74,7 @@ class EtiquetaDetailsCard extends StatelessWidget {
     required this.formatCustomDate,
     required this.incluirTabelaNutricional,
     required this.tabelaNutricional,
+    required this.onOuvirEtiqueta,
   });
 
   String _formatNum(dynamic val, {int casasDecimais = 2}) {
@@ -201,16 +203,21 @@ class EtiquetaDetailsCard extends StatelessWidget {
               Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
-                  StatusChip(
-                    label: statusLabel,
-                    color: statusColor,
-                  ),
-                  const SizedBox(height: 8),
-                  BadgeChip(
-                    label: validadeLabel,
-                    subtitle: validadeHint,
-                    color: validadeColor,
-                    icon: Icons.event_outlined,
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      StatusChip(
+                        label: statusLabel,
+                        color: statusColor,
+                      ),
+                      const SizedBox(height: 8),
+                      BadgeChip(
+                        label: validadeLabel,
+                        subtitle: validadeHint,
+                        color: validadeColor,
+                        icon: Icons.event_outlined,
+                      ),
+                    ],
                   ),
                 ],
               ),
@@ -225,6 +232,78 @@ class EtiquetaDetailsCard extends StatelessWidget {
             _linha("Setor/Responsável", setorNome),
           _linha("Fabricação", fabricacaoFormatada),
           _linhaColor("Validade", validadeFormatada, validadeColor),
+
+          const SizedBox(height: 17),
+
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              Semantics(
+                button: true,
+                label: 'Ouvir detalhes da etiqueta',
+                child: GestureDetector(
+                  onTap: onOuvirEtiqueta,
+                  child: Container(
+                    padding: const EdgeInsets.all(4),
+                    decoration: BoxDecoration(
+                      color: validadeColor.withOpacity(0.25),
+                      borderRadius: BorderRadius.circular(26),
+                    ),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
+                      decoration: BoxDecoration(
+                        color: validadeColor.withOpacity(0.12),
+                        borderRadius: BorderRadius.circular(22),
+                        border: Border.all(
+                          color: validadeColor.withOpacity(0.35),
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: validadeColor.withOpacity(0.15),
+                            blurRadius: 10,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.volume_up_rounded,
+                            color: validadeColor,
+                            size: 22,
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            'Ouvir detalhes da etiqueta',
+                            style: TextStyle(
+                              color: validadeColor,
+                              fontWeight: FontWeight.w900,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 6),
+
+              Text(
+                'Toque no botão para ouvir os alertas',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 11.5,
+                  color: mutedColor,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+
+          const SizedBox(height: 17),
 
           if (hasLote) ...[
             

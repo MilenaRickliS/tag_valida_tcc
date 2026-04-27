@@ -13,6 +13,7 @@ import '../../models/etiqueta_model.dart';
 import '../../providers/gerar_etiqueta_provider.dart';
 import '../../services/sync_status_service.dart';
 import '../../main.dart' show routeObserver;
+import 'package:flutter_tts/flutter_tts.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -67,6 +68,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
   @override
   void dispose() {
     routeObserver.unsubscribe(this);
+    _tts.stop();
     super.dispose();
   }
 
@@ -80,6 +82,30 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
     if (!kIsWeb) {
       _executarSincronizacaoAutomatica();
     }
+  }
+
+  final FlutterTts _tts = FlutterTts();
+
+  Future<void> _ouvirResumoEtiquetas() async {
+    await _tts.setLanguage("pt-BR");
+    await _tts.setSpeechRate(0.48);
+    await _tts.setPitch(1.0);
+
+    String mensagem;
+
+    if (_qtdVencidas > 0) {
+      mensagem =
+          "Atenção. Você possui $_qtdVencidas etiquetas vencidas e $_qtdAlerta em alerta.";
+    } else if (_qtdAlerta > 0) {
+      mensagem =
+          "Nenhuma etiqueta vencida. Você possui $_qtdAlerta etiquetas em alerta.";
+    } else {
+      mensagem =
+          "Tudo certo. Nenhuma etiqueta vencida e nenhuma etiqueta em alerta.";
+    }
+
+    await _tts.stop();
+    await _tts.speak(mensagem);
   }
 
   Future<void> _carregarStatusSync() async {
@@ -410,6 +436,7 @@ class _HomeScreenState extends State<HomeScreen> with RouteAware {
                           loading: _loadingIndicadores,
                           titleSize: titleSize,
                           subtitleSize: subtitleSize,
+                          onOuvirResumo: _ouvirResumoEtiquetas,
                         ),
                         const SizedBox(height: 18),
 

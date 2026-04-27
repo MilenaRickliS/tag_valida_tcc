@@ -13,6 +13,7 @@ import '../../utils/formatar_lote.dart';
 import '../etiqueta_detalhes/widgets/etiqueta_details_card.dart';
 import '../etiqueta_detalhes/widgets/etiqueta_qr_card.dart';
 import './widgets/qr_fullscreen.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 
 class EtiquetaPublicaScreen extends StatelessWidget {
   final String uid;
@@ -432,6 +433,30 @@ class EtiquetaPublicaScreen extends StatelessWidget {
     );
   }
 
+  Future<void> _ouvirEtiqueta({
+    required String produtoNome,
+    required String? lote,
+    required String validadeHint,
+    required String validadeFormatada,
+    required String statusLabel,
+  }) async {
+    final tts = FlutterTts();
+
+    await tts.setLanguage("pt-BR");
+    await tts.setSpeechRate(0.48);
+    await tts.setPitch(1.0);
+
+    final loteTexto = lote != null && lote.trim().isNotEmpty
+        ? "Lote $lote."
+        : "Sem lote informado.";
+
+    final mensagem =
+        "$produtoNome. $loteTexto Validade $validadeFormatada. $validadeHint. Status $statusLabel.";
+
+    await tts.stop();
+    await tts.speak(mensagem);
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = _isDark(context);
@@ -634,6 +659,13 @@ class EtiquetaPublicaScreen extends StatelessWidget {
                             tabelaNutricional: etiqueta.tabelaNutricional,
                             formatCustomDate: (ms) =>
                                 _fmtDate(DateTime.fromMillisecondsSinceEpoch(ms)),
+                            onOuvirEtiqueta: () => _ouvirEtiqueta(
+                              produtoNome: produtoNome,
+                              lote: lotePrefixo ?? loteFormatado,
+                              validadeHint: _validadeHint(validade),
+                              validadeFormatada: _fmtDate(validade),
+                              statusLabel: _validadeShortLabel(validade),
+                            ),
                           ),
                         ],
                       ),

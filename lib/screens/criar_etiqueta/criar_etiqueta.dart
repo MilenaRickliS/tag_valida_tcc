@@ -126,13 +126,6 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
   String? _validadeError;
   
 
-  String? _validateDates(DateTime? fab, DateTime? val) {
-    if (fab == null) return "Selecione a data de fabricação.";
-    if (val == null) return "Selecione a data de validade.";
-    if (val.isBefore(fab)) return "Validade deve ser igual ou após a fabricação.";
-    return null;
-  }
-
   InputDecoration appInputDecoration(String label) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final brand = isDark ? const Color(0xFFD4AF37) : const Color(0xFF2B2B2B);
@@ -1190,7 +1183,6 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
         }
 
         final isInteger = campo.tipo == CampoTipo.integer;
-        final isDecimal = campo.tipo == CampoTipo.decimal;
         final isMoney = campo.tipo == CampoTipo.currency;
         final isPrice = campo.tipo == CampoTipo.priceMode;
 
