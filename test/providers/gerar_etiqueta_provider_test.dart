@@ -61,7 +61,7 @@ void main() {
   });
 
   test('deve criar etiqueta com sucesso', () async {
-    // ARRANGE (preparar dados)
+   
     provider.tipoId = 'tipo1';
     provider.produtoCtrl.text = 'Pão francês';
     provider.quantidadeCtrl.text = '10';
@@ -91,13 +91,13 @@ void main() {
       permiteTabelaNutricional: false,
     );
 
-    // ACT
+
     final id = await provider.salvarEtiqueta(
       uid: 'user1',
       tipoAtual: tipo,
     );
 
-    // ASSERT
+   
     expect(id, isNotEmpty);
 
     verify(() => repo.upsert('user1', any())).called(1);
