@@ -91,17 +91,13 @@ class CampoCustomModel {
   final String label;
   final CampoTipo tipo;
   final bool obrigatorio;
-
-
   final String? prefixo; 
   final String? sufixo; 
   final String? unidadePadrao; 
   final List<String> opcoesUnidade; 
   final bool permitirUnidadeCustom;
   final CampoPosicaoSimbolo posicaoSimbolo;
-  final int casasDecimais;
-
- 
+  final int casasDecimais; 
   final bool habilitarModoPreco;
   final List<String> opcoesModoPreco; 
   final String? modoPrecoPadrao;
