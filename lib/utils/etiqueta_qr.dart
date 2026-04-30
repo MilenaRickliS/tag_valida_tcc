@@ -22,8 +22,8 @@ String buildEtiquetaQrPublico({
   required String uid,
   required String etiquetaId,
 }) {
-  // return 'https://dominio.com/e/$etiquetaId?uid=$uid';
-  return 'PUBLICO:$uid:$etiquetaId';
+  return 'https://tagvalida.web.app/e/$etiquetaId?uid=$uid';
+  // return 'PUBLICO:$uid:$etiquetaId';
 }
 
 String buildEtiquetaQrData({

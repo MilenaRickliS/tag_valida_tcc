@@ -72,6 +72,7 @@ dependencies:
   url_launcher: ^6.3.2
   audioplayers: ^6.6.0
   flutter_tts: ^4.2.5
+  mocktail: ^1.0.5
 
 dev_dependencies:
   flutter_test:

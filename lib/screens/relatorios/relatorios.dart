@@ -131,7 +131,7 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
         return Theme(
           data: base.copyWith(
             colorScheme: scheme,
-            dialogTheme: DialogTheme(
+            dialogTheme: DialogThemeData(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(18),
               ),

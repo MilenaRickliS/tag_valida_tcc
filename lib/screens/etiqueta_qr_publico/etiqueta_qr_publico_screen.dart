@@ -589,7 +589,7 @@ class EtiquetaPublicaScreen extends StatelessWidget {
               ? formatarLote(loteValue.trim(), formato: LoteFormato.prefixoL)
               : null;
 
-          final qrPublico = 'PUBLICO:$uid:$etiquetaId';
+          final qrPublico = 'https://tagvalida.web.app/e/$etiquetaId?uid=$uid';
 
           return SingleChildScrollView(
             padding: const EdgeInsets.fromLTRB(16, 14, 16, 28),
