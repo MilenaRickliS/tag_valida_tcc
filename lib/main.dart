@@ -5,6 +5,7 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_auth/firebase_auth.dart' as fb_auth;
 import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter_web_plugins/url_strategy.dart';
 
 import 'firebase_options.dart';
 import 'services/firebase/firestore_paths.dart';
@@ -58,13 +59,14 @@ import 'screens/configuracoes_impressora/configuracoes_impressora_screen.dart';
 import 'screens/resultado_previsao/resultado_previsao_screen.dart';
 import 'screens/catalogo_alimentos/catalogo_alimentos.dart';
 import 'screens/backup/backup_screen.dart';
+import 'screens/etiqueta_qr_publico/etiqueta_qr_publico_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
   );
-
+  setUrlStrategy(PathUrlStrategy());
   FlutterError.onError = (FlutterErrorDetails details) {
     FlutterError.dumpErrorToConsole(details);
   };
@@ -189,7 +191,7 @@ class MyApp extends StatelessWidget {
       theme: AppThemes.lightTheme,
       darkTheme: AppThemes.darkTheme,
       themeMode: themeProvider.themeMode,
-      initialRoute: '/',
+      // initialRoute: '/',
       routes: {
         '/': (context) => const WelcomeScreen(),
         '/login': (context) => const LoginScreen(),
@@ -241,6 +243,32 @@ class MyApp extends StatelessWidget {
         return child!;
       },
       onGenerateRoute: (settings) {
+
+        final uri = Uri.parse(settings.name ?? '');
+
+        if (uri.pathSegments.length == 2 && uri.pathSegments[0] == 'e') {
+          final etiquetaId = uri.pathSegments[1];
+          final uid = uri.queryParameters['uid'];
+
+          if (uid == null || uid.isEmpty) {
+            return MaterialPageRoute(
+              settings: settings,
+              builder: (_) => const ErrorPage(
+                title: 'QR inválido',
+                message: 'O link público da etiqueta não possui UID.',
+              ),
+            );
+          }
+
+          return MaterialPageRoute(
+            settings: settings,
+            builder: (_) => EtiquetaPublicaScreen(
+              uid: uid,
+              etiquetaId: etiquetaId,
+            ),
+          );
+        }
+
         if (settings.name == '/criar-etiqueta') {
           final args = (settings.arguments as Map?) ?? {};
 
