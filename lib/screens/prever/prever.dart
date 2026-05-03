@@ -13,9 +13,7 @@ import '../../widgets/menu.dart';
 import './widgets/example_image_card.dart';
 import './widgets/hero_card.dart';
 import './widgets/info_box.dart';
-import './widgets/info_card.dart';
 import './widgets/outros_metodos_card.dart';
-import './widgets/prever_validade_fab.dart';
 import './widgets/tip_card.dart';
 
 class PreverValidadeScreen extends StatefulWidget {
@@ -202,15 +200,9 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
     final isDark = theme.brightness == Brightness.dark;
 
     final bg = theme.scaffoldBackgroundColor;
-    final brand = isDark ? const Color(0xFFD4AF37) : const Color(0xFF428E2E);
     final text = isDark ? Colors.white : const Color(0xFF2B2B2B);
     final muted =
         isDark ? const Color(0xFFD6D6D6) : Colors.black.withOpacity(0.60);
-    final fabBg = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final fabFg = isDark ? const Color(0xFFD4AF37) : const Color(0xFF428E2E);
-    final fabBorder = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.18)
-        : Colors.black.withOpacity(0.08);
 
     final w = MediaQuery.of(context).size.width;
     final compact = w < 835;
@@ -240,79 +232,90 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
                 ],
               ),
       ),
-      floatingActionButton: PreverValidadeFab(
-        isDark: isDark,
-        loading: _loading,
-        brand: brand,
-        fabBg: fabBg,
-        fabFg: fabFg,
-        fabBorder: fabBorder,
-        onPressed: _abrirOpcoes,
-      ),
       body: Center(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 1080),
           child: SingleChildScrollView(
-            padding: const EdgeInsets.fromLTRB(18, 18, 18, 110),
+            padding: const EdgeInsets.fromLTRB(18, 18, 18, 32),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                HeroCard(compact: compact),
-                const SizedBox(height: 18),
+                HeroCard(compact: compact, mobile: mobile,),
+                const SizedBox(height: 16),
 
-                if (mobile)
-                  Column(
-                    children: const [
-                      InfoStatCard(
-                        icon: Icons.photo_camera_outlined,
-                        title: "1. Tire a foto",
-                        subtitle: "Capture uma imagem nítida do produto.",
-                      ),
-                      SizedBox(height: 12),
-                      InfoStatCard(
-                        icon: Icons.psychology_alt_outlined,
-                        title: "2. IA analisa",
-                        subtitle: "O sistema avalia o estado visual do alimento.",
-                      ),
-                      SizedBox(height: 12),
-                      InfoStatCard(
-                        icon: Icons.fact_check_outlined,
-                        title: "3. Veja o resultado",
-                        subtitle: "Receba o status: bom, alerta ou vencido.",
-                      ),
-                    ],
-                  )
-                else
-                  Row(
-                    children: const [
-                      Expanded(
-                        child: InfoStatCard(
-                          icon: Icons.photo_camera_outlined,
-                          title: "1. Tire a foto",
-                          subtitle: "Capture uma imagem nítida do produto.",
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: InfoStatCard(
-                          icon: Icons.psychology_alt_outlined,
-                          title: "2. IA analisa",
-                          subtitle: "O sistema avalia o estado visual do alimento.",
-                        ),
-                      ),
-                      SizedBox(width: 12),
-                      Expanded(
-                        child: InfoStatCard(
-                          icon: Icons.fact_check_outlined,
-                          title: "3. Veja o resultado",
-                          subtitle: "Receba o status: bom, alerta ou vencido.",
-                        ),
+                Container(
+                  width: double.infinity,
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(20),
+                    gradient: LinearGradient(
+                      colors: 
+                          [const Color(0xFF00C9A7), const Color(0xFF92FE9D)],
+                          
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
+                    boxShadow: [
+                      BoxShadow(
+                        color: const Color(0xFF00C9A7).withOpacity(0.35),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: _loading ? null : _abrirOpcoes,
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 16),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (_loading)
+                              const SizedBox(
+                                width: 22,
+                                height: 22,
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2.4,
+                                  color: Colors.black,
+                                ),
+                              )
+                            else
+                              Container(
+                                padding: const EdgeInsets.all(8),
+                                decoration: BoxDecoration(
+                                  color: Colors.black.withOpacity(0.2),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Icon(
+                                  Icons.camera_alt_rounded,
+                                  size: 26,
+                                  color: Colors.black,
+                                ),
+                              ),
 
-                const SizedBox(height: 24),
+                            const SizedBox(width: 12),
 
+                            Text(
+                              _loading
+                                  ? "Analisando imagem..."
+                                  : "Tirar foto para análise",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: Colors.black,
+                                letterSpacing: 0.3,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 18),
                 Text(
                   "Orientações para tirar a foto",
                   style: TextStyle(

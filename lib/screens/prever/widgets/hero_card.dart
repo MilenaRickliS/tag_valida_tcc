@@ -1,11 +1,17 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import './info_card.dart';
 
 class HeroCard extends StatelessWidget {
   final bool compact;
+  final bool mobile;
 
-  const HeroCard({super.key, required this.compact});
+  const HeroCard({
+    super.key,
+    required this.compact,
+    required this.mobile,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -44,22 +50,80 @@ class HeroCard extends StatelessWidget {
           ),
         ],
       ),
-      child: compact
-          ? Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: const [
-                HeroText(),
-                SizedBox(height: 18),
-                HeroIcon(),
-              ],
-            )
-          : Row(
-              children: const [
-                Expanded(child: HeroText()),
-                SizedBox(width: 20),
-                HeroIcon(),
-              ],
-            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          compact
+              ? Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: const [
+                    HeroText(),
+                    SizedBox(height: 18),
+                    HeroIcon(),
+                  ],
+                )
+              : Row(
+                  children: const [
+                    Expanded(child: HeroText()),
+                    SizedBox(width: 20),
+                    HeroIcon(),
+                  ],
+                ),
+
+          const SizedBox(height: 20),
+
+          // 👇 AQUI entram os passos
+          mobile
+              ? Column(
+                  children: const [
+                    InfoStatCard(
+                      icon: Icons.photo_camera_outlined,
+                      title: "1. Tire a foto",
+                      subtitle: "Capture uma imagem nítida do produto.",
+                    ),
+                    SizedBox(height: 12),
+                    InfoStatCard(
+                      icon: Icons.psychology_alt_outlined,
+                      title: "2. IA analisa",
+                      subtitle: "O sistema avalia o estado visual do alimento.",
+                    ),
+                    SizedBox(height: 12),
+                    InfoStatCard(
+                      icon: Icons.fact_check_outlined,
+                      title: "3. Veja o resultado",
+                      subtitle: "Receba o status: bom, alerta ou vencido.",
+                    ),
+                  ],
+                )
+              : Row(
+                  children: const [
+                    Expanded(
+                      child: InfoStatCard(
+                        icon: Icons.photo_camera_outlined,
+                        title: "1. Tire a foto",
+                        subtitle: "Capture uma imagem nítida do produto.",
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: InfoStatCard(
+                        icon: Icons.psychology_alt_outlined,
+                        title: "2. IA analisa",
+                        subtitle: "O sistema avalia o estado visual do alimento.",
+                      ),
+                    ),
+                    SizedBox(width: 12),
+                    Expanded(
+                      child: InfoStatCard(
+                        icon: Icons.fact_check_outlined,
+                        title: "3. Veja o resultado",
+                        subtitle: "Receba o status: bom, alerta ou vencido.",
+                      ),
+                    ),
+                  ],
+                ),
+        ],
+      ),
     );
   }
 }
