@@ -216,9 +216,11 @@ class DetalheAlimentoScreen extends StatelessWidget {
                       ),
                     ),
                   ),
+                  
                 ],
               ),
             ),
+            const SizedBox(height: 35),
           ],
         ),
       ),

@@ -689,6 +689,7 @@ class _ConfiguracoesImpressoraScreenState
                             ),
                           ),
                         ),
+                        const SizedBox(height: 25),
                       ],
                     ),
                   ],

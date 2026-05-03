@@ -632,6 +632,7 @@ class _CriarCampoCustomScreenState extends State<CriarCampoCustomScreen> {
                       ),
                     ],
                   ),
+                  const SizedBox(height: 32),
                 ],
               ),
             ),

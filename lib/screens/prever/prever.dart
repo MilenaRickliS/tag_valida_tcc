@@ -471,6 +471,7 @@ class _PreverValidadeScreenState extends State<PreverValidadeScreen> {
 
                 const SizedBox(height: 18),
                 OutrosMetodosCard(),
+                const SizedBox(height: 25),
               ],
             ),
           ),

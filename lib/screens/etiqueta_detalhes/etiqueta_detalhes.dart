@@ -1034,6 +1034,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                         style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
+                    const SizedBox(height: 25),
                   ],
                 ),
               ),
