@@ -1,10 +1,12 @@
 // ignore_for_file: deprecated_member_use
 
 import 'package:flutter/material.dart';
+import 'package:open_filex/open_filex.dart';
 import 'badge_chip.dart';
 import 'status_chip.dart';
 import 'tabela_nutricional_preview_card.dart';
 import 'rotulagem_frontal_card.dart';
+import './tabela_nutricional_pdf_service.dart';
 import '../../../models/tabela_nutricional_model.dart';
 
 
@@ -425,16 +427,77 @@ class EtiquetaDetailsCard extends StatelessWidget {
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                 if (incluirTabelaNutricional && tabelaNutricional != null) ...[
                   const SizedBox(height: 12),
+
                   TabelaNutricionalPreviewCard(
                     tabela: tabelaNutricional!,
                   ),
+
                   const SizedBox(height: 6),
+
                   RotulagemFrontalImagem(
                     tabela: tabelaNutricional!,
                   ),
-                ],
+
+                  const SizedBox(height: 12),
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 10),
+
+                      Text(
+                        'Exportação',
+                        style: TextStyle(
+                          color: mutedColor,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xff88be8e),
+                          foregroundColor: Colors.black,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () {
+                          showModalBottomSheet(
+                            context: context,
+                            builder: (_) => _EscolherLayoutTabelaPdfSheet(
+                              tabela: tabelaNutricional!,
+                              produtoNome: produtoNome,
+                            ),
+                          );
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: const [
+                            Icon(Icons.download_rounded),
+                            SizedBox(width: 8),
+                            Text(
+                              'Gerar PDF da tabela nutricional',
+                              style: TextStyle(fontWeight: FontWeight.w800),
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      const SizedBox(height: 6),
+
+                      Text(
+                        'Baixe a tabela no padrão exigido pela ANVISA',
+                        style: TextStyle(
+                          fontSize: 11.5,
+                          color: mutedColor,
+                        ),
+                      ),
+                    ],
+                  )
                 ],
               ),
             ),
@@ -623,3 +686,81 @@ class EtiquetaDetailsCard extends StatelessWidget {
   }
 }
 
+class _EscolherLayoutTabelaPdfSheet extends StatelessWidget {
+  final TabelaNutricionalModel tabela;
+  final String produtoNome;
+
+  const _EscolherLayoutTabelaPdfSheet({
+    required this.tabela,
+    required this.produtoNome,
+  });
+
+  Future<void> _gerar(
+    BuildContext context,
+    LayoutTabelaNutricionalPdf layout,
+  ) async {
+    Navigator.pop(context);
+
+    final service = TabelaNutricionalPdfService();
+
+    try {
+      final file = await service.gerarPdf(
+        tabela: tabela,
+        layout: layout,
+        produtoNome: produtoNome,
+      );
+
+      await OpenFilex.open(file.path);
+    } catch (e) {
+      // ignore: use_build_context_synchronously
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Erro ao gerar PDF. Tente novamente.'),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.all(18),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              'Escolha o layout do PDF',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 12),
+            ListTile(
+              leading: const Icon(Icons.view_agenda_outlined),
+              title: const Text('Modelo vertical'),
+              onTap: () => _gerar(context, LayoutTabelaNutricionalPdf.vertical),
+            ),
+            ListTile(
+              leading: const Icon(Icons.table_rows_outlined),
+              title: const Text('Modelo horizontal'),
+              onTap: () => _gerar(context, LayoutTabelaNutricionalPdf.horizontal),
+            ),
+            ListTile(
+              leading: const Icon(Icons.view_column_outlined),
+              title: const Text('Modelo vertical quebrado'),
+              onTap: () => _gerar(context, LayoutTabelaNutricionalPdf.verticalQuebrado),
+            ),
+            ListTile(
+              leading: const Icon(Icons.splitscreen_outlined),
+              title: const Text('Modelo horizontal quebrado'),
+              onTap: () => _gerar(context, LayoutTabelaNutricionalPdf.horizontalQuebrado),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
