@@ -73,6 +73,7 @@ dependencies:
   audioplayers: ^6.6.0
   flutter_tts: ^4.2.5
   mocktail: ^1.0.5
+  video_player: ^2.11.1
 
 dev_dependencies:
   flutter_test:
@@ -101,6 +102,7 @@ flutter:
     - assets/portifolio/
     - assets/exemplos/
     - assets/sounds/beep.mp3
+    - assets/videos/
   
   fonts:
   - family: RobotoMono

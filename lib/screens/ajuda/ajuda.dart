@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import '../../widgets/menu.dart';
 import '../ajuda/widgets/contact_pill.dart';
 import '../ajuda/widgets/help_card.dart';
+import '../ajuda/widgets/tutorial_video_section.dart';
 
 class AjudaScreen extends StatelessWidget {
   const AjudaScreen({super.key});
@@ -175,6 +176,7 @@ class AjudaScreen extends StatelessWidget {
                       ),
                       const SizedBox(height: 10),
                       const SizedBox(height: 10),
+                      const TutorialVideoSection(),
                     ],
                   ),
                 ),
