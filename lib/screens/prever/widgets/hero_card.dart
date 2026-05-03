@@ -72,7 +72,6 @@ class HeroCard extends StatelessWidget {
 
           const SizedBox(height: 20),
 
-          // 👇 AQUI entram os passos
           mobile
               ? Column(
                   children: const [
