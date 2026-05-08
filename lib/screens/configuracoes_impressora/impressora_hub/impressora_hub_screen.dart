@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:tag_valida/screens/configuracoes_impressora/impressora_hub/widgets/animated_top_tab_bar.dart';
 import '../../../widgets/menu.dart';
 import '../configuracoes_impressora_screen.dart';
-import '../../design_etiqueta/design_etiqueta_screen.dart';
+import '../../design_etiqueta_v2/design_etiqueta_v2_screen.dart';
 
 class ImpressoraHubScreen extends StatefulWidget {
   const ImpressoraHubScreen({super.key});
@@ -128,7 +128,7 @@ class _ImpressoraHubScreenState extends State<ImpressoraHubScreen>
         physics: const BouncingScrollPhysics(),
         children: [
           const ConfiguracoesImpressoraScreen(),
-          DesignEtiquetaScreen(),
+          DesignEtiquetaV2Screen(),
         ],
       ),
     );

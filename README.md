@@ -252,4 +252,4 @@ Projeto desenvolvido como Trabalho de Conclusão de Curso em Engenharia de Softw
 
 ## Licença
 
-Projeto desenvolvido para fins acadêmicos e de portfólio.
+Projeto desenvolvido para fins acadêmicos e de portifólio.

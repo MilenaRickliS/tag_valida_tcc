@@ -7,23 +7,23 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import '../../data/local/repos/design_etiqueta_local_repo.dart';
+import '../../data/local/repos/design_etiqueta_v2_local_repo.dart';
 import '../../models/etiqueta_model.dart';
 import '../../models/user_model.dart';
 import '../../models/tipo_etiqueta_model.dart';
-import '../../models/design_etiqueta_model.dart';
+import '../../models/etiqueta_layout_preset.dart';
 import '../../providers/tipos_etiqueta_provider.dart';
 import '../../providers/estoque_mov_provider.dart';
 import '../../providers/printer_config_provider.dart';
 import '../../providers/gerar_etiqueta_provider.dart';
 import '../../services/etiqueta_pdf_service.dart';
-import '../../services/printer/printer_app_service.dart';
+import '../../services/printer/printer_app_service_v2.dart';
 import '../../services/etiqueta_qr_resolver.dart';
 import '../../utils/formatar_lote.dart';
 import '../criar_etiqueta/criar_etiqueta.dart';
 import 'widgets/etiqueta_actions_row.dart';
 import 'widgets/etiqueta_details_card.dart';
-import 'widgets/etiqueta_print_preview.dart';
+import 'widgets/etiqueta_print_preview_v2_real.dart';
 import 'widgets/etiqueta_qr_card.dart';
 import 'widgets/historico_etiqueta_screen.dart';
 import 'package:flutter_tts/flutter_tts.dart';
@@ -342,11 +342,31 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
     }
   }
 
+  EtiquetaLayoutPreset _presetCorreto({
+    required TipoEtiquetaModel tipo,
+    required EtiquetaModel etiqueta,
+  }) {
+    if (etiqueta.incluirTabelaNutricional &&
+        etiqueta.tabelaNutricional != null) {
+      return EtiquetaLayoutPreset.mm100x80;
+    }
+
+    final largura = tipo.larguraMm;
+    final altura = tipo.alturaMm;
+
+    if (largura >= 90 || altura >= 70) {
+      return EtiquetaLayoutPreset.mm100x80;
+    }
+
+    return EtiquetaLayoutPreset.mm60x40;
+  }
+
   Future<void> _imprimirComConfigSalva(
     BuildContext context, {
     required String uid,
     required EtiquetaModel etiqueta,
-     required UserModel usuario,
+    required TipoEtiquetaModel tipoEtiqueta,
+    required UserModel usuario,
     required String qrData,
   }) async {
     try {
@@ -360,28 +380,30 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
       }
 
       final printer = printerProvider.defaultPrinter;
+
       if (printer == null) {
         throw Exception('Nenhuma impressora padrão configurada.');
       }
+
       if (!printer.ativo) {
         throw Exception('A impressora padrão está inativa.');
       }
-      if (!printer.isValida) {
-        throw Exception('A configuração da impressora está incompleta.');
-      }
-      if (!printer.isNetwork) {
-        throw Exception('A impressão disponível no momento é apenas via rede.');
-      }
 
-      final appService = PrinterAppService(
-        designRepo: DesignEtiquetaLocalRepo(),
+      final preset = _presetCorreto(
+        tipo: tipoEtiqueta,
+        etiqueta: etiqueta,
       );
 
-      await appService.imprimirEtiquetaComDesign(
+      final appService = PrinterAppServiceV2(
+        designRepo: DesignEtiquetaV2LocalRepo(),
+      );
+
+      await appService.imprimirEtiquetaComDesignV2(
         printer: printer,
         etiqueta: etiqueta,
         usuario: usuario,
         qrData: qrData,
+        preset: preset,
         copias: copias,
       );
 
@@ -390,12 +412,8 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
           SnackBar(
             content: Text(
               copias == 1
-                  ? '1 etiqueta enviada para impressão com sucesso.'
-                  : '$copias etiquetas enviadas para impressão com sucesso.',
-            ),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
+                  ? '1 etiqueta enviada para impressão.'
+                  : '$copias etiquetas enviadas para impressão.',
             ),
           ),
         );
@@ -403,19 +421,13 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
     } catch (e) {
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Erro ao imprimir: $e'),
-            behavior: SnackBarBehavior.floating,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(14),
-            ),
-          ),
+          SnackBar(content: Text('Erro ao imprimir: $e')),
         );
       }
     }
   }
 
-  Future<void> _abrirPreviewImpressao(
+ Future<void> _abrirPreviewImpressao(
     BuildContext context, {
     required TipoEtiquetaModel tipoEtiqueta,
     required EtiquetaModel etiqueta,
@@ -423,9 +435,23 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
     required String qrData,
   }) async {
     try {
-      final repo = DesignEtiquetaLocalRepo();
-      final DesignEtiquetaModel design = await repo.loadForTipo(tipoEtiqueta);
-        
+      final preset = _presetCorreto(
+        tipo: tipoEtiqueta,
+        etiqueta: etiqueta,
+      );
+
+      final repo = DesignEtiquetaV2LocalRepo();
+
+      final design = await repo.loadSavedByTipoId(
+        etiqueta.tipoId,
+        preset: preset,
+      );
+
+      if (design == null) {
+        throw Exception(
+          'Nenhum design salvo encontrado para ${etiqueta.tipoNome} no tamanho ${preset.label}.',
+        );
+      }
 
       if (!context.mounted) return;
 
@@ -454,49 +480,23 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                         color: isDark ? Colors.white : _lightText,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Visualização com o design salvo deste tipo',
-                      style: TextStyle(
-                        fontSize: 13,
-                        color: isDark
-                            ? const Color(0xFFD6D6D6)
-                            : Colors.black.withOpacity(0.58),
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
                     const SizedBox(height: 18),
-                    EtiquetaPrintPreviewDesign(
+
+                    EtiquetaPrintPreviewV2Real(
                       config: design,
                       etiqueta: etiqueta,
+                      usuario: usuario,
                       qrData: qrData,
-                      empresaRazao: usuario.razao,
-                      empresaCnpj: usuario.cnpj,
-                      empresaRua: usuario.rua,
-                      empresaNumero: usuario.numero,
-                      empresaCep: usuario.cep,
-                      empresaCidade: usuario.cidade,
-                      empresaEstado: usuario.estado,
                     ),
+
                     const SizedBox(height: 18),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: ElevatedButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.check, color: Colors.black),
-                        label: const Text('Fechar'),
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFF4D58D),
-                          foregroundColor: Colors.black,
-                          elevation: 0,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 14,
-                          ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
-                          ),
-                        ),
+                    ElevatedButton.icon(
+                      onPressed: () => Navigator.pop(context),
+                      icon: const Icon(Icons.check, color: Colors.black),
+                      label: const Text('Fechar'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFF4D58D),
+                        foregroundColor: Colors.black,
                       ),
                     ),
                   ],
@@ -974,6 +974,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                         context,
                         uid: uid,
                         etiqueta: etiqueta,
+                        tipoEtiqueta: tipoEtiqueta,
                         usuario: usuario,
                         qrData: qrData,
                       ),

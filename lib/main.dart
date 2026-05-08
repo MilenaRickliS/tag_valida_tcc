@@ -21,6 +21,7 @@ import 'data/local/repos/estoque_mov_local_repo.dart';
 import 'data/local/repos/etiqueta_template_local_repo.dart';
 import 'data/local/repos/printer_config_local_repo.dart';
 import 'data/local/repos/design_etiqueta_local_repo.dart';
+import 'data/local/repos/design_etiqueta_v2_local_repo.dart';
 
 import 'providers/categorias_provider.dart';
 import 'providers/setores_provider.dart';
@@ -31,6 +32,7 @@ import 'providers/templates_provider.dart';
 import 'providers/theme_provider.dart';
 import 'providers/printer_config_provider.dart';
 import 'providers/design_etiqueta_provider.dart';
+import 'providers/design_etiqueta_v2_provider.dart';
 
 import 'theme/app_theme.dart';
 import 'data/sync/sync_service.dart';
@@ -151,6 +153,9 @@ void main() async {
           Provider<PrinterConfigLocalRepo>(
             create: (_) => PrinterConfigLocalRepo(),
           ),
+          Provider<DesignEtiquetaV2LocalRepo>(
+            create: (_) => DesignEtiquetaV2LocalRepo(),
+          ),
           ChangeNotifierProvider<PrinterConfigProvider>(
             create: (context) => PrinterConfigProvider(
               context.read<PrinterConfigLocalRepo>(),
@@ -159,6 +164,11 @@ void main() async {
           ChangeNotifierProvider(
             create: (_) => DesignEtiquetaProvider(
               repo: DesignEtiquetaLocalRepo(),
+            ),
+          ),
+          ChangeNotifierProvider(
+            create: (context) => DesignEtiquetaV2Provider(
+              repo: context.read<DesignEtiquetaV2LocalRepo>(),
             ),
           ),
         ],

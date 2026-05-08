@@ -34,8 +34,8 @@ RESULTS_DIR.mkdir(parents=True, exist_ok=True)
 
 app.mount("/results", StaticFiles(directory=RESULTS_DIR), name="results")
 
-DETECTION_MODEL_PATH = BASE_DIR / "runs" / "detect" / "train2" / "weights" / "best.pt"
-CLASSIFICATION_MODEL_PATH = BASE_DIR / "runs" / "classify" / "train3" / "weights" / "best.pt"
+DETECTION_MODEL_PATH = BASE_DIR / "runs" / "detect" / "train4" / "weights" / "best.pt"
+CLASSIFICATION_MODEL_PATH = BASE_DIR / "runs" / "classify" / "classificacao_refinada_sem_aug" / "weights" / "best.pt"
 
 pipeline: TagValidaPipeline | None = None
 

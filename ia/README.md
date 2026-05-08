@@ -37,7 +37,7 @@ Classes detectadas:
 * pão francês
 * pão de forma
 * croissant de presunto e queijo
-* danesse de goiabada
+* morango
 * queijo mussarela
 * ovo
 
@@ -90,7 +90,7 @@ ia/
 ├── models/
 │
 ├── scripts/
-│   └── ia_detectar.py
+│   └── ia_pipeline.py
 │
 ├── results/
 │
@@ -115,7 +115,7 @@ Cada alimento possui imagens em três estados:
 
 ### Quantidade de imagens
 
-Cada alimento possui aproximadamente:
+Cada alimento na detecção possui aproximadamente:
 
 * **128 imagens por estado**
 
@@ -126,6 +126,18 @@ Total por alimento:
 Total aproximado do dataset:
 
 **2304 imagens**
+
+Cada alimento na classificação possui aproximadamente:
+
+* **256 imagens por estado (128 normais + 128 com data augmentation)**
+
+Total por alimento:
+
+768 imagens
+
+Total aproximado do dataset:
+
+**4608 imagens**
 
 ---
 
@@ -180,7 +192,7 @@ names:
   0: pao_frances
   1: pao_forma
   2: croissant
-  3: danesse_goiabada
+  3: morango
   4: ovo_teste
   5: queijo_mussarela
 ```

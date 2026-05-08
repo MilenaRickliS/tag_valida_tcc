@@ -166,6 +166,12 @@ class TagValidaPipeline:
 
                 estado_confidence = top1_conf
 
+                if estado_confidence < 0.85:
+                    estado_original = estado
+                    estado = "alerta"
+                else:
+                    estado_original = estado
+
             produto = det_names.get(cls_id, str(cls_id))
             cor = self._cor_por_estado(estado)
 
@@ -330,8 +336,8 @@ def main() -> None:
 
     image_path = input("Digite o caminho da imagem: ").strip()
 
-    detection_model_path = "runs/detect/train2/weights/best.pt"
-    classification_model_path = "runs/classify/train3/weights/best.pt"
+    detection_model_path = "runs/detect/train4/weights/best.pt"
+    classification_model_path = "runs/classify/classificacao_refinada_sem_aug/weights/best.pt"
 
     pipeline = TagValidaPipeline(
         detection_model_path=detection_model_path,

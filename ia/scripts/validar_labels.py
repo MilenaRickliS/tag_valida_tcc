@@ -2,16 +2,18 @@ from pathlib import Path
 import cv2
 
 
-IMAGE_DIR = Path("dataset/detection/images/train")
-LABEL_DIR = Path("dataset/detection/labels/train")
+from pathlib import Path
+import cv2
+
+BASE_DIR = Path("../dataset/detection")
 
 CLASS_NAMES = {
     0: "pao_frances",
     1: "pao_forma",
     2: "queijo_mussarela",
-    # 3: "danesse_goiabada",
-    # 4: "ovo_teste",
-    # 5: "croissant",
+    3: "croissant",
+    4: "morango",
+    5: "ovo_teste",
 }
 
 
@@ -58,26 +60,28 @@ def desenhar_bbox(image, label_path):
     return image
 
 
-def validar_dataset():
-    imagens = list(IMAGE_DIR.glob("*.*"))
+def validar_dataset(split="train"):
+    image_dir = BASE_DIR / "images" / split
+    label_dir = BASE_DIR / "labels" / split
+
+    imagens = list(image_dir.glob("*.*"))
 
     if not imagens:
-        print("❌ Nenhuma imagem encontrada.")
+        print(f"❌ Nenhuma imagem encontrada em {image_dir}")
         return
 
+    print(f"\nValidando: {split}")
     print(f"Total de imagens: {len(imagens)}")
-    print("Use:")
-    print("→ ENTER ou espaço: próxima imagem")
-    print("→ ESC: sair\n")
+    print("ENTER/espaço: próxima | ESC: sair\n")
 
     cv2.namedWindow("Validacao YOLO", cv2.WINDOW_NORMAL)
     cv2.resizeWindow("Validacao YOLO", 1200, 800)
 
     for img_path in imagens:
-        if img_path.suffix.lower() not in [".jpg", ".jpeg", ".png"]:
+        if img_path.suffix.lower() not in [".jpg", ".jpeg", ".png", ".webp"]:
             continue
 
-        label_path = LABEL_DIR / f"{img_path.stem}.txt"
+        label_path = label_dir / f"{img_path.stem}.txt"
 
         image = cv2.imread(str(img_path))
 
@@ -92,20 +96,15 @@ def validar_dataset():
         image = desenhar_bbox(image, label_path)
 
         max_width = 1000
-
         h, w = image.shape[:2]
 
         if w > max_width:
             scale = max_width / w
-            new_w = int(w * scale)
-            new_h = int(h * scale)
-            image = cv2.resize(image, (new_w, new_h))
+            image = cv2.resize(image, (int(w * scale), int(h * scale)))
 
         cv2.imshow("Validacao YOLO", image)
-
         key = cv2.waitKey(0)
 
-      
         if key == 27:
             break
 
@@ -113,4 +112,6 @@ def validar_dataset():
 
 
 if __name__ == "__main__":
-    validar_dataset()
+    validar_dataset("train")
+    validar_dataset("val")
+    validar_dataset("test")

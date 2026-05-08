@@ -12,6 +12,7 @@ import './widgets/config_panel.dart';
 import './widgets/top_header.dart';
 import './widgets/preview_panel.dart';
 import './widgets/loading_card.dart';
+import '../design_etiqueta_v2/design_etiqueta_v2_screen.dart';
 
 
 class DesignEtiquetaScreen extends StatefulWidget {
@@ -161,6 +162,34 @@ class _DesignEtiquetaScreenState extends State<DesignEtiquetaScreen> {
                     text: text,
                     muted: muted,
                     border: border,
+                  ),
+                  const SizedBox(height: 12),
+
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFED7227),
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                      ),
+                      icon: const Icon(Icons.auto_awesome),
+                      label: const Text(
+                        'Testar Design V2',
+                        style: TextStyle(fontWeight: FontWeight.w800),
+                      ),
+                      onPressed: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const DesignEtiquetaV2Screen(),
+                          ),
+                        );
+                      },
+                    ),
                   ),
                   const SizedBox(height: 18),
                    if (tipos.isNotEmpty) ...[

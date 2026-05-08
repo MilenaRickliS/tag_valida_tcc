@@ -1,3 +1,26 @@
+
+# === RESULTADO DETECÇÃO ===
+# Precision: 0.9913
+# Recall:    0.9854
+# mAP50:     0.9915
+# mAP50-95:  0.9583
+# Arquivos salvos em: results\avaliacao_deteccao\execucao
+
+# === RESULTADO CLASSIFICAÇÃO ===
+# Acurácia:        0.9869
+# Precision macro: 0.9874
+# Recall macro:    0.9869
+# F1 macro:        0.9869
+# Total de erros:  2
+# Matriz salva em: results\avaliacao_classificacao\confusion_matrix.png
+# CSV de erros:    results\avaliacao_classificacao\erros_classificacao.csv
+# Ranking conf.:   results\avaliacao_classificacao\ranking_confusoes.csv
+
+# === TOP CONFUSÕES ===
+# bom -> alerta : 2
+
+
+
 from pathlib import Path
 import json
 import csv
@@ -75,13 +98,13 @@ def avaliar_deteccao(
 def avaliar_classificacao(
     model_path: str,
     dataset_dir: str,
-    split: str = "test",  
+    split: str = "val",  
     imgsz: int = 224,
-    save_dir: str = "results/avaliacao_classificacao",
+    save_dir: str = "results/avaliacao_classificacao_morango",
 ) -> dict:
     """
     Estrutura esperada:
-    dataset/classification/test/
+    dataset/classification/val/
       bom/
       alerta/
       vencido/
@@ -101,11 +124,22 @@ def avaliar_classificacao(
     y_pred = []
     erros = []
 
+    # for class_name in class_names:
+    #     class_dir = base / class_name
+    #     imagens = []
+    #     for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
+    #         imagens.extend(class_dir.glob(ext))
+    
+    ALIMENTO_FILTRO = "morango"
+
     for class_name in class_names:
         class_dir = base / class_name
         imagens = []
         for ext in ("*.jpg", "*.jpeg", "*.png", "*.webp"):
             imagens.extend(class_dir.glob(ext))
+
+
+        imagens = [img for img in imagens if ALIMENTO_FILTRO in img.name.lower()]
 
         for img_path in imagens:
             results = model.predict(
@@ -263,17 +297,17 @@ def main():
     print("=== AVALIAÇÃO DA IA TAGVALIDA ===")
 
    
-    detection_model_path = "../runs/detect/train2/weights/best.pt"
+    detection_model_path = "../runs/detect/train4/weights/best.pt"
     detection_data_yaml = "../dataset/detection/data.yaml"
 
-    classification_model_path = "../runs/classify/train3/weights/best.pt"
+    classification_model_path = "../runs/classify/classificacao_refinada_sem_aug/weights/best.pt"
     classification_dataset_dir = "../dataset/classification"
 
     try:
         avaliar_deteccao(
             model_path=detection_model_path,
             data_yaml=detection_data_yaml,
-            split="test",   
+            split="val",   
             imgsz=640,
             conf=0.25,
             iou=0.60,
@@ -286,7 +320,7 @@ def main():
         avaliar_classificacao(
             model_path=classification_model_path,
             dataset_dir=classification_dataset_dir,
-            split="test",   
+            split="val",   
             imgsz=224,
             save_dir="results/avaliacao_classificacao",
         )
