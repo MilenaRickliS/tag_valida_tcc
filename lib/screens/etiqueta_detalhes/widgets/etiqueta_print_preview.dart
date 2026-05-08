@@ -2,14 +2,14 @@
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import '../../../models/design_etiqueta_model.dart';
+import '../../../models/design_etiqueta_v2_model.dart';
 import '../../../models/etiqueta_model.dart';
-import '../../design_etiqueta/widgets/imagem_design.dart';
-import '../../design_etiqueta/widgets/qr_design.dart';
-import '../../design_etiqueta/widgets/tabela_nutricional_design.dart';
+import '../../design_etiqueta_v2/widgets/imagem_design_v2.dart';
+import '../../design_etiqueta_v2/widgets/qr_design_v2.dart';
+import '../../design_etiqueta_v2/widgets/tabela_nutricional_design_v2.dart';
 
 class EtiquetaPrintPreviewDesign extends StatelessWidget {
-  final DesignEtiquetaModel config;
+  final DesignEtiquetaV2Model config;
   final EtiquetaModel etiqueta;
   final String qrData;
   final String empresaRazao;
@@ -77,7 +77,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
     return '-';
   }
 
-  String _valorCampo(CampoDesignEtiquetaModel campo) {
+  String _valorCampo(CampoDesignEtiquetaV2Model campo) {
     final custom = Map<String, dynamic>.from(etiqueta.camposCustomValores);
 
     switch (campo.id) {
@@ -124,7 +124,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
     }
   }
 
-  CampoDesignEtiquetaModel? _findCampo(List<CampoDesignEtiquetaModel> campos, String id) {
+  CampoDesignEtiquetaV2Model? _findCampo(List<CampoDesignEtiquetaV2Model> campos, String id) {
     try {
       return campos.firstWhere((c) => c.id == id);
     } catch (_) {
@@ -144,16 +144,20 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
     }
   }
 
-  double _scaleFont(CampoDesignEtiquetaModel campo) {
-    if (campo.tipo == CampoDesignTipo.produto) {
-      return campo.fontSize * (_is60x40 ? 2.0 : 2.2);
+  double _scaleFont(CampoDesignEtiquetaV2Model campo) {
+    if (campo.tipo == CampoDesignV2Tipo.produto || campo.id == 'produto') {
+      return _is60x40 ? 18 : 22;
     }
 
-    if (campo.tipo == CampoDesignTipo.blocoEmpresa) {
-      return campo.fontSize * 1.4;
+    if (campo.tipo == CampoDesignV2Tipo.blocoEmpresa || campo.id == 'empresa') {
+      return _is60x40 ? 10 : 13;
     }
 
-    return campo.fontSize * (_is60x40 ? 1.5 : 1.7);
+    if (campo.id == 'validade') {
+      return _is60x40 ? 11 : 13;
+    }
+
+    return _is60x40 ? 9 : 11;
   }
 
   TextAlign _safeAlign(TextAlign align) => align;
@@ -162,7 +166,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
       bold ? FontWeight.w800 : FontWeight.w500;
 
   Widget _buildTextoCampo(
-    CampoDesignEtiquetaModel campo,
+    CampoDesignEtiquetaV2Model campo,
     String valor, {
     int? maxLines,
   }) {
@@ -184,7 +188,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
     );
   }
 
-  Widget _buildLinhaInfo(CampoDesignEtiquetaModel campo) {
+  Widget _buildLinhaInfo(CampoDesignEtiquetaV2Model campo) {
     final valor = _valorCampo(campo).trim();
     if (valor.isEmpty) return const SizedBox.shrink();
 
@@ -212,7 +216,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
     );
   }
 
-  Widget _buildInfosReais(List<CampoDesignEtiquetaModel> campos) {
+  Widget _buildInfosReais(List<CampoDesignEtiquetaV2Model> campos) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: campos.map(_buildLinhaInfo).toList(),
@@ -230,17 +234,17 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
     final produtoCampo = _findCampo(camposPreview, 'produto');
     final tabelaCampo = _findCampo(camposPreview, 'tabela_nutricional');
 
-    final hasQr = camposPreview.any((e) => e.tipo == CampoDesignTipo.qrcode);
+    final hasQr = camposPreview.any((e) => e.tipo == CampoDesignV2Tipo.qrcode);
 
-    final imagemCampo = camposPreview.any((e) => e.tipo == CampoDesignTipo.imagem)
-        ? camposPreview.firstWhere((e) => e.tipo == CampoDesignTipo.imagem)
+    final imagemCampo = camposPreview.any((e) => e.tipo == CampoDesignV2Tipo.imagem)
+        ? camposPreview.firstWhere((e) => e.tipo == CampoDesignV2Tipo.imagem)
         : null;
 
     final infoCampos = camposPreview.where((campo) {
-      if (campo.tipo == CampoDesignTipo.qrcode) return false;
-      if (campo.tipo == CampoDesignTipo.blocoEmpresa) return false;
-      if (campo.tipo == CampoDesignTipo.produto) return false;
-      if (campo.tipo == CampoDesignTipo.imagem) return false;
+      if (campo.tipo == CampoDesignV2Tipo.qrcode) return false;
+      if (campo.tipo == CampoDesignV2Tipo.blocoEmpresa) return false;
+      if (campo.tipo == CampoDesignV2Tipo.produto) return false;
+      if (campo.tipo == CampoDesignV2Tipo.imagem) return false;
       if (campo.id == 'tabela_nutricional') return false;
       return true;
     }).toList();
@@ -368,7 +372,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
                               SizedBox(
                                 width: qrSize,
                                 height: qrSize,
-                                child: buildQrPreviewNovoComData(qrData),
+                                child: buildQrPreviewV2(config),
                               ),
                             ],
                           ),
@@ -391,7 +395,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
                           children: [
                             Expanded(child: _buildInfosReais(infoCampos)),
                             const SizedBox(width: 8),
-                            SizedBox(width: 110, child: buildImagemPreviewNovo(imagemCampo)),
+                            SizedBox(width: 110, child: buildImagemPreviewV2(imagemCampo)),
                           ],
                         )
                       : tabelaCampo != null && etiqueta.incluirTabelaNutricional
@@ -400,7 +404,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
                               children: [
                                 Expanded(child: _buildInfosReais(infoCampos)),
                                 const SizedBox(width: 8),
-                                buildTabelaNutricionalPreviewReal(etiqueta.tabelaNutricional),
+                                buildTabelaNutricionalPreviewRealV2(etiqueta.tabelaNutricional),
                               ],
                             )
                           : _buildInfosReais(infoCampos),

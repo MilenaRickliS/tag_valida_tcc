@@ -65,7 +65,7 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
     await loadTipo(_tipoSelecionado!, preset: preset);
   }
 
-  Future<void> saveAtual() async {
+  Future<void> saveAtual(String uid) async {
     final cfg = _config;
     if (cfg == null) return;
 
@@ -81,14 +81,15 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
 
     await repo.saveForTipo(
       cfg,
-      preset: _preset,
+      preset: preset,
+      uid: uid,
     );
 
     _saving = false;
     notifyListeners();
   }
 
-  Future<void> resetAtual() async {
+  Future<void> resetAtual(String uid) async {
     final tipo = _tipoSelecionado;
     if (tipo == null) return;
 
@@ -98,6 +99,7 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
     await repo.resetForTipo(
       tipo,
       preset: _preset,
+      uid: uid,
     );
 
     await loadTipo(tipo, preset: _preset);

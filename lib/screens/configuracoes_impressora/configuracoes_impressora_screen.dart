@@ -7,7 +7,7 @@ import 'package:tag_valida/screens/configuracoes_impressora/widgets/status_pill.
 
 import '../../models/printer_config_model.dart';
 import '../../providers/printer_config_provider.dart';
-import '../../services/printer/elgin_l42_network_service.dart';
+import '../../services/printer/elgin_l42_network_service_v2.dart';
 import './widgets/resumo_card.dart';
 import './widgets/config_card.dart';
 
@@ -113,8 +113,8 @@ class _ConfiguracoesImpressoraScreenState
     super.dispose();
   }
 
-  Future<ElginL42NetworkService> _buildService() async {
-    return ElginL42NetworkService(
+  Future<ElginL42NetworkServiceV2> _buildService() async {
+    return ElginL42NetworkServiceV2(
       ip: _ipCtrl.text.trim(),
       port: int.tryParse(_portaCtrl.text.trim()) ?? 9100,
     );
@@ -188,7 +188,7 @@ class _ConfiguracoesImpressoraScreenState
         throw Exception('Não foi possível conectar à impressora.');
       }
 
-      await service.printTeste();
+      await service.printTesteV2();
 
       setState(() {
         _ultimoTesteOk = true;
@@ -242,7 +242,7 @@ class _ConfiguracoesImpressoraScreenState
         throw Exception('Não foi possível conectar à impressora.');
       }
 
-      await service.avancarEtiqueta();
+      await service.avancarEtiquetaV2();
 
       setState(() {
         _ultimoTesteOk = true;

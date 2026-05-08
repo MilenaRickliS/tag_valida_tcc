@@ -35,22 +35,18 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
   }
 
   String _empresaCompleta() {
-    final ruaNumero = [
+    final ruaNumeroBairro = [
       usuario.rua.trim(),
       usuario.numero.trim(),
+      usuario.bairro.trim(),
     ].where((e) => e.isNotEmpty).join(', ');
 
-    final cidadeEstado = [
-      usuario.cidade.trim(),
-      usuario.estado.trim(),
-    ].where((e) => e.isNotEmpty).join('-');
+   
 
     return [
       usuario.razao.trim().isNotEmpty ? usuario.razao.trim() : usuario.nome.trim(),
       if (usuario.cnpj.trim().isNotEmpty) 'CNPJ: ${usuario.cnpj}',
-      if (ruaNumero.isNotEmpty) ruaNumero,
-      if (usuario.cep.trim().isNotEmpty) 'CEP: ${usuario.cep}',
-      if (cidadeEstado.isNotEmpty) cidadeEstado,
+      if (ruaNumeroBairro.isNotEmpty) ruaNumeroBairro,
     ].where((e) => e.isNotEmpty).join('\n');
   }
 
@@ -92,26 +88,31 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
         return _lote();
       case 'observacao':
         return custom['observacao']?.toString() ?? '';
-      default:
-        final raw = custom[campo.id];
+     default:
+      dynamic raw = custom[campo.id];
 
-        if (raw is Map) {
-          final value = raw['value'];
-          if (value == null) return '';
+      if (raw == null && campo.id.startsWith('custom_')) {
+        final semPrefixo = campo.id.replaceFirst('custom_', '');
+        raw = custom[semPrefixo];
+      }
 
-          if (value is int) {
-            final isData = campo.id.toLowerCase().contains('data') ||
-                campo.nome.toLowerCase().contains('data');
+      if (raw is Map) {
+        final value = raw['value'];
+        if (value == null) return '';
 
-            if (isData) {
-              return _fmtDate(DateTime.fromMillisecondsSinceEpoch(value));
-            }
+        if (value is int) {
+          final isData = campo.id.toLowerCase().contains('data') ||
+              campo.nome.toLowerCase().contains('data');
+
+          if (isData) {
+            return _fmtDate(DateTime.fromMillisecondsSinceEpoch(value));
           }
-
-          return value.toString();
         }
 
-        return raw?.toString() ?? '';
+        return value.toString();
+      }
+
+      return raw?.toString() ?? '';
     }
   }
 
@@ -237,10 +238,10 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
     final qrSize = _is60x40 ? 56.0 : 84.0;
     final outerPad = _is60x40 ? 6.0 : 10.0;
     final qrGap = _is60x40 ? 6.0 : 8.0;
-    final empresaBoxHeight = _is60x40 ? 28.0 : 42.0;
+    final empresaBoxHeight = _is60x40 ? 40.0 : 60.0;
     final produtoBoxHeight = _is60x40 ? 30.0 : 44.0;
     final brandHeight = _is60x40 ? 10.0 : 14.0;
-    final brandFontSize = _is60x40 ? 10.0 : 11.0;
+    final brandFontSize = _is60x40 ? 8.0 : 9.0;
 
     return Center(
       child: Container(
@@ -296,7 +297,7 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
                                 child: _textoCampo(
                                   empresaCampo,
                                   _valorCampo(empresaCampo),
-                                  maxLines: 3,
+                                  maxLines: 6,
                                 ),
                               ),
                             const SizedBox(height: 2),
@@ -353,36 +354,39 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
                     color: Colors.black.withOpacity(0.62),
                   ),
 
-                  const SizedBox(height: 6),
+                 const SizedBox(height: 6),
 
-                  if (config.preset == EtiquetaLayoutPreset.mm100x80 &&
-                      tabelaCampo != null &&
-                      etiqueta.incluirTabelaNutricional &&
-                      etiqueta.tabelaNutricional != null)
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          flex: 42,
-                          child: Padding(
-                            padding: const EdgeInsets.only(left: 6, right: 10),
-                            child: _infos(infoCampos),
-                          ),
-                        ),
-                        Expanded(
-                          flex: 58,
-                          child: Align(
-                            alignment: Alignment.topRight,
-                            child: buildTabelaNutricionalPreviewV2(width: 200),
-                          ),
-                        ),
-                      ],
-                    )
-                  else
-                    SizedBox(
-                      width: infoWidth,
-                      child: _infos(infoCampos),
+                  Expanded(
+                    child: ClipRect(
+                      child: config.preset == EtiquetaLayoutPreset.mm100x80 &&
+                              tabelaCampo != null &&
+                              etiqueta.incluirTabelaNutricional &&
+                              etiqueta.tabelaNutricional != null
+                          ? Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Expanded(
+                                  flex: 42,
+                                  child: Padding(
+                                    padding: const EdgeInsets.only(left: 6, right: 10),
+                                    child: _infos(infoCampos),
+                                  ),
+                                ),
+                                Expanded(
+                                  flex: 58,
+                                  child: Align(
+                                    alignment: Alignment.topRight,
+                                    child: buildTabelaNutricionalPreviewV2(width: 200),
+                                  ),
+                                ),
+                              ],
+                            )
+                          : SizedBox(
+                              width: infoWidth,
+                              child: _infos(infoCampos),
+                            ),
                     ),
+                  ),
                 ],
               ),
             );

@@ -1,57 +1,169 @@
-import 'package:shared_preferences/shared_preferences.dart';
+import 'dart:convert';
+import 'package:sqflite/sqflite.dart';
 
 import '../../../../models/design_etiqueta_v2_model.dart';
 import '../../../../models/tipo_etiqueta_model.dart';
 import '../../../models/etiqueta_layout_preset.dart';
+import '../app_db.dart';
 import '../mappers/design_etiqueta_v2_default_mapper.dart';
 import '../mappers/design_etiqueta_v2_mapper.dart';
 
 class DesignEtiquetaV2LocalRepo {
-  static const _prefix = 'design_etiqueta_config_v3_';
+  static const _table = 'design_etiqueta_v2_configs';
+  static const _entity = 'design_etiqueta_v2_configs';
 
-  String _key(String tipoId, EtiquetaLayoutPreset preset) {
-    return '$_prefix${tipoId}_${preset.storageKey}';
+  String _entityId(String tipoId, EtiquetaLayoutPreset preset) {
+    return '${tipoId}_${preset.storageKey}';
   }
 
   Future<DesignEtiquetaV2Model> loadForTipo(
     TipoEtiquetaModel tipo, {
     EtiquetaLayoutPreset preset = EtiquetaLayoutPreset.mm60x40,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key(tipo.id, preset));
-
     final defaultModel = DesignEtiquetaV2DefaultMapper.fromTipoEtiqueta(
       tipo,
       preset: preset,
     );
 
-    if (raw == null || raw.trim().isEmpty) {
-      return defaultModel;
-    }
+    final saved = await loadSavedByTipoId(tipo.id, preset: preset);
 
-    try {
-      final saved = DesignEtiquetaV2Mapper.fromJson(raw);
-      return _mergeWithDefault(saved, defaultModel, preset);
-    } catch (_) {
-      return defaultModel;
-    }
+    if (saved == null) return defaultModel;
+
+    return _mergeWithDefault(saved, defaultModel, preset);
   }
 
   Future<DesignEtiquetaV2Model?> loadSavedByTipoId(
     String tipoId, {
     EtiquetaLayoutPreset preset = EtiquetaLayoutPreset.mm60x40,
   }) async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_key(tipoId, preset));
+    final local = await AppDb.instance.db;
 
-    if (raw == null || raw.trim().isEmpty) {
-      return null;
-    }
+    final rows = await local.query(
+      _table,
+      where: 'tipoEtiquetaId = ? AND preset = ?',
+      whereArgs: [tipoId, preset.storageKey],
+      limit: 1,
+    );
+
+    if (rows.isEmpty) return null;
 
     try {
-      return DesignEtiquetaV2Mapper.fromJson(raw);
+      final row = rows.first;
+
+      return DesignEtiquetaV2Mapper.fromMap({
+        'tipoEtiquetaId': row['tipoEtiquetaId'],
+        'tipoEtiquetaNome': row['tipoEtiquetaNome'],
+        'preset': row['preset'],
+        'mostrarMarcaTagValida':
+            (row['mostrarMarcaTagValida'] as int? ?? 1) == 1,
+        'destacarValidade':
+            (row['destacarValidade'] as int? ?? 1) == 1,
+        'campos': jsonDecode(row['camposJson'].toString()),
+      });
     } catch (_) {
       return null;
+    }
+  }
+
+  Future<void> saveForTipo(
+    DesignEtiquetaV2Model model, {
+    required EtiquetaLayoutPreset preset,
+    required String uid,
+  }) async {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final local = await AppDb.instance.db;
+
+    final camposJson = jsonEncode(
+      DesignEtiquetaV2Mapper.toMap(model, preset: preset)['campos'],
+    );
+
+    final row = {
+      'tipoEtiquetaId': model.tipoEtiquetaId,
+      'uid': uid,
+      'tipoEtiquetaNome': model.tipoEtiquetaNome,
+      'preset': preset.storageKey,
+      'mostrarMarcaTagValida': model.mostrarMarcaTagValida ? 1 : 0,
+      'destacarValidade': model.destacarValidade ? 1 : 0,
+      'camposJson': camposJson,
+      'createdAt': now,
+      'updatedAt': now,
+    };
+
+    final payload = {
+      'tipoEtiquetaId': model.tipoEtiquetaId,
+      'tipoEtiquetaNome': model.tipoEtiquetaNome,
+      'preset': preset.storageKey,
+      'mostrarMarcaTagValida': model.mostrarMarcaTagValida,
+      'destacarValidade': model.destacarValidade,
+      'campos': jsonDecode(camposJson),
+      'createdAtMs': now,
+      'updatedAtMs': now,
+    };
+
+    await local.transaction((txn) async {
+      await txn.insert(
+        _table,
+        row,
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+
+      await txn.insert(
+        'outbox',
+        {
+          'uid': uid,
+          'entity': _entity,
+          'entityId': _entityId(model.tipoEtiquetaId, preset),
+          'op': 'UPSERT',
+          'payloadJson': jsonEncode(payload),
+          'createdAt': now,
+          'tries': 0,
+          'lastError': null,
+        },
+      );
+    });
+  }
+
+  Future<void> resetForTipo(
+    TipoEtiquetaModel tipo, {
+    required EtiquetaLayoutPreset preset,
+    required String uid,
+  }) async {
+    final local = await AppDb.instance.db;
+    final now = DateTime.now().millisecondsSinceEpoch;
+
+    await local.transaction((txn) async {
+      await txn.delete(
+        _table,
+        where: 'uid = ? AND tipoEtiquetaId = ? AND preset = ?',
+        whereArgs: [uid, tipo.id, preset.storageKey],
+      );
+
+      await txn.insert(
+        'outbox',
+        {
+          'uid': uid,
+          'entity': _entity,
+          'entityId': _entityId(tipo.id, preset),
+          'op': 'DELETE',
+          'payloadJson': null,
+          'createdAt': now,
+          'tries': 0,
+          'lastError': null,
+        },
+      );
+    });
+  }
+
+  Future<void> resetAllPresetsForTipo(
+    TipoEtiquetaModel tipo, {
+    required String uid,
+  }) async {
+    for (final preset in EtiquetaLayoutPreset.values) {
+      await resetForTipo(
+        tipo,
+        preset: preset,
+        uid: uid,
+      );
     }
   }
 
@@ -67,9 +179,7 @@ class DesignEtiquetaV2LocalRepo {
     final mergedCampos = defaultModel.campos.map((defaultCampo) {
       final savedCampo = savedMap[defaultCampo.id];
 
-      if (savedCampo == null) {
-        return defaultCampo;
-      }
+      if (savedCampo == null) return defaultCampo;
 
       return defaultCampo.copyWith(
         visivel: defaultCampo.obrigatorio ? true : savedCampo.visivel,
@@ -88,33 +198,5 @@ class DesignEtiquetaV2LocalRepo {
       destacarValidade: saved.destacarValidade,
       campos: mergedCampos,
     );
-  }
-
-  Future<void> saveForTipo(
-    DesignEtiquetaV2Model model, {
-    required EtiquetaLayoutPreset preset,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    await prefs.setString(
-      _key(model.tipoEtiquetaId, preset),
-      DesignEtiquetaV2Mapper.toJson(model, preset: preset),
-    );
-  }
-
-  Future<void> resetForTipo(
-    TipoEtiquetaModel tipo, {
-    required EtiquetaLayoutPreset preset,
-  }) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.remove(_key(tipo.id, preset));
-  }
-
-  Future<void> resetAllPresetsForTipo(TipoEtiquetaModel tipo) async {
-    final prefs = await SharedPreferences.getInstance();
-
-    for (final preset in EtiquetaLayoutPreset.values) {
-      await prefs.remove(_key(tipo.id, preset));
-    }
   }
 }

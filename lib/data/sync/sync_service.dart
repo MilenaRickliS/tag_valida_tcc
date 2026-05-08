@@ -237,6 +237,36 @@ class SyncService {
               }
             }
           }
+
+          if (entity == "design_etiqueta_v2_configs") {
+            if (map.containsKey("mostrarMarcaTagValida")) {
+              final v = map["mostrarMarcaTagValida"];
+              if (v is int) map["mostrarMarcaTagValida"] = v == 1;
+              if (v is num) map["mostrarMarcaTagValida"] = v.toInt() == 1;
+              if (v is String) {
+                map["mostrarMarcaTagValida"] =
+                    (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
+
+            if (map.containsKey("destacarValidade")) {
+              final v = map["destacarValidade"];
+              if (v is int) map["destacarValidade"] = v == 1;
+              if (v is num) map["destacarValidade"] = v.toInt() == 1;
+              if (v is String) {
+                map["destacarValidade"] =
+                    (v.toLowerCase().trim() == "true" || v == "1");
+              }
+            }
+
+            if (map["campos"] is String) {
+              try {
+                map["campos"] = jsonDecode(map["campos"]);
+              } catch (_) {
+                map["campos"] = [];
+              }
+            }
+          }
           await _col(uid, entity).doc(entityId).set(map, SetOptions(merge: true));
         }
 
@@ -494,6 +524,47 @@ class SyncService {
           "alturaMm": (d["alturaMm"] as num?)?.toDouble() ?? 40,
           "mostrarMarcaTagValida":toBool(d["mostrarMarcaTagValida"], defaultValue: true) ? 1 : 0,
           "destacarValidade":toBool(d["destacarValidade"], defaultValue: true) ? 1 : 0,
+          "camposJson": jsonEncode(d["campos"] ?? []),
+          "createdAt": ms(d["createdAt"]) ?? ms(d["createdAtMs"]),
+          "updatedAt": ms(d["updatedAt"]) ?? ms(d["updatedAtMs"]),
+        };
+      },
+    );
+
+    await _pullCollection(
+      uid,
+      "design_etiqueta_v2_configs",
+      table: "design_etiqueta_v2_configs",
+      mapToLocal: (doc) {
+        final d = doc.data();
+
+        int? ms(dynamic v) {
+          if (v is Timestamp) return v.millisecondsSinceEpoch;
+          if (v is int) return v;
+          if (v is num) return v.toInt();
+          return null;
+        }
+
+        bool toBool(dynamic v, {bool defaultValue = false}) {
+          if (v == null) return defaultValue;
+          if (v is bool) return v;
+          if (v is int) return v == 1;
+          if (v is num) return v.toInt() == 1;
+          final s = v.toString().trim().toLowerCase();
+          if (s == 'true' || s == '1') return true;
+          if (s == 'false' || s == '0') return false;
+          return defaultValue;
+        }
+
+        return {
+          "tipoEtiquetaId": (d["tipoEtiquetaId"] ?? doc.id).toString(),
+          "uid": uid,
+          "tipoEtiquetaNome": (d["tipoEtiquetaNome"] ?? "").toString(),
+          "preset": (d["preset"] ?? "60x40").toString(),
+          "mostrarMarcaTagValida":
+              toBool(d["mostrarMarcaTagValida"], defaultValue: true) ? 1 : 0,
+          "destacarValidade":
+              toBool(d["destacarValidade"], defaultValue: true) ? 1 : 0,
           "camposJson": jsonEncode(d["campos"] ?? []),
           "createdAt": ms(d["createdAt"]) ?? ms(d["createdAtMs"]),
           "updatedAt": ms(d["updatedAt"]) ?? ms(d["updatedAtMs"]),

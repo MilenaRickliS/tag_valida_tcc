@@ -1,8 +1,10 @@
 // ignore_for_file: deprecated_member_use, use_build_context_synchronously
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import '../../../models/design_etiqueta_v2_model.dart';
 import '../../../providers/design_etiqueta_v2_provider.dart';
+import '../../../providers/auth_provider.dart';
 import 'campo_config_tile_v2.dart';
 import 'settings_card_v2.dart';
 import 'switch_tile_v2.dart';
@@ -115,7 +117,8 @@ Widget buildConfigPanelV2({
                   onPressed: designProvider.loading
                       ? null
                       : () async {
-                          await designProvider.resetAtual();
+                        final uid = context.read<AuthProvider>().user!.uid;
+                          await designProvider.resetAtual(uid);
                         },
                   icon: const Icon(Icons.restart_alt_rounded),
                   label: const Text('Restaurar'),
@@ -127,7 +130,8 @@ Widget buildConfigPanelV2({
                   onPressed: designProvider.saving || !designProvider.canSave
                       ? null
                       : () async {
-                          await designProvider.saveAtual();
+                        final uid = context.read<AuthProvider>().user!.uid;
+                          await designProvider.saveAtual(uid);
 
                           final validation = designProvider.validation;
 
