@@ -29,6 +29,35 @@ class InventarioResumoScreen extends StatelessWidget {
 
     final categoriasOrdenadas = resumo.totalPorCategoria.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
+    
+    final produtosConsolidados = <String, Map<String, dynamic>>{};
+
+    for (final item in resumo.itens) {
+      final chave =
+          '${item.produtoNome.trim().toLowerCase()}|'
+          '${item.categoriaNome.trim().toLowerCase()}|'
+          '${item.setorNome.trim().toLowerCase()}';
+
+      if (produtosConsolidados.containsKey(chave)) {
+        produtosConsolidados[chave]!['quantidade'] += item.quantidade;
+        produtosConsolidados[chave]!['etiquetas'] += 1;
+      } else {
+        produtosConsolidados[chave] = {
+          'produto': item.produtoNome,
+          'categoria': item.categoriaNome,
+          'setor': item.setorNome,
+          'quantidade': item.quantidade,
+          'etiquetas': 1,
+        };
+      }
+    }
+
+    final itensConsolidados = produtosConsolidados.values.toList()
+      ..sort(
+        (a, b) => a['produto']
+            .toString()
+            .compareTo(b['produto'].toString()),
+      );
 
     return Scaffold(
       backgroundColor: bg,
@@ -321,15 +350,17 @@ class InventarioResumoScreen extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  "Etiquetas lidas",
+                  "Produtos consolidados",
                   style: TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.w900,
                     color: text,
                   ),
                 ),
+
                 const SizedBox(height: 12),
-                ...resumo.itens.map(
+
+                ...itensConsolidados.map(
                   (item) => Padding(
                     padding: const EdgeInsets.only(bottom: 12),
                     child: Container(
@@ -356,57 +387,65 @@ class InventarioResumoScreen extends StatelessWidget {
                               size: 22,
                             ),
                           ),
+
                           const SizedBox(width: 12),
+
                           Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  item.produtoNome,
+                                  item['produto'],
                                   style: TextStyle(
                                     color: text,
                                     fontWeight: FontWeight.w900,
                                     fontSize: 14.5,
                                   ),
                                 ),
+
                                 const SizedBox(height: 5),
+
                                 Text(
-                                  "Setor: ${item.setorNome}",
+                                  "Setor: ${item['setor']}",
                                   style: TextStyle(
                                     color: muted,
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
+
                                 const SizedBox(height: 2),
+
                                 Text(
-                                  "Categoria: ${item.categoriaNome}",
+                                  "Categoria: ${item['categoria']}",
                                   style: TextStyle(
                                     color: muted,
                                     fontSize: 12.5,
                                     fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+
+                                const SizedBox(height: 8),
+
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 10,
+                                    vertical: 6,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: accent.withOpacity(0.10),
+                                    borderRadius: BorderRadius.circular(999),
+                                  ),
+                                  child: Text(
+                                    "${item['etiquetas']} etiquetas • ${item['quantidade']} itens",
+                                    style: TextStyle(
+                                      color: accent,
+                                      fontWeight: FontWeight.w800,
+                                      fontSize: 11.5,
+                                    ),
                                   ),
                                 ),
                               ],
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            decoration: BoxDecoration(
-                              color: accent.withOpacity(0.12),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: Text(
-                              item.quantidade.toString(),
-                              style: TextStyle(
-                                color: accent,
-                                fontWeight: FontWeight.w900,
-                                fontSize: 14,
-                              ),
                             ),
                           ),
                         ],

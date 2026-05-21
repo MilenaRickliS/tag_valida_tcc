@@ -20,6 +20,35 @@ class InventarioResumoPdfService {
     final categoriasOrdenadas = resumo.totalPorCategoria.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
+    final produtosConsolidados = <String, Map<String, dynamic>>{};
+
+    for (final item in resumo.itens) {
+      final chave =
+          '${item.produtoNome.trim().toLowerCase()}|'
+          '${item.categoriaNome.trim().toLowerCase()}|'
+          '${item.setorNome.trim().toLowerCase()}';
+
+      if (produtosConsolidados.containsKey(chave)) {
+        produtosConsolidados[chave]!['quantidade'] += item.quantidade;
+        produtosConsolidados[chave]!['etiquetas'] += 1;
+      } else {
+        produtosConsolidados[chave] = {
+          'produto': item.produtoNome,
+          'categoria': item.categoriaNome,
+          'setor': item.setorNome,
+          'quantidade': item.quantidade,
+          'etiquetas': 1,
+        };
+      }
+    }
+
+    final itensConsolidados = produtosConsolidados.values.toList()
+      ..sort(
+        (a, b) => a['produto']
+            .toString()
+            .compareTo(b['produto'].toString()),
+      );
+
     pdf.addPage(
       pw.MultiPage(
         pageFormat: PdfPageFormat.a4,
@@ -39,7 +68,7 @@ class InventarioResumoPdfService {
             itens: categoriasOrdenadas,
           ),
           pw.SizedBox(height: 14),
-          _itensLidos(resumo),
+          _itensConsolidados(itensConsolidados),
         ],
       ),
     );
@@ -192,55 +221,47 @@ class InventarioResumoPdfService {
   );
 }
 
-  static pw.Widget _itensLidos(InventarioResumo resumo) {
+  static pw.Widget _itensConsolidados(
+    List<Map<String, dynamic>> itens,
+  ) {
     return _card(
-      titulo: "Etiquetas lidas",
+      titulo: "Produtos consolidados",
       child: pw.Column(
-        children: resumo.itens.map((item) {
-          return pw.Container(
-            width: double.infinity,
-            margin: const pw.EdgeInsets.only(bottom: 10),
-            padding: const pw.EdgeInsets.all(12),
-            decoration: pw.BoxDecoration(
-              color: PdfColor.fromHex('#F8F5EF'),
-              borderRadius: pw.BorderRadius.circular(10),
-              border: pw.Border.all(color: PdfColor.fromHex('#E8E2D9')),
-            ),
+        children: itens.map((item) {
+          return pw.Padding(
+            padding: const pw.EdgeInsets.only(bottom: 10),
             child: pw.Column(
               crossAxisAlignment: pw.CrossAxisAlignment.start,
               children: [
                 pw.Text(
-                  item.produtoNome,
+                  item['produto'].toString(),
                   style: pw.TextStyle(
-                    fontSize: 12.5,
+                    fontSize: 12,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColor.fromHex('#2B2B2B'),
                   ),
                 ),
-                pw.SizedBox(height: 5),
+                pw.SizedBox(height: 3),
                 pw.Text(
-                  "Setor: ${item.setorNome}",
+                  "Setor: ${item['setor']} | Categoria: ${item['categoria']}",
                   style: pw.TextStyle(
-                    fontSize: 10.5,
+                    fontSize: 10,
                     color: PdfColor.fromHex('#6B6B6B'),
                   ),
                 ),
-                pw.SizedBox(height: 2),
+                pw.SizedBox(height: 3),
                 pw.Text(
-                  "Categoria: ${item.categoriaNome}",
+                  "Etiquetas lidas: ${item['etiquetas']} | Quantidade total: ${item['quantidade']}",
                   style: pw.TextStyle(
                     fontSize: 10.5,
-                    color: PdfColor.fromHex('#6B6B6B'),
-                  ),
-                ),
-                pw.SizedBox(height: 6),
-                pw.Text(
-                  "Quantidade: ${item.quantidade}",
-                  style: pw.TextStyle(
-                    fontSize: 11,
                     fontWeight: pw.FontWeight.bold,
                     color: PdfColor.fromHex('#2B2B2B'),
                   ),
+                ),
+                pw.SizedBox(height: 8),
+                pw.Divider(
+                  color: PdfColor.fromHex('#E8E2D9'),
+                  thickness: 0.5,
                 ),
               ],
             ),
