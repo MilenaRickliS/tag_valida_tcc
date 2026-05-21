@@ -267,27 +267,29 @@ class _MovimentarEstoqueModalState extends State<MovimentarEstoqueModal> {
                       ],
                     ),
                   ],
-                  const SizedBox(height: 16),
-                  TextFormField(
-                    controller: _quantidadeCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                    decoration: InputDecoration(
-                      labelText: "Quantidade",
-                      filled: true,
-                      fillColor: card,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
+                  if (_tipo != MovimentoEstoqueTipo.cancelamento) ...[
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _quantidadeCtrl,
+                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      decoration: InputDecoration(
+                        labelText: "Quantidade",
+                        filled: true,
+                        fillColor: card,
+                        border: OutlineInputBorder(
+                          borderRadius: BorderRadius.circular(16),
+                        ),
                       ),
+                      validator: (v) {
+                        final n = num.tryParse((v ?? '').replaceAll(',', '.'));
+                        if (n == null) return "Informe uma quantidade válida";
+                        if (n <= 0) {
+                          return "Informe uma quantidade maior que zero";
+                        }
+                        return null;
+                      },
                     ),
-                    validator: (v) {
-                      final n = num.tryParse((v ?? '').replaceAll(',', '.'));
-                      if (n == null) return "Informe uma quantidade válida";
-                      if (n <= 0) {
-                        return "Informe uma quantidade maior que zero";
-                      }
-                      return null;
-                    },
-                  ),
+                  ],
                   const SizedBox(height: 14),
                   TextFormField(
                     controller: _obsCtrl,

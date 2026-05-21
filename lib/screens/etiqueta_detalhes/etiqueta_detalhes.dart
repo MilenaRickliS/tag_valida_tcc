@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter_tts/flutter_tts.dart';
 import '../../data/local/repos/design_etiqueta_v2_local_repo.dart';
 import '../../models/etiqueta_model.dart';
 import '../../models/user_model.dart';
@@ -26,9 +27,10 @@ import 'widgets/etiqueta_details_card.dart';
 import 'widgets/etiqueta_print_preview_v2_real.dart';
 import 'widgets/etiqueta_qr_card.dart';
 import 'widgets/historico_etiqueta_screen.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import '../etiquetas_ativas/movimentacao/movimentar_estoque_modal.dart';
+import '../etiquetas_ativas/movimentacao/estoque_mov_service.dart';
 
-class EtiquetaDetalhesScreen extends StatelessWidget {
+class EtiquetaDetalhesScreen extends StatefulWidget {
   final String uid;
   final String etiquetaId;
 
@@ -37,6 +39,13 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
     required this.uid,
     required this.etiquetaId,
   });
+
+  @override
+  State<EtiquetaDetalhesScreen> createState() =>
+      _EtiquetaDetalhesScreenState();
+}
+
+class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
 
   static const _lightCard = Colors.white;
   static const _lightText = Color(0xFF2B2B2B);
@@ -657,6 +666,71 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
     await tts.speak(mensagem);
   }
 
+  Future<void> _movimentarEtiquetaRapido(
+    BuildContext context, {
+    required String uid,
+    required EtiquetaModel etiqueta,
+  }) async {
+    try {
+      if (etiqueta.status != "ativa") {
+        throw Exception("Etiqueta não está ativa.");
+      }
+
+      if (etiqueta.statusEstoque != "ativo") {
+        throw Exception("Etiqueta sem estoque disponível.");
+      }
+
+      final result = await showModalBottomSheet<MovimentacaoEstoqueData>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => MovimentarEstoqueModal(
+          etiqueta: etiqueta,
+        ),
+      );
+
+      if (result == null) return;
+
+      final etiquetasProv = context.read<GerarEtiquetaProvider>();
+      final movProv = context.read<EstoqueMovProvider>();
+
+      final service = EstoqueMovService(
+        etiquetasRepo: etiquetasProv,
+        movRepo: movProv,
+      );
+
+      await service.salvarMovimentacao(
+        uid: uid,
+        etiqueta: etiqueta,
+        data: result,
+      );
+
+      if (mounted) {
+        setState(() {});
+      }
+
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Movimentação salva com sucesso."),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    } catch (e) {
+      if (!context.mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text("Erro ao movimentar estoque: $e"),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final gerar = context.read<GerarEtiquetaProvider>();
@@ -688,8 +762,8 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
       ),
       body: FutureBuilder<List<dynamic>>(
         future: Future.wait([
-          gerar.getEtiquetaById(uid: uid, id: etiquetaId),
-          FirebaseFirestore.instance.collection('usuarios').doc(uid).get(),
+          gerar.getEtiquetaById(uid: widget.uid, id: widget.etiquetaId),
+          FirebaseFirestore.instance.collection('usuarios').doc(widget.uid).get(),
         ]),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
@@ -742,7 +816,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
           final qrData = EtiquetaQrResolver.resolve(
             etiqueta: etiqueta,
             tipoEtiqueta: tipoEtiqueta,
-            uid: uid,
+            uid: widget.uid,
           );
 
           final produtoNome = etiqueta.produtoNome;
@@ -819,7 +893,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                             if (!ok) return;
 
                             final mov = context.read<EstoqueMovProvider>();
-                            final before = await etiquetasProv.getEtiquetaById(uid: uid, id: etiqueta.id);
+                            final before = await etiquetasProv.getEtiquetaById(uid: widget.uid, id: etiqueta.id);
                             if (before == null) return;
 
                             final st = before.statusEstoque.trim().isEmpty
@@ -830,7 +904,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
 
                             if (st == "ativo" && rest > 0) {
                               await mov.registrarCancelamento(
-                                uid: uid,
+                                uid: widget.uid,
                                 etiquetaId: before.id,
                                 quantidade: rest,
                                 produtoNome: before.produtoNome,
@@ -839,13 +913,13 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                             }
 
                             await mov.registrarExclusao(
-                              uid: uid,
+                              uid: widget.uid,
                               etiquetaId: before.id,
                               produtoNome: before.produtoNome,
                               motivo: "Exclusão suave",
                             );
 
-                            await etiquetasProv.deleteSoft(uid, before.id);
+                            await etiquetasProv.deleteSoft(widget.uid, before.id);
 
                             if (context.mounted) {
                               ScaffoldMessenger.of(context).showSnackBar(
@@ -972,7 +1046,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                         ? null
                         : () => _imprimirComConfigSalva(
                         context,
-                        uid: uid,
+                        uid: widget.uid,
                         etiqueta: etiqueta,
                         tipoEtiqueta: tipoEtiqueta,
                         usuario: usuario,
@@ -989,7 +1063,7 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                             context,
                             MaterialPageRoute(
                               builder: (_) => HistoricoEtiquetaScreen(
-                                uid: uid,
+                                uid: widget.uid,
                                 etiquetaId: etiqueta.id,
                                 produtoNome: etiqueta.produtoNome,
                               ),
@@ -1010,6 +1084,38 @@ class EtiquetaDetalhesScreen extends StatelessWidget {
                         style: OutlinedButton.styleFrom(
                           side: BorderSide(color: borderColor),
                           backgroundColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton.icon(
+                        onPressed: status != "ativo"
+                            ? null
+                            : () => _movimentarEtiquetaRapido(
+                                  context,
+                                  uid: widget.uid,
+                                  etiqueta: etiqueta,
+                                ),
+                        icon: const Icon(Icons.swap_horiz_rounded),
+                        label: const Text(
+                          "Movimentar estoque",
+                          style: TextStyle(
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor:
+                              isDark ? const Color(0xFFD4AF37) : const Color(0xFFED7227),
+                          foregroundColor:
+                              isDark ? Colors.black : Colors.white,
+                          elevation: 0,
                           padding: const EdgeInsets.symmetric(vertical: 16),
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(16),
