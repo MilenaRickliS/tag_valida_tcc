@@ -196,15 +196,11 @@ class AjudaScreen extends StatelessWidget {
     final borderColor = isDark
         ? const Color(0xFFD4AF37).withOpacity(0.16)
         : Colors.black.withOpacity(0.08);
-    final iconBg = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.12)
-        : const Color(0xFF428E2E).withOpacity(0.12);
+    final iconBg = const Color(0xFF428E2E).withOpacity(0.12);
     final iconColor = isDark
-        ? const Color(0xFFD4AF37)
+        ? const Color.fromARGB(255, 255, 255, 255)
         : const Color(0xFF2B2B2B);
-    final buttonColor = isDark
-        ? const Color(0xFFD4AF37)
-        : const Color(0xFF428E2E);
+    final buttonColor =  const Color(0xFF428E2E);
     final buttonFg = isDark ? Colors.black : Colors.white;
 
     showModalBottomSheet(
