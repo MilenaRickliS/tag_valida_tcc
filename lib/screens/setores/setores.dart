@@ -12,31 +12,39 @@ import './widgets/setores_list.dart';
 import './widgets/novo_setor_fab.dart';
 
 final _nomeDeny = FilteringTextInputFormatter.deny(
-  RegExp(r"[^0-9A-Za-zÀ-ÖØ-öø-ÿÇç ]"),
+  RegExp(r"[^0-9A-Za-zÀ-ÖØ-öø-ÿÇç ()-]"),
 );
 
 class TitleCaseEachWordFormatter extends TextInputFormatter {
   const TitleCaseEachWordFormatter();
 
-  bool _isLetter(String ch) => RegExp(r"[A-Za-zÀ-ÖØ-öø-ÿÇç]").hasMatch(ch);
+  bool _isLetter(String ch) {
+    return RegExp(r"[A-Za-zÀ-ÖØ-öø-ÿÇç]").hasMatch(ch);
+  }
 
   @override
   TextEditingValue formatEditUpdate(
     TextEditingValue oldValue,
     TextEditingValue newValue,
   ) {
-    final t = newValue.text;
-    if (t.isEmpty) return newValue;
 
-    final lower = t.toLowerCase();
-    final chars = lower.split('');
+    if (newValue.composing.isValid) {
+      return newValue;
+    }
+
+    final text = newValue.text;
+
+    if (text.isEmpty) return newValue;
+
+    final chars = text.split('');
 
     bool capitalizeNext = true;
 
     for (int i = 0; i < chars.length; i++) {
       final ch = chars[i];
 
-      if (ch == ' ') {
+      
+      if (ch == ' ' || ch == '-' || ch == '(') {
         capitalizeNext = true;
         continue;
       }
@@ -45,22 +53,17 @@ class TitleCaseEachWordFormatter extends TextInputFormatter {
         chars[i] = ch.toUpperCase();
         capitalizeNext = false;
       } else {
-        capitalizeNext = false;
+        chars[i] = ch.toLowerCase();
       }
     }
 
     final formatted = chars.join();
-    final sel = newValue.selection;
-    final clampedBase = sel.baseOffset.clamp(0, formatted.length);
-    final clampedExtent = sel.extentOffset.clamp(0, formatted.length);
 
     return TextEditingValue(
       text: formatted,
-      selection: TextSelection(
-        baseOffset: clampedBase,
-        extentOffset: clampedExtent,
+      selection: TextSelection.collapsed(
+        offset: formatted.length,
       ),
-      composing: TextRange.empty,
     );
   }
 }
@@ -488,7 +491,7 @@ class _SetoresScreenState extends State<SetoresScreen> {
                 return;
               }
 
-              final nomeOk = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÇç0-9 ]+$").hasMatch(nome);
+              final nomeOk = RegExp(r"^[A-Za-zÀ-ÖØ-öø-ÿÇç0-9 ()-]+$").hasMatch(nome);
               if (!nomeOk) {
                 ScaffoldMessenger.of(context).showSnackBar(
                   const SnackBar(
