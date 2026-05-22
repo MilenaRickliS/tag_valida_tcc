@@ -2,6 +2,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:open_filex/open_filex.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'badge_chip.dart';
 import 'status_chip.dart';
 import 'tabela_nutricional_preview_card.dart';
@@ -584,24 +585,25 @@ class EtiquetaDetailsCard extends StatelessWidget {
               borderRadius: BorderRadius.circular(16),
               child: AspectRatio(
                 aspectRatio: 16 / 10,
-                child: Image.network(
-                  imageUrl,
+                child: CachedNetworkImage(
+                  imageUrl: imageUrl,
                   fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
+                  placeholder: (context, url) {
                     return Center(
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: isDark ? const Color(0xFFD4AF37) : const Color(0xFFED7227),
+                        color: isDark
+                            ? const Color(0xFFD4AF37)
+                            : const Color(0xFFED7227),
                       ),
                     );
                   },
-                  errorBuilder: (_, __, ___) {
+                  errorWidget: (context, url, error) {
                     return Container(
                       alignment: Alignment.center,
                       padding: const EdgeInsets.all(16),
                       child: Text(
-                        "Não foi possível carregar a imagem.",
+                        "Imagem indisponível offline.",
                         style: TextStyle(
                           color: mutedColor,
                           fontWeight: FontWeight.w600,

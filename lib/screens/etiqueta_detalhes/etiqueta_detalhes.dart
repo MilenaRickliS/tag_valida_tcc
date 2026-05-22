@@ -8,6 +8,7 @@ import 'package:qr_flutter/qr_flutter.dart';
 import 'package:printing/printing.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_tts/flutter_tts.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../../data/local/repos/design_etiqueta_v2_local_repo.dart';
 import '../../models/etiqueta_model.dart';
 import '../../models/user_model.dart';
@@ -27,8 +28,21 @@ import 'widgets/etiqueta_details_card.dart';
 import 'widgets/etiqueta_print_preview_v2_real.dart';
 import 'widgets/etiqueta_qr_card.dart';
 import 'widgets/historico_etiqueta_screen.dart';
+import 'widgets/etiqueta_loading_view.dart';
 import '../etiquetas_ativas/movimentacao/movimentar_estoque_modal.dart';
 import '../etiquetas_ativas/movimentacao/estoque_mov_service.dart';
+
+class EtiquetaDetalhesLoadResult {
+  final EtiquetaModel? etiqueta;
+  final UserModel? usuario;
+  final bool offline;
+
+  EtiquetaDetalhesLoadResult({
+    required this.etiqueta,
+    required this.usuario,
+    required this.offline,
+  });
+}
 
 class EtiquetaDetalhesScreen extends StatefulWidget {
   final String uid;
@@ -731,6 +745,44 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
     }
   }
 
+  Future<EtiquetaDetalhesLoadResult> _carregarDadosOfflineFirst() async {
+    final gerar = context.read<GerarEtiquetaProvider>();
+
+    final connectivity = await Connectivity().checkConnectivity();
+
+    // ignore: unrelated_type_equality_checks
+    final offline = connectivity == ConnectivityResult.none;
+
+   
+    final etiqueta = await gerar.getEtiquetaById(
+      uid: widget.uid,
+      id: widget.etiquetaId,
+    );
+
+    UserModel? usuario;
+
+    try {
+     
+      final userDoc = await FirebaseFirestore.instance
+          .collection('usuarios')
+          .doc(widget.uid)
+          .get()
+          .timeout(const Duration(seconds: 4));
+
+      if (userDoc.exists && userDoc.data() != null) {
+        usuario = UserModel.fromMap(userDoc.data()!);
+      }
+    } catch (_) {
+      usuario = null;
+    }
+
+    return EtiquetaDetalhesLoadResult(
+      etiqueta: etiqueta,
+      usuario: usuario,
+      offline: offline,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final gerar = context.read<GerarEtiquetaProvider>();
@@ -760,17 +812,13 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
           ),
         ),
       ),
-      body: FutureBuilder<List<dynamic>>(
-        future: Future.wait([
-          gerar.getEtiquetaById(uid: widget.uid, id: widget.etiquetaId),
-          FirebaseFirestore.instance.collection('usuarios').doc(widget.uid).get(),
-        ]),
+      body: FutureBuilder<EtiquetaDetalhesLoadResult>(
+        future: _carregarDadosOfflineFirst(),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
-            return Center(
-              child: CircularProgressIndicator(
-                color: isDark ? _gold : const Color(0xFFED7227),
-              ),
+            return EtiquetaLoadingView(
+              isDark: isDark,
+              offline: false,
             );
           }
 
@@ -780,25 +828,39 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
             );
           }
 
-          final etiqueta = snap.data![0] as EtiquetaModel?;
-          final userDoc = snap.data![1] as DocumentSnapshot<Map<String, dynamic>>;
+         final result = snap.data!;
 
-          if (etiqueta == null) {
-            return Center(
-              child: Text(
-                "Etiqueta não encontrada.",
-                style: TextStyle(color: textColor),
-              ),
+        final etiqueta = result.etiqueta;
+        final offline = result.offline;
+
+        if (etiqueta == null) {
+          return Center(
+            child: Text(
+              "Etiqueta não encontrada.",
+              style: TextStyle(color: textColor),
+            ),
+          );
+        }
+
+        final UserModel usuario = result.usuario ??
+            UserModel(
+              uid: widget.uid,
+              nome: 'Usuário',
+              email: '',
+              razao: '',
+              cnpj: '',
+              cep: '',
+              rua: '',
+              numero: '',
+              bairro: '',
+              complemento: '',
+              cidade: '',
+              estado: '',
+              telefone: '',
+              responsavel: '',
+              logo: '',
             );
-          }
-
-          if (!userDoc.exists || userDoc.data() == null) {
-            return const Center(
-              child: Text("Usuário não encontrado."),
-            );
-          }
-
-          final usuario = UserModel.fromMap(userDoc.data()!);
+          
 
           final tipoEtiqueta = tiposProv.items.firstWhere(
             (t) => t.id == etiqueta.tipoId,
@@ -977,6 +1039,38 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
                       ),
                     ),
                     const SizedBox(height: 8),
+                    if (offline) ...[
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(12),
+                        margin: const EdgeInsets.only(bottom: 12),
+                        decoration: BoxDecoration(
+                          color: Colors.orange.withOpacity(0.12),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: Colors.orange.withOpacity(0.35),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.wifi_off_rounded,
+                              color: Colors.orange,
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'Modo offline ativo. Mostrando dados salvos.',
+                                style: TextStyle(
+                                  color: textColor,
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                     EtiquetaDetailsCard(
                       isDark: isDark,
                       cardColor: cardColor,
