@@ -7,7 +7,14 @@ import '../models/named_value.dart';
 class RankList extends StatelessWidget {
   final List<NamedValue> items;
   final String tipo;
-  const RankList({super.key, required this.items, required this.tipo});
+  final String unidade;
+
+  const RankList({
+    super.key,
+    required this.items,
+    required this.tipo,
+    required this.unidade,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -22,9 +29,11 @@ class RankList extends StatelessWidget {
     return Column(
       children: List.generate(items.length, (i) {
         final it = items[i];
-        final v = (it.value % 1 == 0)
+        final valor = it.value % 1 == 0
             ? it.value.toInt().toString()
-            : it.value.toStringAsFixed(2);
+            : it.value.toStringAsFixed(3).replaceAll('.', ',');
+
+        final v = '$valor $unidade';
 
         return Container(
           margin: const EdgeInsets.only(bottom: 8),

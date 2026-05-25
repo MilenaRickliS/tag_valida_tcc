@@ -26,6 +26,7 @@ extension EtiquetaLocalMapper on EtiquetaModel {
       'tabelaNutricionalJson': tabelaNutricional == null ? null : jsonEncode(tabelaNutricional!.toMap()),
       'quantidade': quantidade,
       'quantidadeRestante': quantidadeRestante,
+      'unidadeMedida': unidadeMedida,
       'statusEstoque': statusEstoque,
       'soldAtMs': soldAt?.millisecondsSinceEpoch,
       'createdAt': createdAt?.millisecondsSinceEpoch ?? nowMs,
@@ -58,7 +59,8 @@ extension EtiquetaLocalMapper on EtiquetaModel {
 
     final qtd = asNum(m['quantidade'], def: 1);
     final rest = asNum(m['quantidadeRestante'], def: qtd);
-
+    final unidadeMedidaRaw = (m['unidadeMedida'] ?? 'un').toString().trim().toLowerCase();
+    final unidadeMedida = unidadeMedidaRaw == 'kg' ? 'kg' : 'un';
     final soldAt = dtMsNullable(m['soldAtMs']);
 
     final statusEstoqueRaw = (m['statusEstoque'] ?? '').toString().trim().toLowerCase();
@@ -92,6 +94,7 @@ extension EtiquetaLocalMapper on EtiquetaModel {
       tabelaNutricional: tabela,
       quantidade: qtd,
       quantidadeRestante: rest,
+      unidadeMedida: unidadeMedida,
       statusEstoque: statusEstoque,
       soldAt: soldAt,
       createdAt: dtMsNullable(m['createdAt']),

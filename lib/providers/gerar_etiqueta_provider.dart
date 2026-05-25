@@ -44,6 +44,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
   DateTime? validade;
 
   final quantidadeCtrl = TextEditingController(text: "1");
+  String unidadeMedida = 'un';
 
   final Map<String, Map<String, dynamic>> camposValores = {};
   bool saving = false;
@@ -113,6 +114,22 @@ class GerarEtiquetaProvider extends ChangeNotifier {
 
   void setQuantidadeText(String v) {
     quantidadeCtrl.text = v;
+    notifyListeners();
+  }
+
+  void setUnidadeMedida(String value) {
+    unidadeMedida = value == 'kg' ? 'kg' : 'un';
+
+    if (unidadeMedida == 'un') {
+      final n = num.tryParse(
+        quantidadeCtrl.text.replaceAll(',', '.'),
+      );
+
+      if (n != null) {
+        quantidadeCtrl.text = n.toInt().toString();
+      }
+    }
+
     notifyListeners();
   }
 
@@ -196,6 +213,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
     produtoCtrl.clear();
 
     quantidadeCtrl.text = "1";
+    unidadeMedida = 'un';
     editingStatusEstoque = "ativo";
 
     incluirTabelaNutricional = false;
@@ -224,9 +242,22 @@ class GerarEtiquetaProvider extends ChangeNotifier {
   }
 
   num _parseQtdOrThrow() {
-    final raw = quantidadeCtrl.text.trim().replaceAll(",", ".");
+    final raw = quantidadeCtrl.text
+        .trim()
+        .replaceAll(",", ".");
+
     final v = num.tryParse(raw);
-    if (v == null || v <= 0) throw Exception("Quantidade inválida.");
+
+    if (v == null || v <= 0) {
+      throw Exception("Quantidade inválida.");
+    }
+
+    if (unidadeMedida == 'un' && v % 1 != 0) {
+      throw Exception(
+        "Quantidade em unidade deve ser inteira.",
+      );
+    }
+
     return v;
   }
 
@@ -256,7 +287,12 @@ class GerarEtiquetaProvider extends ChangeNotifier {
     editingStatusEstoque = e.statusEstoque;
     editingSoldAt = e.soldAt;
 
-    quantidadeCtrl.text = _normalizarQuantidade(e.quantidade);
+    quantidadeCtrl.text = _normalizarQuantidade(
+      e.quantidade,
+      unidade: e.unidadeMedida,
+    );
+
+    unidadeMedida = e.unidadeMedida;
 
     incluirTabelaNutricional = e.incluirTabelaNutricional;
 
@@ -494,7 +530,9 @@ class GerarEtiquetaProvider extends ChangeNotifier {
     final raw = quantidadeCtrl.text.trim();
     final qtd = num.tryParse(raw.replaceAll(",", "."));
     if (qtd == null || qtd <= 0) return "Informe uma quantidade válida.";
-
+    if (unidadeMedida == 'un' && qtd % 1 != 0) {
+      return "Quantidade em unidade deve ser inteira.";
+    }
     for (final c in tipoAtual.camposCustom) {
       if (c.obrigatorio) {
         final v = camposValores[c.key]?["value"];
@@ -505,23 +543,25 @@ class GerarEtiquetaProvider extends ChangeNotifier {
     return null;
   }
 
-  String _normalizarQuantidade(dynamic value) {
+ String _normalizarQuantidade(
+    dynamic value, {
+    String unidade = 'un',
+  }) {
     if (value == null) return '';
 
-    if (value is int) return value.toString();
-
-    if (value is double) {
-      return value % 1 == 0
-          ? value.toInt().toString()
-          : value.toString().replaceAll('.', ',');
-    }
-
     final s = value.toString().trim().replaceAll(',', '.');
+
     final n = num.tryParse(s);
 
     if (n == null) return s;
 
-    return n % 1 == 0 ? n.toInt().toString() : n.toString();
+    if (unidade == 'kg') {
+      return n
+          .toStringAsFixed(3)
+          .replaceAll('.', ',');
+    }
+
+    return n.toInt().toString();
   }
 
   Future<EtiquetaModel?> getEtiquetaById({
@@ -566,6 +606,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
         tabelaNutricional: tabela,
         quantidade: (data["quantidade"] as num?) ?? 1,
         quantidadeRestante: (data["quantidadeRestante"] as num?) ?? 1,
+        unidadeMedida: (data["unidadeMedida"] ?? "un").toString(),
         statusEstoque: (data["statusEstoque"] ?? "ativo").toString(),
         soldAt: dtN(data["soldAt"]),
         createdAt: dtN(data["createdAt"]),
@@ -608,6 +649,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           data["camposCustomValores"] ?? {},
         ),
         quantidadePadrao: (data["quantidadePadrao"] as num?) ?? 1,
+        unidadeMedidaPadrao: (data["unidadeMedidaPadrao"] ?? "un").toString(),
         incluirTabelaNutricional: data["incluirTabelaNutricional"] == true,
         tabelaNutricional: tabela,
         createdAt: dt(data["createdAt"]) ?? DateTime.now(),
@@ -658,6 +700,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
         createdAt: now,
         quantidade: qtd,
         quantidadeRestante: qtd,
+        unidadeMedida: unidadeMedida,
         statusEstoque: "ativo",
         soldAt: null,
       );
@@ -677,6 +720,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           setorNome: etiqueta.setorNome,
           camposCustomValores: safeCampos,
           quantidadePadrao: etiqueta.quantidade,
+          unidadeMedidaPadrao: unidadeMedida,
           incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,
           tabelaNutricional: etiqueta.tabelaNutricional,
           createdAt: DateTime.now(),
@@ -694,6 +738,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
             uid: uid,
             etiquetaId: id,
             quantidade: qtd,
+            unidadeMedida: unidadeMedida,
             produtoNome: etiqueta.produtoNome,
             motivo: "Criação da etiqueta",
           );
@@ -724,6 +769,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           setorNome: etiqueta.setorNome,
           camposCustomValores: safeCampos,
           quantidadePadrao: etiqueta.quantidade,
+          unidadeMedidaPadrao: unidadeMedida,
           incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,
           tabelaNutricional: etiqueta.tabelaNutricional,
           createdAt: existing?.createdAt ?? DateTime.now(),
@@ -736,6 +782,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           uid: uid,
           etiquetaId: id,
           quantidade: qtd,
+          unidadeMedida: unidadeMedida,
           produtoNome: etiqueta.produtoNome,
           motivo: "Criação da etiqueta",
         );
@@ -827,6 +874,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
         tabelaNutricional: tabela,
         quantidade: qtdInformada,
         quantidadeRestante: novoRestante,
+        unidadeMedida: unidadeMedida,
         statusEstoque: statusEstoqueFinal,
         soldAt: soldAtFinal,
       );
@@ -848,6 +896,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           uid: uid,
           etiquetaId: atualizado.id,
           quantidade: restanteAntigo,
+          unidadeMedida: unidadeMedida,
           produtoNome: atualizado.produtoNome,
           motivo: "Cancelamento ao editar etiqueta",
         );
@@ -858,6 +907,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           uid: uid,
           etiquetaId: atualizado.id,
           quantidade: restanteAntigo,
+          unidadeMedida: unidadeMedida,
           produtoNome: atualizado.produtoNome,
           motivo: "Venda ao editar etiqueta",
         );
@@ -868,6 +918,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
             etiquetaId: atualizado.id,
             tipo: EstoqueMovModel.tipoAjusteEntrada,
             quantidade: deltaQuantidade,
+            unidadeMedida: unidadeMedida,
             produtoNome: atualizado.produtoNome,
             motivo: "Ajuste ao editar etiqueta",
           );
@@ -877,6 +928,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
             etiquetaId: atualizado.id,
             tipo: EstoqueMovModel.tipoAjusteSaida,
             quantidade: deltaQuantidade.abs(),
+            unidadeMedida: unidadeMedida,
             produtoNome: atualizado.produtoNome,
             motivo: "Ajuste ao editar etiqueta",
           );
@@ -919,6 +971,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
         camposCustomValores: current.camposCustomValores,
         quantidade: current.quantidade,
         quantidadeRestante: current.quantidadeRestante,
+        unidadeMedida: current.unidadeMedida,
         statusEstoque: "cancelado",
         soldAt: current.soldAt,
         status: "excluida",
@@ -968,8 +1021,9 @@ class GerarEtiquetaProvider extends ChangeNotifier {
         status: "ativa",
         lote: current.lote,
         createdAt: current.createdAt,
-        quantidade: current.quantidade,
+        quantidade: quantidadeRestante,
         quantidadeRestante: quantidadeRestante,
+        unidadeMedida: current.unidadeMedida,
         statusEstoque: novoStatusEstoque,
         soldAt: soldAt,
         incluirTabelaNutricional: current.incluirTabelaNutricional,
@@ -980,12 +1034,37 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           .doc(etiquetaId)
           .set(updated.toMap(), SetOptions(merge: true));
     } else {
-      await repo!.reabrirEtiqueta(
-        uid: uid,
-        etiquetaId: etiquetaId,
-        quantidadeRestante: quantidadeRestante,
-      );
-    }
+        final current = await repo!.getById(uid: uid, id: etiquetaId);
+        if (current == null) {
+          throw Exception("Etiqueta não encontrada.");
+        }
+
+        final updated = EtiquetaModel(
+          id: current.id,
+          tipoId: current.tipoId,
+          tipoNome: current.tipoNome,
+          produtoNome: current.produtoNome,
+          categoriaId: current.categoriaId,
+          categoriaNome: current.categoriaNome,
+          setorId: current.setorId,
+          setorNome: current.setorNome,
+          dataFabricacao: current.dataFabricacao,
+          dataValidade: current.dataValidade,
+          camposCustomValores: current.camposCustomValores,
+          status: "ativa",
+          lote: current.lote,
+          createdAt: current.createdAt,
+          quantidade: quantidadeRestante,
+          quantidadeRestante: quantidadeRestante,
+          unidadeMedida: current.unidadeMedida,
+          statusEstoque: "ativo",
+          soldAt: null,
+          incluirTabelaNutricional: current.incluirTabelaNutricional,
+          tabelaNutricional: current.tabelaNutricional,
+        );
+
+        await repo!.upsert(uid, updated);
+      }
 
     notifyListeners();
   }
@@ -1063,6 +1142,7 @@ class GerarEtiquetaProvider extends ChangeNotifier {
           tabelaNutricional: tabela,
           quantidade: (data["quantidade"] as num?) ?? 1,
           quantidadeRestante: (data["quantidadeRestante"] as num?) ?? 1,
+          unidadeMedida: (data["unidadeMedida"] ?? "un").toString(),
           statusEstoque: (data["statusEstoque"] ?? "ativo").toString(),
           soldAt: dtN(data["soldAt"]),
           createdAt: dtN(data["createdAt"]),

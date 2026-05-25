@@ -87,35 +87,44 @@ class EstoqueMovLocalRepo {
     return rows.map(EstoqueMovLocalMapper.fromLocalMap).toList();
   }
 
-  Future<EstoqueMovResumo> resumo({required String uid}) async {
+ Future<EstoqueMovResumo> resumo({
+    required String uid,
+    String unidadeMedida = 'un',
+  }) async {
     final db = await AppDb.instance.db;
 
     Future<num> sumTipo(String tipo) async {
-      final r = await db.rawQuery(
-        "SELECT COALESCE(SUM(quantidade), 0) AS s FROM estoque_mov WHERE uid = ? AND tipo = ?",
-        [uid, tipo],
+        final r = await db.rawQuery(
+          """
+          SELECT COALESCE(SUM(quantidade), 0) AS s
+          FROM estoque_mov
+          WHERE uid = ?
+            AND tipo = ?
+            AND unidadeMedida = ?
+          """,
+          [uid, tipo, unidadeMedida],
+        );
+
+        return (r.first["s"] as num?) ?? 0;
+      }
+
+      final entradas = await sumTipo(EstoqueMovModel.tipoEntrada) +
+          await sumTipo(EstoqueMovModel.tipoAjusteEntrada);
+
+      final saidasVenda = await sumTipo(EstoqueMovModel.tipoVenda);
+
+      final outrasSaidas = await sumTipo(EstoqueMovModel.tipoCancelamento) +
+          await sumTipo(EstoqueMovModel.tipoAjusteSaida) +
+          await sumTipo(EstoqueMovModel.tipoUso) +
+          await sumTipo(EstoqueMovModel.tipoDescarte);
+
+      final saldo = entradas - (saidasVenda + outrasSaidas);
+
+      return EstoqueMovResumo(
+        entradas: entradas,
+        saidasVenda: saidasVenda,
+        saidasCancelamento: outrasSaidas,
+        saldo: saldo,
       );
-      return (r.first["s"] as num?) ?? 0;
-    }
-
-    final entradas = await sumTipo(EstoqueMovModel.tipoEntrada) +
-        await sumTipo(EstoqueMovModel.tipoAjusteEntrada);
-
-    final saidasVenda = await sumTipo(EstoqueMovModel.tipoVenda);
-
-    final outrasSaidas =
-        await sumTipo(EstoqueMovModel.tipoCancelamento) +
-            await sumTipo(EstoqueMovModel.tipoAjusteSaida) +
-            await sumTipo(EstoqueMovModel.tipoUso) +
-            await sumTipo(EstoqueMovModel.tipoDescarte);
-
-    final saldo = entradas - (saidasVenda + outrasSaidas);
-
-    return EstoqueMovResumo(
-      entradas: entradas,
-      saidasVenda: saidasVenda,
-      saidasCancelamento: outrasSaidas,
-      saldo: saldo,
-    );
   }
 }

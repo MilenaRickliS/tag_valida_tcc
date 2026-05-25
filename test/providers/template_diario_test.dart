@@ -44,6 +44,7 @@ class FakeMovRepo implements EstoqueMovLocalProvider {
     required String uid,
     required String etiquetaId,
     required num quantidade,
+    required unidadeMedida,
     String? produtoNome,
     String? motivo,
   }) async {}
@@ -94,6 +95,7 @@ void main() {
 
       provider.produtoCtrl.text = "Pão francês";
       provider.quantidadeCtrl.text = "10";
+      provider.unidadeMedida = 'un';
 
       provider.fabricacao = DateTime.now();
       provider.validade = DateTime.now().add(Duration(days: 2));
@@ -111,6 +113,7 @@ void main() {
 
       expect(template.produtoNome, "Pão francês");
       expect(template.quantidadePadrao, 10);
+      expect(template.unidadeMedidaPadrao, 'un');
       expect(template.categoriaId, categoria.id);
       expect(template.setorId, setor.id);
     });

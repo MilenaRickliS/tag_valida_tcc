@@ -20,6 +20,7 @@ class EtiquetaTemplateModel {
   final TabelaNutricionalModel? tabelaNutricional;
 
   final num quantidadePadrao;
+  final String unidadeMedidaPadrao;
 
   final DateTime? createdAt;
   final DateTime? updatedAt;
@@ -35,6 +36,7 @@ class EtiquetaTemplateModel {
     required this.setorNome,
     required this.camposCustomValores,
     required this.quantidadePadrao,
+    this.unidadeMedidaPadrao = 'un',
     required this.incluirTabelaNutricional,
     this.tabelaNutricional,
     this.createdAt,
@@ -51,6 +53,7 @@ class EtiquetaTemplateModel {
         'setorNome': setorNome,
         'camposCustomValores': camposCustomValores,
         'quantidadePadrao': quantidadePadrao,
+        'unidadeMedidaPadrao': unidadeMedidaPadrao,
         'incluirTabelaNutricional': incluirTabelaNutricional,
         'tabelaNutricional': tabelaNutricional?.toMap(),
         'createdAt': createdAt != null
@@ -76,6 +79,13 @@ class EtiquetaTemplateModel {
               )
             : null;
 
+    final unidadeRaw = (data['unidadeMedidaPadrao'] ?? 'un')
+        .toString()
+        .trim()
+        .toLowerCase();
+
+    final unidadeMedidaPadrao = unidadeRaw == 'kg' ? 'kg' : 'un';
+
     return EtiquetaTemplateModel(
       id: doc.id,
       tipoId: (data['tipoId'] ?? '').toString(),
@@ -91,6 +101,7 @@ class EtiquetaTemplateModel {
       incluirTabelaNutricional: data['incluirTabelaNutricional'] == true,
       tabelaNutricional: tabela,
       quantidadePadrao: (data['quantidadePadrao'] as num?) ?? 1,
+      unidadeMedidaPadrao: unidadeMedidaPadrao,
       createdAt: dt(data['createdAt']),
       updatedAt: dt(data['updatedAt']),
     );

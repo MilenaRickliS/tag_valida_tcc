@@ -541,20 +541,33 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
 
         var all = snap.data!;
 
-        num entradasTotal = 0;
-        num saidasTotal = 0;
-        num geralTotal = 0;
+        final entradasPorUnidade = <String, num>{};
+        final saidasPorUnidade = <String, num>{};
+        final totalPorUnidade = <String, num>{};
 
         
         for (final e in all) {
+          final unidade = e.unidadeMedida.trim().isEmpty ? 'un' : e.unidadeMedida;
+
           final qtd = e.quantidade;
           final rest = e.quantidadeRestante;
-          final status = (e.statusEstoque.trim().isEmpty) ? "ativo" : e.statusEstoque.trim();
+          final status = (e.statusEstoque.trim().isEmpty)
+              ? "ativo"
+              : e.statusEstoque.trim();
 
-          entradasTotal += qtd;
-          geralTotal += (status == "cancelado") ? 0 : rest;
+          entradasPorUnidade[unidade] =
+              (entradasPorUnidade[unidade] ?? 0) + qtd;
+
+          totalPorUnidade[unidade] =
+              (totalPorUnidade[unidade] ?? 0) +
+              ((status == "cancelado") ? 0 : rest);
+
           final saiu = (status == "cancelado") ? qtd : (qtd - rest);
-          if (saiu > 0) saidasTotal += saiu;
+
+          if (saiu > 0) {
+            saidasPorUnidade[unidade] =
+                (saidasPorUnidade[unidade] ?? 0) + saiu;
+          }
         }
 
         if (all.isEmpty) {
@@ -773,10 +786,10 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
                   ? Padding(
                       padding: const EdgeInsets.only(top: 4),
                       child: EstoqueFooter(
-                        entradas: entradasTotal,
-                        saidas: saidasTotal,
-                        total: geralTotal,
-                      ),
+                        entradasPorUnidade: entradasPorUnidade,
+                        saidasPorUnidade: saidasPorUnidade,
+                        totalPorUnidade: totalPorUnidade,
+                      )
                     )
                   : const SizedBox.shrink(),
             ),

@@ -15,6 +15,7 @@ class EstoqueMovModel {
   final String? produtoNome;
   final String tipo;
   final num quantidade;
+  final String unidadeMedida;
   final String? motivo;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -24,6 +25,7 @@ class EstoqueMovModel {
     required this.etiquetaId,
     required this.tipo,
     required this.quantidade,
+    this.unidadeMedida = 'un',
     required this.createdAt,
     required this.updatedAt,
     this.produtoNome,
@@ -36,6 +38,7 @@ class EstoqueMovModel {
         "produtoNome": produtoNome,
         "tipo": tipo,
         "quantidade": quantidade,
+        "unidadeMedida": unidadeMedida,
         "motivo": motivo,
         "createdAt": Timestamp.fromDate(createdAt),
         "updatedAt": Timestamp.fromDate(updatedAt),
@@ -54,12 +57,21 @@ class EstoqueMovModel {
   ) {
     final data = doc.data();
 
+    final unidadeRaw =
+        (data["unidadeMedida"] ?? "un")
+            .toString()
+            .trim()
+            .toLowerCase();
+
+    final unidadeMedida = unidadeRaw == "kg" ? "kg" : "un";
+
     return EstoqueMovModel(
       id: (data["id"] ?? doc.id).toString(),
       etiquetaId: (data["etiquetaId"] ?? "").toString(),
       produtoNome: data["produtoNome"]?.toString(),
       tipo: (data["tipo"] ?? "").toString(),
       quantidade: (data["quantidade"] as num?) ?? 0,
+      unidadeMedida: unidadeMedida,
       motivo: data["motivo"]?.toString(),
       createdAt: _parseDate(data["createdAt"]),
       updatedAt: _parseDate(data["updatedAt"]),

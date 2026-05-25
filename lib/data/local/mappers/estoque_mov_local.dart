@@ -9,6 +9,7 @@ extension EstoqueMovLocalMapper on EstoqueMovModel {
       "produtoNome": produtoNome,
       "tipo": tipo,
       "quantidade": quantidade,
+      "unidadeMedida": unidadeMedida,
       "motivo": motivo,
       "createdAt": createdAt.millisecondsSinceEpoch,
       "updatedAt": updatedAt.millisecondsSinceEpoch,
@@ -28,6 +29,11 @@ extension EstoqueMovLocalMapper on EstoqueMovModel {
       return num.tryParse(v.toString().replaceAll(",", ".")) ?? def;
     }
 
+    final unidadeRaw =
+        (m["unidadeMedida"] ?? "un").toString().trim().toLowerCase();
+
+    final unidadeMedida = unidadeRaw == "kg" ? "kg" : "un";
+
     return EstoqueMovModel(
       id: (m["id"] ?? "").toString(),
       etiquetaId: (m["etiquetaId"] ?? "").toString(),
@@ -36,6 +42,7 @@ extension EstoqueMovLocalMapper on EstoqueMovModel {
           : (m["produtoNome"] ?? "").toString(),
       tipo: (m["tipo"] ?? "").toString(),
       quantidade: asNum(m["quantidade"]),
+      unidadeMedida: unidadeMedida,
       motivo: (m["motivo"] ?? "").toString().trim().isEmpty ? null : (m["motivo"] ?? "").toString(),
       createdAt: dtMs(m["createdAt"]),
       updatedAt: dtMs(m["updatedAt"]),

@@ -83,7 +83,7 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
       case 'setor':
         return etiqueta.setorNome;
       case 'quantidade':
-        return _fmtNum(etiqueta.quantidadeRestante);
+        return '${_fmtNum(etiqueta.quantidadeRestante)} ${etiqueta.unidadeMedida}';
       case 'lote':
         return _lote();
       case 'observacao':

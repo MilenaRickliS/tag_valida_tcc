@@ -148,7 +148,7 @@ class DesignEtiquetaV2Limiter {
       case 'setor':
         return 'SETOR: Produção';
       case 'quantidade':
-        return 'QUANTIDADE: 5';
+        return 'QUANTIDADE: 2,500 kg';
       case 'lote':
         return 'LOTE: A2D3FD20';
       case 'observacao':

@@ -845,7 +845,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
         final UserModel usuario = result.usuario ??
             UserModel(
               uid: widget.uid,
-              nome: 'Usuário',
+              nome: '',
               email: '',
               razao: '',
               cnpj: '',
@@ -970,6 +970,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
                                 etiquetaId: before.id,
                                 quantidade: rest,
                                 produtoNome: before.produtoNome,
+                                unidadeMedida: before.unidadeMedida,
                                 motivo: "Exclusão da etiqueta (removeu do estoque)",
                               );
                             }
@@ -978,6 +979,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
                               uid: widget.uid,
                               etiquetaId: before.id,
                               produtoNome: before.produtoNome,
+                              unidadeMedida: before.unidadeMedida,
                               motivo: "Exclusão suave",
                             );
 
@@ -1095,6 +1097,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
                       quantidade: _fmtNum(qtd),
                       saidas: _fmtNum(saidas),
                       restante: _fmtNum(restanteView),
+                      unidadeMedida: etiqueta.unidadeMedida,
                       customSemLote: customSemLote,
                       incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,
                       tabelaNutricional: etiqueta.tabelaNutricional,

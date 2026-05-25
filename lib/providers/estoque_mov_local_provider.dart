@@ -11,8 +11,8 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
     return repo.listAll(uid: uid, limit: limit);
   }
 
-  Future<EstoqueMovResumo> resumo({required String uid}) {
-    return repo.resumo(uid: uid);
+  Future<EstoqueMovResumo> resumo({required String uid, String unidadeMedida = 'un',}) {
+    return repo.resumo( uid: uid, unidadeMedida: unidadeMedida,);
   }
 
   Future<void> registrar({
@@ -20,6 +20,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
     required String etiquetaId,
     required String tipo,
     required num quantidade,
+    required String unidadeMedida,
     String? produtoNome,
     String? motivo,
   }) async {
@@ -31,6 +32,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
       produtoNome: produtoNome,
       tipo: tipo,
       quantidade: quantidade,
+      unidadeMedida: unidadeMedida,
       motivo: motivo,
       createdAt: now,
       updatedAt: now,
@@ -45,6 +47,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
     required String uid,
     required String etiquetaId,
     required num quantidade,
+    required String unidadeMedida,
     String? produtoNome,
     String? motivo,
   }) async {
@@ -56,6 +59,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
       produtoNome: produtoNome,
       tipo: EstoqueMovModel.tipoEntrada,
       quantidade: quantidade,
+      unidadeMedida: unidadeMedida,
       motivo: motivo ?? "Entrada",
       createdAt: now,
       updatedAt: now,
@@ -69,6 +73,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
     required String uid,
     required String etiquetaId,
     required num quantidade,
+    required String unidadeMedida,
     String? produtoNome,
     String? motivo,
   }) async {
@@ -80,6 +85,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
       produtoNome: produtoNome,
       tipo: EstoqueMovModel.tipoVenda,
       quantidade: quantidade,
+      unidadeMedida: unidadeMedida,
       motivo: motivo ?? "Venda",
       createdAt: now,
       updatedAt: now,
@@ -93,6 +99,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
     required String uid,
     required String etiquetaId,
     required num quantidade,
+    required String unidadeMedida,
     String? produtoNome,
     String? motivo,
   }) async {
@@ -104,6 +111,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
       produtoNome: produtoNome,
       tipo: EstoqueMovModel.tipoCancelamento,
       quantidade: quantidade,
+      unidadeMedida: unidadeMedida,
       motivo: motivo ?? "Cancelamento",
       createdAt: now,
       updatedAt: now,
@@ -117,6 +125,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
     required String uid,
     required String etiquetaId,
     num quantidade = 0,
+    String unidadeMedida = 'un',
     String? produtoNome,
     String? motivo,
   }) async {
@@ -128,6 +137,7 @@ class EstoqueMovLocalProvider extends ChangeNotifier {
       produtoNome: produtoNome,
       tipo: EstoqueMovModel.tipoExclusao,
       quantidade: quantidade,
+      unidadeMedida: unidadeMedida,
       motivo: motivo ?? "Exclusão (suave)",
       createdAt: now,
       updatedAt: now,

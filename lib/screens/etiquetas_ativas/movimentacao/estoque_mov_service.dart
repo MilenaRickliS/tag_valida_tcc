@@ -34,9 +34,17 @@ class EstoqueMovService {
 
     final quantidadeAtual = atual.quantidadeRestante;
     final quantidadeInformada = data.quantidade;
+    final unidade = atual.unidadeMedida.trim().toLowerCase();
+    
 
     if (quantidadeInformada == 0) {
       throw Exception('A quantidade não pode ser zero.');
+    }
+
+    if (unidade == 'un' && quantidadeInformada % 1 != 0) {
+      throw Exception(
+        'Produtos por unidade aceitam apenas números inteiros.',
+      );
     }
 
     String tipoMov;
@@ -161,6 +169,7 @@ class EstoqueMovService {
       tabelaNutricional: atual.tabelaNutricional,
       quantidade: atual.quantidade,
       quantidadeRestante: novoRestante,
+      unidadeMedida: atual.unidadeMedida,
       statusEstoque: novoStatusEstoque,
       soldAt: novoStatusEstoque == 'vendido' ? agora : atual.soldAt,
       createdAt: atual.createdAt,
@@ -179,6 +188,7 @@ class EstoqueMovService {
         produtoNome: atual.produtoNome,
         tipo: tipoMov,
         quantidade: quantidadeMov,
+        unidadeMedida: atual.unidadeMedida,
         motivo: motivo,
         createdAt: agora,
         updatedAt: agora,

@@ -3,27 +3,38 @@
 import 'package:flutter/material.dart';
 
 class EstoqueFooter extends StatelessWidget {
-  final num entradas;
-  final num saidas;
-  final num total;
+  final Map<String, num> entradasPorUnidade;
+  final Map<String, num> saidasPorUnidade;
+  final Map<String, num> totalPorUnidade;
 
   const EstoqueFooter({
     super.key,
-    required this.entradas,
-    required this.saidas,
-    required this.total,
+    required this.entradasPorUnidade,
+    required this.saidasPorUnidade,
+    required this.totalPorUnidade,
   });
 
   String _fmt(num v) {
-    if (v == v.roundToDouble()) return v.toInt().toString();
-    return v.toStringAsFixed(2);
+    if (v % 1 == 0) return v.toInt().toString();
+    return v.toStringAsFixed(3).replaceAll('.', ',');
+  }
+
+  String _fmtMap(Map<String, num> values) {
+    if (values.isEmpty) return '0 un';
+
+    final entries = values.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    return entries
+        .map((e) => '${_fmt(e.value)} ${e.key}')
+        .join(' • ');
   }
 
   Widget _pill({
     required BuildContext context,
     required IconData icon,
     required String label,
-    required num value,
+    required String value,
     required Color bg,
     required Color fg,
     required Color border,
@@ -60,12 +71,17 @@ class EstoqueFooter extends StatelessWidget {
               ),
             ),
           ),
-          Text(
-            _fmt(value),
-            style: TextStyle(
-              fontWeight: FontWeight.w900,
-              color: fg,
-              fontSize: 14,
+          Flexible(
+            child: Text(
+              value,
+              textAlign: TextAlign.right,
+              overflow: TextOverflow.ellipsis,
+              maxLines: 2,
+              style: TextStyle(
+                fontWeight: FontWeight.w900,
+                color: fg,
+                fontSize: 14,
+              ),
             ),
           ),
         ],
@@ -82,6 +98,10 @@ class EstoqueFooter extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    final entradasText = _fmtMap(entradasPorUnidade);
+    final saidasText = _fmtMap(saidasPorUnidade);
+    final totalText = _fmtMap(totalPorUnidade);
 
     final containerBg =
         isDark ? const Color(0xFF1E1E1E) : Colors.white.withOpacity(0.70);
@@ -111,7 +131,7 @@ class EstoqueFooter extends StatelessWidget {
                     context: context,
                     icon: Icons.input_rounded,
                     label: "Entradas",
-                    value: entradas,
+                    value: entradasText,
                     bg: isDark
                         ? Colors.green.withOpacity(0.14)
                         : Colors.green.withOpacity(0.08),
@@ -128,7 +148,7 @@ class EstoqueFooter extends StatelessWidget {
                     context: context,
                     icon: Icons.output_rounded,
                     label: "Saídas",
-                    value: saidas,
+                    value: saidasText,
                     bg: isDark
                         ? Colors.orange.withOpacity(0.14)
                         : Colors.orange.withOpacity(0.08),
@@ -145,7 +165,7 @@ class EstoqueFooter extends StatelessWidget {
                     context: context,
                     icon: Icons.inventory_2_outlined,
                     label: "Total em estoque",
-                    value: total,
+                    value: totalText,
                     bg: isDark
                         ? const Color(0xFFD4AF37).withOpacity(0.12)
                         : Colors.black.withOpacity(0.04),
@@ -165,11 +185,13 @@ class EstoqueFooter extends StatelessWidget {
                   context: context,
                   icon: Icons.input_rounded,
                   label: "Entradas",
-                  value: entradas,
+                  value: entradasText,
                   bg: isDark
                       ? Colors.green.withOpacity(0.14)
                       : Colors.green.withOpacity(0.08),
-                  fg: isDark ? Colors.greenAccent.shade200 : Colors.green.shade800,
+                  fg: isDark
+                      ? Colors.greenAccent.shade200
+                      : Colors.green.shade800,
                   border: isDark
                       ? Colors.greenAccent.withOpacity(0.22)
                       : Colors.green.withOpacity(0.20),
@@ -179,11 +201,13 @@ class EstoqueFooter extends StatelessWidget {
                   context: context,
                   icon: Icons.output_rounded,
                   label: "Saídas",
-                  value: saidas,
+                  value: saidasText,
                   bg: isDark
                       ? Colors.orange.withOpacity(0.14)
                       : Colors.orange.withOpacity(0.08),
-                  fg: isDark ? Colors.orangeAccent.shade100 : Colors.orange.shade800,
+                  fg: isDark
+                      ? Colors.orangeAccent.shade100
+                      : Colors.orange.shade800,
                   border: isDark
                       ? Colors.orangeAccent.withOpacity(0.22)
                       : Colors.orange.withOpacity(0.20),
@@ -193,7 +217,7 @@ class EstoqueFooter extends StatelessWidget {
                   context: context,
                   icon: Icons.inventory_2_outlined,
                   label: "Total em estoque",
-                  value: total,
+                  value: totalText,
                   bg: isDark
                       ? const Color(0xFFD4AF37).withOpacity(0.12)
                       : Colors.black.withOpacity(0.04),

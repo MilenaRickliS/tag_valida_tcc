@@ -101,6 +101,11 @@ class _MovimentarEstoqueModalState extends State<MovimentarEstoqueModal> {
     return "-";
   }
 
+  String _fmtQtd(num v) {
+    if (v % 1 == 0) return v.toInt().toString();
+    return v.toStringAsFixed(3).replaceAll('.', ',');
+  }
+
   @override
   void dispose() {
     _quantidadeCtrl.dispose();
@@ -192,7 +197,7 @@ class _MovimentarEstoqueModalState extends State<MovimentarEstoqueModal> {
                         _info("Lote", _loteFormatado(), text, muted),
                         _info(
                           "Quantidade atual",
-                          e.quantidadeRestante.toString(),
+                          "${_fmtQtd(e.quantidadeRestante)} ${e.unidadeMedida}",
                           text,
                           muted,
                         ),
@@ -271,9 +276,11 @@ class _MovimentarEstoqueModalState extends State<MovimentarEstoqueModal> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _quantidadeCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                      keyboardType: TextInputType.numberWithOptions(
+                        decimal: e.unidadeMedida == 'kg',
+                      ),
                       decoration: InputDecoration(
-                        labelText: "Quantidade",
+                        labelText: "Quantidade (${e.unidadeMedida})",
                         filled: true,
                         fillColor: card,
                         border: OutlineInputBorder(
@@ -285,6 +292,9 @@ class _MovimentarEstoqueModalState extends State<MovimentarEstoqueModal> {
                         if (n == null) return "Informe uma quantidade válida";
                         if (n <= 0) {
                           return "Informe uma quantidade maior que zero";
+                        }
+                        if (e.unidadeMedida == 'un' && n % 1 != 0) {
+                          return "Quantidade em unidade deve ser inteira.";
                         }
                         return null;
                       },

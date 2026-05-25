@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 
 class KpiCard extends StatelessWidget {
   final String label;
-  final num value;
+  final String value;
   final Color bg;
   final Color fg;
 
@@ -18,8 +18,6 @@ class KpiCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final v =
-        (value % 1 == 0) ? value.toInt().toString() : value.toStringAsFixed(2);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -75,8 +73,8 @@ class KpiCard extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Text(
-                      v,
-                      maxLines: 1,
+                      value,
+                      maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
                         fontSize: isSmall ? 18 : 20,

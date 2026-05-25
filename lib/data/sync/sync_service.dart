@@ -153,6 +153,17 @@ class SyncService {
                 }
               }
             }
+
+            if (map.containsKey("unidadeMedida")) {
+              final v = (map["unidadeMedida"] ?? "un")
+                  .toString()
+                  .trim()
+                  .toLowerCase();
+
+              map["unidadeMedida"] = (v == "kg") ? "kg" : "un";
+            } else {
+              map["unidadeMedida"] = "un";
+            }
           }
 
           if (entity == "etiquetas_templates") {
@@ -185,6 +196,17 @@ class SyncService {
                   map["tabelaNutricional"] = null;
                 }
               }
+            }
+
+            if (map.containsKey("unidadeMedidaPadrao")) {
+              final v = (map["unidadeMedidaPadrao"] ?? "un")
+                  .toString()
+                  .trim()
+                  .toLowerCase();
+
+              map["unidadeMedidaPadrao"] = (v == "kg") ? "kg" : "un";
+            } else {
+              map["unidadeMedidaPadrao"] = "un";
             }
           }
           if (entity == "printer_configs") {
@@ -265,6 +287,18 @@ class SyncService {
               } catch (_) {
                 map["campos"] = [];
               }
+            }
+          }
+          if (entity == "estoque_mov") {
+            if (map.containsKey("unidadeMedida")) {
+              final v = (map["unidadeMedida"] ?? "un")
+                  .toString()
+                  .trim()
+                  .toLowerCase();
+
+              map["unidadeMedida"] = (v == "kg") ? "kg" : "un";
+            } else {
+              map["unidadeMedida"] = "un";
             }
           }
           await _col(uid, entity).doc(entityId).set(map, SetOptions(merge: true));
@@ -373,6 +407,7 @@ class SyncService {
 
         "quantidade": (d["quantidade"] as num?) ?? 1,
         "quantidadeRestante": (d["quantidadeRestante"] as num?) ?? (d["quantidade"] as num?) ?? 1,
+        "unidadeMedida":(d["unidadeMedida"] ?? "un").toString(),
         "statusEstoque": (d["statusEstoque"] ?? "ativo").toString(),
         "soldAtMs": ts(d["soldAt"])?.millisecondsSinceEpoch,
 
@@ -408,6 +443,7 @@ class SyncService {
         "etiquetaId": (d["etiquetaId"] ?? "").toString(),
         "tipo": (d["tipo"] ?? "").toString(),
         "quantidade": (d["quantidade"] as num?) ?? 0,
+        "unidadeMedida":(d["unidadeMedida"] ?? "un").toString(),
         "motivo": d["motivo"]?.toString(),
         "produtoNome": d["produtoNome"]?.toString(),
         "createdAt": ms(d["createdAt"]) ?? ms(d["createdAtMs"]) ?? 0,
@@ -443,6 +479,7 @@ class SyncService {
         "camposCustomValoresJson": jsonEncode(d["camposCustomValores"] ?? {}),
 
         "quantidadePadrao": (d["quantidadePadrao"] as num?) ?? 1,
+        "unidadeMedidaPadrao":(d["unidadeMedidaPadrao"] ?? "un").toString(),
 
         "incluirTabelaNutricional": (d["incluirTabelaNutricional"] ?? false) ? 1 : 0,
         "tabelaNutricionalJson": d["tabelaNutricional"] == null

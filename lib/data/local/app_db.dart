@@ -7,7 +7,7 @@ class AppDb {
   static final AppDb instance = AppDb._();
 
   static const _dbName = 'tag_valida.db';
-  static const _dbVersion = 19;
+  static const _dbVersion = 20;
 
   Database? _db;
 
@@ -107,6 +107,7 @@ class AppDb {
      
       quantidade REAL NOT NULL DEFAULT 1,
       quantidadeRestante REAL NOT NULL DEFAULT 1,
+      unidadeMedida TEXT NOT NULL DEFAULT 'un',
       statusEstoque TEXT NOT NULL DEFAULT 'ativo', 
       soldAtMs INTEGER,                             
 
@@ -136,6 +137,7 @@ class AppDb {
         camposCustomValoresJson TEXT NOT NULL,
 
         quantidadePadrao REAL NOT NULL DEFAULT 1,
+        unidadeMedidaPadrao TEXT NOT NULL DEFAULT 'un',
 
         incluirTabelaNutricional INTEGER NOT NULL DEFAULT 0,
         tabelaNutricionalJson TEXT,
@@ -195,7 +197,8 @@ class AppDb {
 
         etiquetaId TEXT NOT NULL,
         tipo TEXT NOT NULL,             
-        quantidade REAL NOT NULL,        
+        quantidade REAL NOT NULL, 
+        unidadeMedida TEXT NOT NULL DEFAULT 'un',       
         motivo TEXT,
         produtoNome TEXT,  
         createdAt INTEGER NOT NULL,
@@ -656,6 +659,46 @@ class AppDb {
       await db.execute(
         'CREATE INDEX IF NOT EXISTS idx_design_v2_uid_tipo ON design_etiqueta_v2_configs(uid, tipoEtiquetaId);',
       );
+    }
+
+    if (oldVersion < 20) {
+      
+      final etqCols = await db.rawQuery("PRAGMA table_info(etiquetas)");
+
+      bool hasEtqCol(String name) =>
+          etqCols.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasEtqCol("unidadeMedida")) {
+        await db.execute(
+          "ALTER TABLE etiquetas ADD COLUMN unidadeMedida TEXT NOT NULL DEFAULT 'un';",
+        );
+      }
+
+      
+      final tplCols =
+          await db.rawQuery("PRAGMA table_info(etiquetas_templates)");
+
+      bool hasTplCol(String name) =>
+          tplCols.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasTplCol("unidadeMedidaPadrao")) {
+        await db.execute(
+          "ALTER TABLE etiquetas_templates ADD COLUMN unidadeMedidaPadrao TEXT NOT NULL DEFAULT 'un';",
+        );
+      }
+
+      
+      final movCols =
+          await db.rawQuery("PRAGMA table_info(estoque_mov)");
+
+      bool hasMovCol(String name) =>
+          movCols.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasMovCol("unidadeMedida")) {
+        await db.execute(
+          "ALTER TABLE estoque_mov ADD COLUMN unidadeMedida TEXT NOT NULL DEFAULT 'un';",
+        );
+      }
     }
   }
 }

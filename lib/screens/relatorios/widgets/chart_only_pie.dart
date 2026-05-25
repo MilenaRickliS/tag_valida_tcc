@@ -7,15 +7,30 @@ import 'package:fl_chart/fl_chart.dart';
 
 class ChartOnlyPie extends StatelessWidget {
   final List<EstoqueMovModel> movs;
-  const ChartOnlyPie({super.key, required this.movs});
+  final String unidade;
+
+  const ChartOnlyPie({
+    super.key,
+    required this.movs,
+    required this.unidade,
+  });
 
   @override
   Widget build(BuildContext context) {
     final byType = <String, num>{};
+
     for (final m in movs) {
-      byType[m.tipo] = (byType[m.tipo] ?? 0) + m.quantidade;
+      final un = m.unidadeMedida.trim().isEmpty ? 'un' : m.unidadeMedida.trim();
+
+      if (un != unidade) continue;
+
+      final tipo = m.tipo.trim();
+
+      byType[tipo] = (byType[tipo] ?? 0) + m.quantidade;
     }
+
     final total = byType.values.fold<num>(0, (a, b) => a + b);
+
     final entries = byType.entries.toList()
       ..sort((a, b) => b.value.compareTo(a.value));
 
@@ -29,14 +44,15 @@ class ChartOnlyPie extends StatelessWidget {
       child: SizedBox(
         height: 260,
         child: total == 0
-            ? const Center(child: Text('Sem dados no período'))
+            ? Center(child: Text('Sem dados em $unidade no período'))
             : PieChart(
                 PieChartData(
                   sectionsSpace: 2,
                   centerSpaceRadius: 50,
                   sections: List.generate(entries.length, (i) {
                     final e = entries[i];
-                    final pct = total == 0 ? 0 : (e.value / total * 100);
+                    final pct = e.value / total * 100;
+
                     return PieChartSectionData(
                       value: e.value.toDouble(),
                       title: '${e.key}\n${pct.toStringAsFixed(0)}%',

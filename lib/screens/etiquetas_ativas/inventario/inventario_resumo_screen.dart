@@ -12,6 +12,40 @@ class InventarioResumoScreen extends StatelessWidget {
     required this.resumo,
   });
 
+  Map<String, num> agruparPorSetorUnidade() {
+    final map = <String, num>{};
+
+    for (final item in resumo.itens) {
+      final unidade = item.unidadeMedida.trim().isEmpty ? 'un' : item.unidadeMedida;
+      final chave = '${item.setorNome} • $unidade';
+
+      map[chave] = (map[chave] ?? 0) + item.quantidade;
+    }
+
+    return map;
+  }
+
+  Map<String, num> agruparPorCategoriaUnidade() {
+    final map = <String, num>{};
+
+    for (final item in resumo.itens) {
+      final unidade = item.unidadeMedida.trim().isEmpty ? 'un' : item.unidadeMedida;
+      final chave = '${item.categoriaNome} • $unidade';
+
+      map[chave] = (map[chave] ?? 0) + item.quantidade;
+    }
+
+    return map;
+  }
+
+  String fmtQtd(num v, String un) {
+    final txt = v % 1 == 0
+        ? v.toInt().toString()
+        : v.toStringAsFixed(3).replaceAll('.', ',');
+
+    return '$txt $un';
+  }
+
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -24,11 +58,11 @@ class InventarioResumoScreen extends StatelessWidget {
         : Colors.black.withOpacity(0.08);
     final accent = isDark ? const Color(0xFFD4AF37) : const Color(0xFFED7227);
 
-    final setoresOrdenados = resumo.totalPorSetor.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final setoresOrdenados = agruparPorSetorUnidade().entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key)); 
 
-    final categoriasOrdenadas = resumo.totalPorCategoria.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final categoriasOrdenadas = agruparPorCategoriaUnidade().entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
     
     final produtosConsolidados = <String, Map<String, dynamic>>{};
 
@@ -36,7 +70,8 @@ class InventarioResumoScreen extends StatelessWidget {
       final chave =
           '${item.produtoNome.trim().toLowerCase()}|'
           '${item.categoriaNome.trim().toLowerCase()}|'
-          '${item.setorNome.trim().toLowerCase()}';
+          '${item.setorNome.trim().toLowerCase()}|'
+          '${item.unidadeMedida}';
 
       if (produtosConsolidados.containsKey(chave)) {
         produtosConsolidados[chave]!['quantidade'] += item.quantidade;
@@ -47,6 +82,7 @@ class InventarioResumoScreen extends StatelessWidget {
           'categoria': item.categoriaNome,
           'setor': item.setorNome,
           'quantidade': item.quantidade,
+          'unidadeMedida': item.unidadeMedida,
           'etiquetas': 1,
         };
       }
@@ -218,7 +254,9 @@ class InventarioResumoScreen extends StatelessWidget {
                     Expanded(
                       child: _miniCard(
                         label: "Itens",
-                        value: resumo.totalItens.toString(),
+                        value: resumo.totalPorUnidade.entries
+                          .map((e) => fmtQtd(e.value, e.key))
+                          .join(' • '),
                         icon: Icons.inventory_2_rounded,
                         isDark: isDark,
                         accent: accent,
@@ -272,7 +310,7 @@ class InventarioResumoScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            e.value.toString(),
+                            fmtQtd(e.value, e.key.split(' • ').last),
                             style: TextStyle(
                               color: accent,
                               fontWeight: FontWeight.w900,
@@ -327,7 +365,7 @@ class InventarioResumoScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(999),
                           ),
                           child: Text(
-                            e.value.toString(),
+                            fmtQtd(e.value, e.key.split(' • ').last),
                             style: TextStyle(
                               color: accent,
                               fontWeight: FontWeight.w900,
@@ -437,7 +475,8 @@ class InventarioResumoScreen extends StatelessWidget {
                                     borderRadius: BorderRadius.circular(999),
                                   ),
                                   child: Text(
-                                    "${item['etiquetas']} etiquetas • ${item['quantidade']} itens",
+                                   "${item['etiquetas']} etiquetas • "
+                                   "${fmtQtd(item['quantidade'], item['unidadeMedida'])}",
                                     style: TextStyle(
                                       color: accent,
                                       fontWeight: FontWeight.w800,

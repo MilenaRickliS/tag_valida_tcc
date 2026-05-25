@@ -17,7 +17,7 @@ class ChartOnlyBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         border: Border.all(color: const Color(0xFFE7D8C2)),
       ),
-      child: SizedBox(height: 260, child: TopSoldBarChart(movs: movs)),
+      child: SizedBox(height: 260, child: TopSoldBarChart(movs: movs, unidade: 'un',)),
     );
   }
 }

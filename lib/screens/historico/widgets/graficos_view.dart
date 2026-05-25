@@ -7,22 +7,44 @@ import 'bar_chart.dart';
 import 'tipo_chip.dart';
 
 class MovStats {
-  final Map<String, double> byTipo;
+  final Map<String, double> byTipoUn;
+  final Map<String, double> byTipoKg;
   final Map<String, int> byDay;
 
-  MovStats({required this.byTipo, required this.byDay});
+  MovStats({
+    required this.byTipoUn,
+    required this.byTipoKg,
+    required this.byDay,
+  });
 
   static MovStats fromMovs(List<EstoqueMovModel> all) {
-    final tipo = <String, double>{};
+    final tipoUn = <String, double>{};
+    final tipoKg = <String, double>{};
     final day = <String, int>{};
 
     String two(int v) => v.toString().padLeft(2, '0');
     String dayKey(DateTime d) => "${two(d.day)}/${two(d.month)}";
 
     for (final m in all) {
-      tipo[m.tipo] = (tipo[m.tipo] ?? 0) + (m.quantidade.toDouble());
+      final unidade = m.unidadeMedida.trim().isEmpty ? 'un' : m.unidadeMedida;
       final k = dayKey(m.createdAt);
+
       day[k] = (day[k] ?? 0) + 1;
+
+      if (unidade == 'kg') {
+        tipoKg[m.tipo] = (tipoKg[m.tipo] ?? 0) + m.quantidade.toDouble();
+      } else {
+        tipoUn[m.tipo] = (tipoUn[m.tipo] ?? 0) + m.quantidade.toDouble();
+      }
+    }
+
+    Map<String, double> sortMap(Map<String, double> map) {
+      final keys = map.keys.toList()
+        ..sort((a, b) => (map[b] ?? 0).compareTo(map[a] ?? 0));
+
+      return {
+        for (final k in keys) k: map[k]!,
+      };
     }
 
     final sortedDayKeys = day.keys.toList()
@@ -37,19 +59,15 @@ class MovStats {
         return toNum(a).compareTo(toNum(b));
       });
 
-    final daySorted = <String, int>{};
-    for (final k in sortedDayKeys) {
-      daySorted[k] = day[k]!;
-    }
+    final daySorted = {
+      for (final k in sortedDayKeys) k: day[k]!,
+    };
 
-    final tipoKeys = tipo.keys.toList()
-      ..sort((a, b) => (tipo[b] ?? 0).compareTo(tipo[a] ?? 0));
-    final tipoSorted = <String, double>{};
-    for (final k in tipoKeys) {
-      tipoSorted[k] = tipo[k]!;
-    }
-
-    return MovStats(byTipo: tipoSorted, byDay: daySorted);
+    return MovStats(
+      byTipoUn: sortMap(tipoUn),
+      byTipoKg: sortMap(tipoKg),
+      byDay: daySorted,
+    );
   }
 }
 
@@ -68,10 +86,10 @@ class GraficosView extends StatelessWidget {
 
           final cards = <Widget>[
             ChartCard(
-              title: "Volume por tipo",
-              subtitle: "Soma das quantidades por categoria.",
+              title: "Volume por tipo (un)",
+              subtitle: "Soma das quantidades em unidade.",
               child: BarChart(
-                items: stats.byTipo.entries
+                items: stats.byTipoUn.entries
                     .map((e) => BarItem(
                           label: e.key,
                           value: e.value,
@@ -80,6 +98,21 @@ class GraficosView extends StatelessWidget {
                     .toList(),
               ),
             ),
+
+            ChartCard(
+              title: "Volume por tipo (kg)",
+              subtitle: "Soma das quantidades em quilos.",
+              child: BarChart(
+                items: stats.byTipoKg.entries
+                    .map((e) => BarItem(
+                          label: e.key,
+                          value: e.value,
+                          color: TipoColors.fg(e.key),
+                        ))
+                    .toList(),
+              ),
+            ),
+
             ChartCard(
               title: "Movimentações por dia",
               subtitle: "Quantidade de registros por data.",
@@ -110,6 +143,8 @@ class GraficosView extends StatelessWidget {
               Expanded(child: cards[0]),
               const SizedBox(width: 12),
               Expanded(child: cards[1]),
+              const SizedBox(width: 12),
+              Expanded(child: cards[2]),
             ],
           );
         },

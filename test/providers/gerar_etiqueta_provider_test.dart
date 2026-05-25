@@ -55,6 +55,7 @@ void main() {
           uid: any(named: 'uid'),
           etiquetaId: any(named: 'etiquetaId'),
           quantidade: any(named: 'quantidade'),
+          unidadeMedida: any(named: 'unidadeMedida'),
           produtoNome: any(named: 'produtoNome'),
           motivo: any(named: 'motivo'),
         )).thenAnswer((_) async {});
@@ -107,6 +108,7 @@ void main() {
           uid: 'user1',
           etiquetaId: any(named: 'etiquetaId'),
           quantidade: 10,
+          unidadeMedida: 'un',
           produtoNome: 'Pão francês',
           motivo: 'Criação da etiqueta',
         )).called(1);

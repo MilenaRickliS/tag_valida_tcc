@@ -240,7 +240,7 @@ String getValorExemploV2(CampoDesignEtiquetaV2Model campo) {
     case 'setor':
       return 'Produção';
     case 'quantidade':
-      return '20';
+      return '2,500 kg';
     case 'lote':
       return 'A2D3FD20';
     case 'observacao':

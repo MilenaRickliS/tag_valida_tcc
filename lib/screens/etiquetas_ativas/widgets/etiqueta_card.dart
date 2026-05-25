@@ -128,10 +128,6 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
         : Colors.black.withOpacity(0.07);
     final text = isDark ? Colors.white : const Color(0xFF2B2B2B);
     final muted = isDark ? const Color(0xFFD6D6D6) : Colors.black.withOpacity(0.60);
-    final neutralIconBg = isDark
-        ? const Color(0xFFD4AF37).withOpacity(0.12)
-        : Colors.black.withOpacity(0.08);
-    final neutralIconColor = isDark ? const Color(0xFFD4AF37) : Colors.black87;
     final etiquetasProv = context.read<GerarEtiquetaProvider>();
 
     final produto = e.produtoNome;
@@ -177,29 +173,30 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: vencida
-                        ? Colors.red.withOpacity(0.12)
-                        : alerta
-                            ? const Color.fromARGB(255, 255, 123, 0).withOpacity(0.12)
-                            : neutralIconBg,
-                    borderRadius: BorderRadius.circular(12),
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      color: vencida
+                          ? Colors.red.withOpacity(0.12)
+                          : alerta
+                              ? const Color.fromARGB(255, 255, 123, 0)
+                                  .withOpacity(0.12)
+                              : Colors.green.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Icon(
+                      vencida
+                          ? Icons.warning_amber_rounded
+                          : alerta
+                              ? Icons.notification_important_outlined
+                              : Icons.check_circle_outline_rounded,
+                      color: vencida
+                          ? Colors.red
+                          : alerta
+                              ? Colors.orange
+                              : Colors.green,
+                    ),
                   ),
-                  child: Icon(
-                    vencida
-                        ? Icons.warning_amber_rounded
-                        : alerta
-                            ? Icons.notification_important_outlined
-                            : Icons.local_offer_outlined,
-                    color: vencida
-                      ? Colors.red
-                      : alerta
-                          ? Colors.orange
-                          : neutralIconColor,
-                  ),
-                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -227,12 +224,18 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
                           MiniPill(
                             icon: Icons.calendar_month_outlined,
                             text: "Fab: ${_fmtDate(fab)}",
+                            info: true,
                           ),
                           MiniPill(
                             icon: Icons.event_available_outlined,
                             text: "Val: ${_fmtDate(val)}",
                             danger: vencida,
                             warn: alerta,
+                            success: !vencida && !alerta,
+                          ),
+                          MiniPill(
+                            icon: Icons.inventory_2_outlined,
+                            text: "Estoque: ${_fmtQtd(e.quantidadeRestante, e.unidadeMedida)}",
                           ),
                         ],
                       ),
@@ -309,6 +312,7 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
                   etiquetaId: before.id,
                   quantidade: rest,
                   produtoNome: before.produtoNome,
+                  unidadeMedida: before.unidadeMedida,
                   motivo: "Exclusão da etiqueta (removeu do estoque)",
                 );
               }
@@ -317,6 +321,8 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
                 uid: uid,
                 etiquetaId: before.id,
                 produtoNome: before.produtoNome,
+                quantidade: before.quantidadeRestante,
+                unidadeMedida: before.unidadeMedida,
                 motivo: "Exclusão suave (tela de ativas)",
               );
 
@@ -369,6 +375,14 @@ Future<bool> _confirmDeleteEtiqueta(BuildContext context, String produtoNome) as
     final mm = d.month.toString().padLeft(2, "0");
     final yy = d.year.toString();
     return "$dd/$mm/$yy";
+  }
+
+  String _fmtQtd(num v, String un) {
+    final txt = v % 1 == 0
+        ? v.toInt().toString()
+        : v.toStringAsFixed(3).replaceAll('.', ',');
+
+    return '$txt $un';
   }
 }
 

@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import '../../../models/estoque_mov_model.dart';
 import './top_sold_bar_chart.dart';
 import './section_card.dart';
-import 'package:fl_chart/fl_chart.dart';
+import './chart_only_pie.dart';
 
 
 class ChartsRow extends StatelessWidget {
@@ -12,7 +12,8 @@ class ChartsRow extends StatelessWidget {
   final GlobalKey barKey;
   final List<EstoqueMovModel> movs;
 
-  const ChartsRow({super.key, 
+  const ChartsRow({
+    super.key,
     required this.pieKey,
     required this.barKey,
     required this.movs,
@@ -20,72 +21,88 @@ class ChartsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final byType = <String, num>{};
-    for (final m in movs) {
-      byType[m.tipo] = (byType[m.tipo] ?? 0) + m.quantidade;
-    }
-
-    final total = byType.values.fold<num>(0, (a, b) => a + b);
-    final entries = byType.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-
     return LayoutBuilder(
       builder: (context, c) {
         final isNarrow = c.maxWidth < 900;
 
-        final pieCard = SectionCard(
-          title: 'Distribuição por tipo',
+        final pieUnCard = SectionCard(
+          title: 'Distribuição por tipo (un)',
           child: RepaintBoundary(
             key: pieKey,
-            child: SizedBox(
-              height: 240,
-              child: total == 0
-                  ? const Center(child: Text('Sem dados no período'))
-                  : PieChart(
-                      PieChartData(
-                        sectionsSpace: 2,
-                        centerSpaceRadius: 48,
-                        sections: List.generate(entries.length, (i) {
-                          final e = entries[i];
-                          final pct = total == 0 ? 0 : (e.value / total * 100);
-                          final color = RelatorioCores.solid(e.key);
-                          return PieChartSectionData(
-                            value: e.value.toDouble(),
-                            title: '${e.key}\n${pct.toStringAsFixed(0)}%',
-                            radius: 78,
-                            color: color,
-                            titleStyle: const TextStyle(
-                              fontSize: 11,
-                              fontWeight: FontWeight.w900,
-                              color: Colors.white,
-                            ),
-                          );
-                        }),
-                      ),
-                    ),
+            child: ChartOnlyPie(
+              movs: movs,
+              unidade: 'un',
             ),
           ),
         );
 
-        final barCard = SectionCard(
-          title: 'Top vendidos (barras)',
+        final pieKgCard = SectionCard(
+          title: 'Distribuição por tipo (kg)',
+          child: ChartOnlyPie(
+            movs: movs,
+            unidade: 'kg',
+          ),
+        );
+
+        final barUnCard = SectionCard(
+          title: 'Top vendidos (un)',
           child: RepaintBoundary(
             key: barKey,
-            child: SizedBox(height: 240, child: TopSoldBarChart(movs: movs)),
+            child: SizedBox(
+              height: 240,
+              child: TopSoldBarChart(
+                movs: movs,
+                unidade: 'un',
+              ),
+            ),
+          ),
+        );
+
+        final barKgCard = SectionCard(
+          title: 'Top vendidos (kg)',
+          child: SizedBox(
+            height: 240,
+            child: TopSoldBarChart(
+              movs: movs,
+              unidade: 'kg',
+            ),
           ),
         );
 
         if (isNarrow) {
           return Column(
-            children: [pieCard, const SizedBox(height: 12), barCard],
+            children: [
+              pieUnCard,
+              const SizedBox(height: 12),
+              pieKgCard,
+              const SizedBox(height: 12),
+              barUnCard,
+              const SizedBox(height: 12),
+
+              barKgCard,
+            ],
           );
         }
 
-        return Row(
+        return Column(
           children: [
-            Expanded(child: pieCard),
-            const SizedBox(width: 12),
-            Expanded(child: barCard),
+             Row(
+                children: [
+                  Expanded(child: pieUnCard),
+                  const SizedBox(width: 12),
+                  Expanded(child: pieKgCard),
+                ],
+              ),
+
+              const SizedBox(height: 12),
+
+              Row(
+                children: [
+                  Expanded(child: barUnCard),
+                  const SizedBox(width: 12),
+                  Expanded(child: barKgCard),
+                ],
+              ),
           ],
         );
       },
@@ -118,6 +135,7 @@ class RelatorioCores {
         return Colors.black.withOpacity(0.06);
     }
   }
+
 
   static Color fg(String tipo) {
     switch (tipo) {

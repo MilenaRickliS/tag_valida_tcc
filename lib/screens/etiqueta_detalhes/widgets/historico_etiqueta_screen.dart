@@ -237,6 +237,11 @@ class _TimelineCard extends StatelessWidget {
     return DateFormat("dd/MM/yyyy • HH:mm").format(d);
   }
 
+  String fmtNum(num v) {
+    if (v % 1 == 0) return v.toInt().toString();
+    return v.toStringAsFixed(3).replaceAll('.', ',');
+  }
+
   @override
   Widget build(BuildContext context) {
     final color = _acaoColor(mov.tipo);
@@ -292,7 +297,7 @@ class _TimelineCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(999),
                       ),
                       child: Text(
-                        mov.quantidade.toString(),
+                        '${fmtNum(mov.quantidade)} ${mov.unidadeMedida}',
                         style: TextStyle(
                           color: color,
                           fontWeight: FontWeight.w900,

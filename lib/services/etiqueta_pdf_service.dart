@@ -13,6 +13,18 @@ class EtiquetaPdfService {
     return v.toStringAsFixed(2).replaceAll(".", ",");
   }
 
+  static String _fmtQtd(num v, String unidade) {
+    if (unidade == 'kg') {
+      return "${v.toStringAsFixed(3).replaceAll(".", ",")} kg";
+    }
+
+    if (v % 1 == 0) {
+      return "${v.toInt()} un";
+    }
+
+    return "${_fmtNum(v)} un";
+  }
+
   static DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
 
   static int _daysToExpire(DateTime validade) {
@@ -746,6 +758,7 @@ static String _formatarCampoCustomPdf(Map<String, dynamic> obj) {
                 pw.SizedBox(height: 16),
                 _pdfLinha("Categoria", e.categoriaNome),
                 _pdfLinha("Setor", e.setorNome),
+                _pdfLinha("Unidade de medida", e.unidadeMedida.toUpperCase()),
                 _pdfLinha("Fabricação", _df.format(e.dataFabricacao)),
                 _pdfLinha(
                   "Validade",
@@ -756,11 +769,11 @@ static String _formatarCampoCustomPdf(Map<String, dynamic> obj) {
                 pw.SizedBox(height: 14),
                 pw.Row(
                   children: [
-                    pw.Expanded(child: _metricCard("Qtd", _fmtNum(qtd))),
+                    pw.Expanded(child: _metricCard("Qtd", _fmtQtd(qtd, e.unidadeMedida))),
                     pw.SizedBox(width: 8),
-                    pw.Expanded(child: _metricCard("Saídas", _fmtNum(saidas))),
+                    pw.Expanded(child: _metricCard("Saídas", _fmtQtd(saidas, e.unidadeMedida))),
                     pw.SizedBox(width: 8),
-                    pw.Expanded(child: _metricCard("Restante", _fmtNum(restanteView))),
+                    pw.Expanded(child: _metricCard("Restante", _fmtQtd(restanteView, e.unidadeMedida))),
                   ],
                 ),
                 if (customWidgets.isNotEmpty) ...[

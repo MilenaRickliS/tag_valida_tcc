@@ -33,6 +33,7 @@ void main() {
             loteFormatado: null,
             lotePrefixo: null,
             quantidade: '10',
+            unidadeMedida: 'un',
             saidas: '0',
             restante: '10',
             customSemLote: const {},

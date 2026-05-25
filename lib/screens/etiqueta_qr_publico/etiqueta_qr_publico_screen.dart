@@ -653,6 +653,7 @@ class EtiquetaPublicaScreen extends StatelessWidget {
                             quantidade: "",
                             saidas: "",
                             restante: "",
+                            unidadeMedida: etiqueta.unidadeMedida,
 
                             customSemLote: customSemLote,
                             incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,

@@ -16,6 +16,7 @@ class InventarioItemLido {
   final String setorNome;
   final String categoriaNome;
   final num quantidade;
+  final String unidadeMedida;
 
   const InventarioItemLido({
     required this.etiquetaId,
@@ -23,6 +24,7 @@ class InventarioItemLido {
     required this.setorNome,
     required this.categoriaNome,
     required this.quantidade,
+    required this.unidadeMedida,
   });
 }
 
@@ -31,6 +33,9 @@ class InventarioResumo {
   final num totalItens;
   final Map<String, num> totalPorSetor;
   final Map<String, num> totalPorCategoria;
+  final Map<String, num> totalPorUnidade;
+  final Map<String, num> totalPorSetorUnidade;
+  final Map<String, num> totalPorCategoriaUnidade;
   final List<InventarioItemLido> itens;
 
   const InventarioResumo({
@@ -38,6 +43,9 @@ class InventarioResumo {
     required this.totalItens,
     required this.totalPorSetor,
     required this.totalPorCategoria,
+    required this.totalPorUnidade,
+    required this.totalPorCategoriaUnidade,
+    required this.totalPorSetorUnidade,
     required this.itens,
   });
 }
@@ -112,6 +120,19 @@ class _ScannerInventarioScreenState extends State<ScannerInventarioScreen> {
       await _player.play(AssetSource('sounds/beep.mp3'));
     } catch (_) {}
   }
+  Future<void> _erroSound() async {
+    try {
+      await _player.play(AssetSource('sounds/error.mp3'));
+    } catch (_) {}
+  }
+
+  String fmtQtd(num v, String un) {
+    final txt = v % 1 == 0
+        ? v.toInt().toString()
+        : v.toStringAsFixed(3).replaceAll('.', ',');
+
+    return '$txt $un';
+  }
 
   Future<void> _processarQr(String raw) async {
     if (_loading) return;
@@ -156,6 +177,7 @@ class _ScannerInventarioScreenState extends State<ScannerInventarioScreen> {
             ? "Sem categoria"
             : etiqueta.categoriaNome,
         quantidade: etiqueta.quantidadeRestante,
+        unidadeMedida: etiqueta.unidadeMedida,
       );
 
       setState(() {
@@ -164,8 +186,9 @@ class _ScannerInventarioScreenState extends State<ScannerInventarioScreen> {
 
       await _bip();
 
-     _mostrarMensagem("${item.produtoNome} adicionado (${item.quantidade}).");
+     _mostrarMensagem("${item.produtoNome} adicionado (${fmtQtd(item.quantidade, item.unidadeMedida)}).");
     } catch (e) {
+        await _erroSound();
         String mensagem = "QR inválido para inventário.";
 
         final erro = e.toString();
@@ -195,13 +218,33 @@ class _ScannerInventarioScreenState extends State<ScannerInventarioScreen> {
 
     final Map<String, num> porSetor = {};
     final Map<String, num> porCategoria = {};
+    final Map<String, num> porUnidade = {};
     num total = 0;
 
+    final Map<String, num> porSetorUnidade = {};
+    final Map<String, num> porCategoriaUnidade = {};
+
     for (final item in itens) {
+      final unidade = item.unidadeMedida.trim().isEmpty ? 'un' : item.unidadeMedida;
+
+      final chaveSetor = '${item.setorNome}||$unidade';
+      final chaveCategoria = '${item.categoriaNome}||$unidade';
       total += item.quantidade;
-      porSetor[item.setorNome] = (porSetor[item.setorNome] ?? 0) + item.quantidade;
+
+      porSetor[item.setorNome] =
+          (porSetor[item.setorNome] ?? 0) + item.quantidade;
+
       porCategoria[item.categoriaNome] =
           (porCategoria[item.categoriaNome] ?? 0) + item.quantidade;
+
+      porUnidade[unidade] =
+          (porUnidade[unidade] ?? 0) + item.quantidade;
+
+      porSetorUnidade[chaveSetor] =
+          (porSetorUnidade[chaveSetor] ?? 0) + item.quantidade;
+
+      porCategoriaUnidade[chaveCategoria] =
+          (porCategoriaUnidade[chaveCategoria] ?? 0) + item.quantidade;
     }
 
     return InventarioResumo(
@@ -209,6 +252,9 @@ class _ScannerInventarioScreenState extends State<ScannerInventarioScreen> {
       totalItens: total,
       totalPorSetor: porSetor,
       totalPorCategoria: porCategoria,
+      totalPorUnidade: porUnidade,
+      totalPorSetorUnidade: porSetorUnidade,
+      totalPorCategoriaUnidade: porCategoriaUnidade,
       itens: itens,
     );
   }
@@ -433,7 +479,7 @@ class _ScannerInventarioScreenState extends State<ScannerInventarioScreen> {
                               ),
                               const SizedBox(width: 10),
                               Text(
-                                item.quantidade.toString(),
+                                fmtQtd(item.quantidade, item.unidadeMedida),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.w900,

@@ -160,16 +160,17 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
         ? "Período: Todos"
         : "Período: ${_fmtDateOnly(periodo.start)} a ${_fmtDateOnly(periodo.end)}";
     final filtroTipo = "Tipo: ${tipo ?? "Todos"}";
-    final filtroBusca = "Busca: ${query.trim().isEmpty ? "—" : query.trim()}";
+    final filtroBusca = "Busca: ${query.trim().isEmpty ? "-" : query.trim()}";
 
     final tableData = <List<String>>[
-      ["Data", "Tipo", "Produto", "Qtd", "Motivo", "EtiquetaId"],
+      ["Data", "Tipo", "Produto", "Qtd", "Un", "Motivo", "EtiquetaId"],
       ...all.map((m) {
         return [
           _fmtDt(m.createdAt),
           m.tipo,
           (m.produtoNome ?? "--"),
           _fmtNum(m.quantidade),
+          m.unidadeMedida,
           (m.motivo ?? ""),
           m.etiquetaId,
         ];
@@ -220,11 +221,12 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
             style: pw.TextStyle(fontSize: 13, fontWeight: pw.FontWeight.bold),
           ),
           pw.SizedBox(height: 8),
+
           _pdfChartCard(
-            title: "Volume por tipo",
-            subtitle: "Soma das quantidades por categoria.",
+            title: "Volume por tipo (un)",
+            subtitle: "Soma das quantidades em unidade.",
             child: _pdfBars(
-              items: stats.byTipo.entries.map((e) {
+              items: stats.byTipoUn.entries.map((e) {
                 return _PdfBarItem(
                   label: e.key,
                   value: e.value,
@@ -233,7 +235,25 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
               }).toList(),
             ),
           ),
+
           pw.SizedBox(height: 10),
+
+          _pdfChartCard(
+            title: "Volume por tipo (kg)",
+            subtitle: "Soma das quantidades em quilos.",
+            child: _pdfBars(
+              items: stats.byTipoKg.entries.map((e) {
+                return _PdfBarItem(
+                  label: e.key,
+                  value: e.value,
+                  color: _TipoColorsPdf.fg(e.key),
+                );
+              }).toList(),
+            ),
+          ),
+
+          pw.SizedBox(height: 10),
+
           _pdfChartCard(
             title: "Movimentações por dia",
             subtitle: "Quantidade de registros por data.",
@@ -247,6 +267,7 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
               }).toList(),
             ),
           ),
+
           pw.SizedBox(height: 16),
           pw.Text(
             "Dados",
@@ -413,6 +434,45 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                   final resumo = resumoSnap.data;
                   final stats = MovStats.fromMovs(all);
 
+                  final entradasPorUnidade = <String, num>{};
+                  final saidasPorUnidade = <String, num>{};
+                  final totalPorUnidade = <String, num>{};
+
+                  for (final m in all) {
+                    final un = m.unidadeMedida.trim().isEmpty
+                        ? 'un'
+                        : m.unidadeMedida;
+
+                    final qtd = m.quantidade;
+
+                    final isEntrada =
+                        m.tipo == EstoqueMovModel.tipoEntrada ||
+                        m.tipo == EstoqueMovModel.tipoAjusteEntrada;
+
+                    final isSaida =
+                        m.tipo == EstoqueMovModel.tipoVenda ||
+                        m.tipo == EstoqueMovModel.tipoCancelamento ||
+                        m.tipo == EstoqueMovModel.tipoUso ||
+                        m.tipo == EstoqueMovModel.tipoDescarte ||
+                        m.tipo == EstoqueMovModel.tipoAjusteSaida;
+
+                    if (isEntrada) {
+                      entradasPorUnidade[un] =
+                          (entradasPorUnidade[un] ?? 0) + qtd;
+
+                      totalPorUnidade[un] =
+                          (totalPorUnidade[un] ?? 0) + qtd;
+                    }
+
+                    if (isSaida) {
+                      saidasPorUnidade[un] =
+                          (saidasPorUnidade[un] ?? 0) + qtd;
+
+                      totalPorUnidade[un] =
+                          (totalPorUnidade[un] ?? 0) - qtd;
+                    }
+                  }
+
                   return LayoutBuilder(
                     builder: (context, constraints) {
                       final footerH = (resumo != null) ? 92.0 : 0.0;
@@ -525,9 +585,9 @@ class _HistoricoScreenState extends State<HistoricoScreen> {
                               child: Padding(
                                 padding: const EdgeInsets.fromLTRB(18, 10, 18, 18),
                                 child: EstoqueFooter(
-                                  entradas: resumo.entradas,
-                                  saidas: resumo.saidasVenda + resumo.saidasCancelamento,
-                                  total: resumo.saldo,
+                                  entradasPorUnidade: entradasPorUnidade,
+                                  saidasPorUnidade: saidasPorUnidade,
+                                  totalPorUnidade: totalPorUnidade,
                                 ),
                               ),
                             ),

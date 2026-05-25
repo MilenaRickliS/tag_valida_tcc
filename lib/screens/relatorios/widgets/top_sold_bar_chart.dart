@@ -6,7 +6,8 @@ import 'package:fl_chart/fl_chart.dart';
 
 class TopSoldBarChart extends StatelessWidget {
   final List<EstoqueMovModel> movs;
-  const TopSoldBarChart({super.key, required this.movs});
+  final String unidade;
+  const TopSoldBarChart({super.key, required this.movs, required this.unidade,});
 
   @override
   Widget build(BuildContext context) {
@@ -15,6 +16,7 @@ class TopSoldBarChart extends StatelessWidget {
     final map = <String, num>{};
     for (final m in movs) {
       if (m.tipo != EstoqueMovModel.tipoVenda) continue;
+      if (m.unidadeMedida != unidade) continue;
       final name = (m.produtoNome?.trim().isNotEmpty ?? false)
           ? m.produtoNome!.trim()
           : 'Sem nome';
@@ -22,7 +24,7 @@ class TopSoldBarChart extends StatelessWidget {
     }
 
     final list = map.entries.toList()..sort((a, b) => b.value.compareTo(a.value));
-    final top = list.take(6).toList();
+    final top = list.take(5).toList();
 
     if (top.isEmpty) {
       return const Center(child: Text('Sem vendas no período'));
@@ -44,13 +46,20 @@ class TopSoldBarChart extends StatelessWidget {
           leftTitles: AxisTitles(
             sideTitles: SideTitles(
               showTitles: true,
-              reservedSize: 34,
+              reservedSize: 54,
               getTitlesWidget: (value, meta) {
+                final txt = unidade == 'kg'
+                    ? '${value.toStringAsFixed(1)} kg'
+                    : '${value.toInt()} un';
+
                 return Text(
-                  value.toInt().toString(),
+                  txt,
+                  maxLines: 1,
+                  overflow: TextOverflow.visible,
+                  softWrap: false,
                   style: TextStyle(
                     color: axisColor,
-                    fontSize: 11,
+                    fontSize: 10,
                     fontWeight: FontWeight.w700,
                   ),
                 );

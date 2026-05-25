@@ -28,6 +28,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
 
   final quantidadeCtrl = TextEditingController(text: "1"); 
+  String unidadeMedida = 'un';
 
   final Map<String, Map<String, dynamic>> camposValores = {};
   bool saving = false;
@@ -87,6 +88,22 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
 
   void setQuantidadeText(String v) {
     quantidadeCtrl.text = v;
+    notifyListeners();
+  }
+
+  void setUnidadeMedida(String value) {
+    unidadeMedida = value == 'kg' ? 'kg' : 'un';
+
+    if (unidadeMedida == 'un') {
+      final n = num.tryParse(
+        quantidadeCtrl.text.replaceAll(',', '.'),
+      );
+
+      if (n != null) {
+        quantidadeCtrl.text = n.toInt().toString();
+      }
+    }
+
     notifyListeners();
   }
 
@@ -164,6 +181,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     produtoCtrl.clear();
 
     quantidadeCtrl.text = "1";
+    unidadeMedida = 'un';
 
     editingStatusEstoque = "ativo";
 
@@ -193,9 +211,22 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
   }
 
   num _parseQtdOrThrow() {
-    final raw = quantidadeCtrl.text.trim().replaceAll(",", ".");
+    final raw = quantidadeCtrl.text
+        .trim()
+        .replaceAll(",", ".");
+
     final v = num.tryParse(raw);
-    if (v == null || v <= 0) throw Exception("Quantidade inválida.");
+
+    if (v == null || v <= 0) {
+      throw Exception("Quantidade inválida.");
+    }
+
+    if (unidadeMedida == 'un' && v % 1 != 0) {
+      throw Exception(
+        "Quantidade em unidade deve ser inteira.",
+      );
+    }
+
     return v;
   }
 
@@ -224,7 +255,8 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     editingSoldAt = e.soldAt;
 
 
-    quantidadeCtrl.text = _normalizarQuantidade(e.quantidade);
+    quantidadeCtrl.text = _normalizarQuantidade(e.quantidade, unidade: e.unidadeMedida);
+    unidadeMedida = e.unidadeMedida;
 
     incluirTabelaNutricional = e.incluirTabelaNutricional;
 
@@ -455,7 +487,9 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     final raw = quantidadeCtrl.text.trim();
     final qtd = num.tryParse(raw.replaceAll(",", "."));
     if (qtd == null || qtd <= 0) return "Informe uma quantidade válida.";
-
+    if (unidadeMedida == 'un' && qtd % 1 != 0) {
+      return "Quantidade em unidade deve ser inteira.";
+    }
     for (final c in tipoAtual.camposCustom) {
       if (c.obrigatorio) {
         final v = camposValores[c.key]?["value"];
@@ -466,23 +500,25 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
     return null;
   }
 
-  String _normalizarQuantidade(dynamic value) {
+  String _normalizarQuantidade(
+    dynamic value, {
+    String unidade = 'un',
+  }) {
     if (value == null) return '';
 
-    if (value is int) return value.toString();
-
-    if (value is double) {
-      return value % 1 == 0
-          ? value.toInt().toString()
-          : value.toString().replaceAll('.', ',');
-    }
-
     final s = value.toString().trim().replaceAll(',', '.');
+
     final n = num.tryParse(s);
 
     if (n == null) return s;
 
-    return n % 1 == 0 ? n.toInt().toString() : n.toString();
+    if (unidade == 'kg') {
+      return n
+          .toStringAsFixed(3)
+          .replaceAll('.', ',');
+    }
+
+    return n.toInt().toString();
   }
 
   Future<String> salvarEtiqueta({
@@ -524,6 +560,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       createdAt: now,
       quantidade: qtd,
       quantidadeRestante: qtd,
+      unidadeMedida: unidadeMedida,
       statusEstoque: "ativo",
       soldAt: null,
     );
@@ -552,6 +589,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       setorNome: etiqueta.setorNome,
       camposCustomValores: safeCampos,
       quantidadePadrao: etiqueta.quantidade,
+      unidadeMedidaPadrao: unidadeMedida,
       incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,
       tabelaNutricional: etiqueta.tabelaNutricional,
       createdAt: existing?.createdAt ?? DateTime.now(),
@@ -565,6 +603,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       uid: uid,
       etiquetaId: id,
       quantidade: qtd,
+      unidadeMedida: etiqueta.unidadeMedida,
       produtoNome: etiqueta.produtoNome,
       motivo: "Criação da etiqueta",
     );
@@ -620,6 +659,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
           etiquetaId: before.id,
           tipo: EstoqueMovModel.tipoAjusteEntrada,
           quantidade: voltou,
+          unidadeMedida: unidadeMedida,
           produtoNome: before.produtoNome,
           motivo: "Reativação (saindo de cancelado)",
         );
@@ -631,6 +671,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
         uid: uid,
         etiquetaId: before.id,
         quantidade: oldRest,
+        unidadeMedida: unidadeMedida,
         produtoNome: before.produtoNome,
         motivo: "Cancelado na edição",
       );
@@ -643,6 +684,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
           uid: uid,
           etiquetaId: before.id,
           quantidade: vendeu,
+          unidadeMedida: unidadeMedida,
           produtoNome: before.produtoNome,
           motivo: "Venda (na edição)",
         );
@@ -657,6 +699,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
           etiquetaId: before.id,
           tipo: EstoqueMovModel.tipoAjusteEntrada,
           quantidade: diff,
+          unidadeMedida: unidadeMedida,
           produtoNome: before.produtoNome,
           motivo: "Ajuste na edição (entrada)",
         );
@@ -666,6 +709,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
           etiquetaId: before.id,
           tipo: EstoqueMovModel.tipoAjusteSaida,
           quantidade: diff.abs(),
+          unidadeMedida: unidadeMedida,
           produtoNome: before.produtoNome,
           motivo: "Ajuste na edição (saída)",
         );
@@ -701,6 +745,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
       createdAt: before.createdAt,
       quantidade: qtdNova,
       quantidadeRestante: restNovo,
+      unidadeMedida: unidadeMedida,
       statusEstoque: statusEstoque,
       soldAt: statusEstoque == "vendido" ? (before.soldAt ?? now) : null,
     );
@@ -734,6 +779,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
         etiquetaId: etiquetaId,
         tipo: EstoqueMovModel.tipoAjusteEntrada,
         quantidade: diff,
+        unidadeMedida: before.unidadeMedida,
         produtoNome: before.produtoNome,
         motivo: "Ajuste manual (entrada)",
       );
@@ -743,6 +789,7 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
         etiquetaId: etiquetaId,
         tipo: EstoqueMovModel.tipoAjusteSaida,
         quantidade: diff.abs(),
+        unidadeMedida: before.unidadeMedida,
         produtoNome: before.produtoNome,
         motivo: "Ajuste manual (saída)",
       );
@@ -777,18 +824,43 @@ class GerarEtiquetaLocalProvider extends ChangeNotifier {
   }
 
    Future<void> reabrirEtiqueta({
-    required String uid,
-    required String etiquetaId,
-    required num quantidadeRestante,
-  }) async {
-    await repo.reabrirEtiqueta(
-      uid: uid,
-      etiquetaId: etiquetaId,
-      quantidadeRestante: quantidadeRestante,
-    );
+      required String uid,
+      required String etiquetaId,
+      required num quantidadeRestante,
+    }) async {
+      final before = await repo.getById(uid: uid, id: etiquetaId);
+      if (before == null) {
+        throw Exception("Etiqueta não encontrada.");
+      }
 
-    notifyListeners();
-  }
+      final updated = EtiquetaModel(
+        id: before.id,
+        tipoId: before.tipoId,
+        tipoNome: before.tipoNome,
+        produtoNome: before.produtoNome,
+        categoriaId: before.categoriaId,
+        categoriaNome: before.categoriaNome,
+        setorId: before.setorId,
+        setorNome: before.setorNome,
+        dataFabricacao: before.dataFabricacao,
+        dataValidade: before.dataValidade,
+        camposCustomValores: before.camposCustomValores,
+        status: "ativa",
+        lote: before.lote,
+        createdAt: before.createdAt,
+
+        quantidade: quantidadeRestante,
+        quantidadeRestante: quantidadeRestante,
+
+        unidadeMedida: before.unidadeMedida,
+        statusEstoque: "ativo",
+        soldAt: null,
+        incluirTabelaNutricional: before.incluirTabelaNutricional,
+        tabelaNutricional: before.tabelaNutricional,
+      );
+
+      await repo.upsert(uid, updated);
+    }
 
   void setQuantidadeMedida(String value) {
     quantidadeMedidaCtrl.text = value;

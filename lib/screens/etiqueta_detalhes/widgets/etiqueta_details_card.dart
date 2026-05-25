@@ -40,6 +40,7 @@ class EtiquetaDetailsCard extends StatelessWidget {
   final String quantidade;
   final String saidas;
   final String restante;
+  final String unidadeMedida;
 
   final Map<String, dynamic> customSemLote;
   final String Function(int ms) formatCustomDate;
@@ -73,6 +74,7 @@ class EtiquetaDetailsCard extends StatelessWidget {
     required this.quantidade,
     required this.saidas,
     required this.restante,
+    required this.unidadeMedida,
     required this.customSemLote,
     required this.formatCustomDate,
     required this.incluirTabelaNutricional,
@@ -353,11 +355,11 @@ class EtiquetaDetailsCard extends StatelessWidget {
           if (quantidade.isNotEmpty)
             Row(
               children: [
-                Expanded(child: _metric("Quantidade", quantidade)),
+                Expanded(child: _metric("Quantidade", "$quantidade $unidadeMedida",)),
                 const SizedBox(width: 10),
-                Expanded(child: _metric("Saídas", saidas)),
+                Expanded(child: _metric("Saídas", "$saidas $unidadeMedida")),
                 const SizedBox(width: 10),
-                Expanded(child: _metric("Restante", restante)),
+                Expanded(child: _metric("Restante", "$restante $unidadeMedida")),
               ],
             ),
 

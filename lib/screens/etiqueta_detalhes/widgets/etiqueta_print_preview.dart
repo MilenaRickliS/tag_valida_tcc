@@ -94,7 +94,7 @@ class EtiquetaPrintPreviewDesign extends StatelessWidget {
       case 'setor':
         return etiqueta.setorNome;
       case 'quantidade':
-        return _fmtNum(etiqueta.quantidadeRestante);
+        return '${_fmtNum(etiqueta.quantidadeRestante)} ${etiqueta.unidadeMedida}';
       case 'lote':
         return _buildLote();
       case 'tabela_nutricional':

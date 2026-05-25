@@ -4,6 +4,7 @@ class InventarioItemLido {
   final String setorNome;
   final String categoriaNome;
   final num quantidade;
+  final String unidadeMedida;
 
   const InventarioItemLido({
     required this.etiquetaId,
@@ -11,21 +12,32 @@ class InventarioItemLido {
     required this.setorNome,
     required this.categoriaNome,
     required this.quantidade,
+    this.unidadeMedida = 'un',
   });
 }
 
 class InventarioResumo {
   final int etiquetasLidas;
-  final num totalItens;
-  final Map<String, num> totalPorSetor;
-  final Map<String, num> totalPorCategoria;
+
+  final num totalUnidades;
+  final num totalKg;
+
+  final Map<String, num> totalUnPorSetor;
+  final Map<String, num> totalKgPorSetor;
+
+  final Map<String, num> totalUnPorCategoria;
+  final Map<String, num> totalKgPorCategoria;
+
   final List<InventarioItemLido> itens;
 
   const InventarioResumo({
     required this.etiquetasLidas,
-    required this.totalItens,
-    required this.totalPorSetor,
-    required this.totalPorCategoria,
+    required this.totalUnidades,
+    required this.totalKg,
+    required this.totalUnPorSetor,
+    required this.totalKgPorSetor,
+    required this.totalUnPorCategoria,
+    required this.totalKgPorCategoria,
     required this.itens,
   });
 }

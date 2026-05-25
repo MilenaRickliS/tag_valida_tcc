@@ -7,7 +7,13 @@ import 'package:intl/intl.dart';
 class MovList extends StatelessWidget {
   final List<EstoqueMovModel> movs;
   const MovList({super.key, required this.movs});
+  String _fmtQtd(num v, String un) {
+    final txt = v % 1 == 0
+        ? v.toInt().toString()
+        : v.toStringAsFixed(3).replaceAll('.', ',');
 
+    return '$txt $un';
+  }
   @override
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
@@ -72,9 +78,7 @@ class MovList extends StatelessWidget {
               ),
               const SizedBox(width: 10),
               Text(
-                (m.quantidade % 1 == 0)
-                    ? m.quantidade.toInt().toString()
-                    : m.quantidade.toStringAsFixed(2),
+                _fmtQtd(m.quantidade, m.unidadeMedida),
                 style: TextStyle(fontWeight: FontWeight.w900, color: fg),
               ),
             ],

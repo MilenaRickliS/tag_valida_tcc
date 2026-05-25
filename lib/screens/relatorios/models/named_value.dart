@@ -1,6 +1,11 @@
 class NamedValue {
   final String name;
   final num value;
+  final String unidadeMedida;
 
-  const NamedValue(this.name, this.value);
+  NamedValue({
+    required this.name,
+    required this.value,
+    required this.unidadeMedida,
+  });
 }

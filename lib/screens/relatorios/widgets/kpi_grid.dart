@@ -5,7 +5,7 @@ import '../../../models/estoque_mov_model.dart';
 import './kpi_card.dart';
 
 class KpiGrid extends StatelessWidget {
-  final Map<String, num> kpis;
+  final Map<String, String> kpis;
   const KpiGrid({super.key, required this.kpis});
 
   @override

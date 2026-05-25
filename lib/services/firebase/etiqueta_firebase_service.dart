@@ -41,6 +41,13 @@ class EtiquetaFirebaseService {
             Map<String, dynamic>.from(tabelaMap),
           )
         : null;
+    
+    final unidadeRaw = (data["unidadeMedida"] ?? "un")
+        .toString()
+        .trim()
+        .toLowerCase();
+
+    final unidadeMedida = unidadeRaw == "kg" ? "kg" : "un";
 
     return EtiquetaModel(
       id: doc.id,
@@ -60,6 +67,7 @@ class EtiquetaFirebaseService {
       lote: data["lote"]?.toString(),
       quantidade: (data["quantidade"] ?? 0) as num,
       quantidadeRestante: (data["quantidadeRestante"] ?? 0) as num,
+      unidadeMedida: unidadeMedida,
       statusEstoque: (data["statusEstoque"] ?? "").toString(),
       soldAt: data["soldAt"] == null ? null : dt(data["soldAt"]),
       createdAt: data["createdAt"] == null ? null : dt(data["createdAt"]),

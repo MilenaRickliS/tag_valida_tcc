@@ -24,9 +24,12 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
   Future<num?> _perguntarQuantidade(
     BuildContext context, {
     required num quantidadeInicial,
+    required String unidadeMedida,
   }) async {
     final controller = TextEditingController(
-      text: quantidadeInicial.toString().replaceAll('.0', ''),
+      text: quantidadeInicial % 1 == 0
+        ? quantidadeInicial.toInt().toString()
+        : quantidadeInicial.toStringAsFixed(3).replaceAll('.', ','),
     );
 
     return showDialog<num>(
@@ -61,11 +64,15 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
               const SizedBox(height: 14),
               TextField(
                 controller: controller,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                keyboardType: TextInputType.numberWithOptions(
+                  decimal: unidadeMedida == 'kg',
+                ),
                 autofocus: true,
                 decoration: InputDecoration(
-                  labelText: 'Quantidade',
-                  hintText: 'Ex: 10',
+                  labelText: 'Quantidade ($unidadeMedida)',
+                  hintText: unidadeMedida == 'kg'
+                      ? 'Ex: 1,250'
+                      : 'Ex: 10',
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(14),
                   ),
@@ -85,6 +92,17 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
 
                 if (qtd == null || qtd <= 0) {
                   Navigator.of(dialogContext).pop(-1);
+                  return;
+                }
+
+                if (unidadeMedida == 'un' && qtd % 1 != 0) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text(
+                        'Produtos por unidade aceitam apenas números inteiros.',
+                      ),
+                    ),
+                  );
                   return;
                 }
 
@@ -114,6 +132,7 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
     final quantidadeParaReabrir = await _perguntarQuantidade(
       context,
       quantidadeInicial: quantidadeBase,
+      unidadeMedida: etiqueta.unidadeMedida,
     );
 
     if (quantidadeParaReabrir == null) return;
@@ -143,6 +162,7 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
         etiquetaId: etiqueta.id,
         tipo: EstoqueMovModel.tipoAjusteEntrada,
         quantidade: quantidadeParaReabrir,
+        unidadeMedida: etiqueta.unidadeMedida,
         produtoNome: etiqueta.produtoNome,
         motivo: 'Reabertura da etiqueta',
       );
@@ -290,11 +310,11 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
                     children: [
                       Pill(
                         icon: Icons.numbers_outlined,
-                        text: "Qtd: ${_fmtNum(e.quantidade)}",
+                        text: "Qtd: ${_fmtQtd(e.quantidade, e.unidadeMedida)}",
                       ),
                       Pill(
                         icon: Icons.inventory_2_outlined,
-                        text: "Rest: ${_fmtNum(e.quantidadeRestante)}",
+                        text: "Rest: ${_fmtQtd(e.quantidadeRestante, e.unidadeMedida)}",
                       ),
                       Pill(
                         icon: Icons.event_available_outlined,
@@ -364,8 +384,11 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
     return "${two(d.day)}/${two(d.month)}/${d.year} ${two(d.hour)}:${two(d.minute)}";
   }
 
-  static String _fmtNum(num v) {
-    if (v == v.roundToDouble()) return v.toInt().toString();
-    return v.toStringAsFixed(2).replaceAll(".", ",");
+  static String _fmtQtd(num v, String un) {
+    final txt = v % 1 == 0
+        ? v.toInt().toString()
+        : v.toStringAsFixed(3).replaceAll(".", ",");
+
+    return "$txt $un";
   }
 }

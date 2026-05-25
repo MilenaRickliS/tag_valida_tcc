@@ -26,7 +26,8 @@ class EtiquetaModel {
   final TabelaNutricionalModel? tabelaNutricional;
 
   final num quantidade; 
-  final num quantidadeRestante; 
+  final num quantidadeRestante;
+  final String unidadeMedida; 
   final String statusEstoque; 
   final DateTime? soldAt; 
   final DateTime? createdAt;
@@ -49,6 +50,7 @@ class EtiquetaModel {
     this.tabelaNutricional,
     required this.quantidade,
     required this.quantidadeRestante,
+    this.unidadeMedida = 'un',
     required this.statusEstoque,
     this.soldAt,
     this.createdAt,
@@ -82,6 +84,7 @@ class EtiquetaModel {
         "tabelaNutricional": tabelaNutricional?.toMap(),
         "quantidade": quantidade,
         "quantidadeRestante": quantidadeRestante,
+        "unidadeMedida": unidadeMedida,
         "statusEstoque": statusEstoque,
         "soldAt": soldAt == null ? null : Timestamp.fromDate(soldAt!),
         "createdAt": FieldValue.serverTimestamp(),
@@ -105,6 +108,7 @@ class EtiquetaModel {
       TabelaNutricionalModel? tabelaNutricional,
       num? quantidade,
       num? quantidadeRestante,
+      String? unidadeMedida,
       String? statusEstoque,
       DateTime? soldAt,
       DateTime? createdAt,
@@ -136,6 +140,8 @@ class EtiquetaModel {
         tabelaNutricional: tabelaNutricional ?? this.tabelaNutricional,
         quantidade: quantidade ?? this.quantidade,
         quantidadeRestante: novoRestante,
+        unidadeMedida:
+          unidadeMedida ?? this.unidadeMedida,
         statusEstoque: novoStatusEstoque,
         soldAt: soldAt ?? this.soldAt,
         createdAt: createdAt ?? this.createdAt,

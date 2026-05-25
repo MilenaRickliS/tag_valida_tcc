@@ -51,6 +51,7 @@ class EtiquetasTemplatesLocalRepo {
         "setorNome": t.setorNome,
         "camposCustomValores": t.camposCustomValores,
         "quantidadePadrao": t.quantidadePadrao,
+        "unidadeMedidaPadrao": t.unidadeMedidaPadrao,
         "incluirTabelaNutricional": t.incluirTabelaNutricional,
         "tabelaNutricional": t.tabelaNutricional?.toMap(),
         "createdAtMs": (t.createdAt?.millisecondsSinceEpoch ?? nowMs),

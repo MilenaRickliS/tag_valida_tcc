@@ -37,6 +37,7 @@ void main() {
         uid: 'user1',
         etiquetaId: 'etiqueta1',
         quantidade: 10,
+        unidadeMedida: 'un',
         produtoNome: 'Pão francês',
       );
 
@@ -57,6 +58,7 @@ void main() {
         uid: 'user1',
         etiquetaId: 'etiqueta1',
         quantidade: 2,
+        unidadeMedida: 'un',
         produtoNome: 'Pão francês',
       );
 
@@ -75,6 +77,7 @@ void main() {
         uid: 'user1',
         etiquetaId: 'etiqueta1',
         quantidade: 5,
+        unidadeMedida: 'un',
         produtoNome: 'Pão francês',
       );
 
@@ -111,6 +114,7 @@ void main() {
         etiquetaId: 'etiqueta1',
         tipo: 'descarte',
         quantidade: 3,
+        unidadeMedida: 'kg',
         produtoNome: 'Pão francês',
         motivo: 'Produto vencido',
       );

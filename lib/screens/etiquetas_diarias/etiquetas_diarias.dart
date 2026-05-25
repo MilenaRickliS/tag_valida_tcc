@@ -209,7 +209,7 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
                         dense: true,
                         produtoNome: t.produtoNome,
                         linha2: "${t.tipoNome} • ${t.categoriaNome}",
-                        linha3: t.setorNome,
+                        linha3: "${t.setorNome} • ${t.unidadeMedidaPadrao}",
                         onTap: () {
                           Navigator.pushNamed(
                             context,
@@ -241,7 +241,7 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
                           dense: false,
                           produtoNome: t.produtoNome,
                           linha2: "${t.tipoNome} • ${t.categoriaNome}",
-                          linha3: t.setorNome,
+                          linha3: "${t.setorNome} • ${t.unidadeMedidaPadrao}",
                           onTap: () {
                             Navigator.pushNamed(
                               context,

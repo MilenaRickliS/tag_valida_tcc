@@ -177,6 +177,12 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
 
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
+        final isNovaEtiqueta =
+            widget.editarEtiquetaId == null && widget.templateId == null;
+
+        if (isNovaEtiqueta) {
+          context.read<GerarEtiquetaProvider>().resetAll();
+        }
         context.read<CategoriasProvider>().fetch(uid);
         context.read<SetoresProvider>().fetch(uid);
         context.read<TiposEtiquetaProvider>().fetch(uid);
@@ -327,6 +333,7 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
       status: "ativa",
       quantidade: t.quantidadePadrao,
       quantidadeRestante: t.quantidadePadrao,
+      unidadeMedida: t.unidadeMedidaPadrao,
       statusEstoque: "ativo",
       soldAt: null,
       createdAt: now,
@@ -700,23 +707,72 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
 
                     const SizedBox(height: 12),
 
-                    TextFormField(
-                      controller: gerar.quantidadeCtrl,
-                      style: TextStyle(color: text),
-                      keyboardType: TextInputType.number,
-                      decoration: appInputDecoration("Quantidade"),
-                      inputFormatters: [
-                        FilteringTextInputFormatter.digitsOnly,
-                        LengthLimitingTextInputFormatter(4),
+                    Row(
+                      children: [
+                        SizedBox(
+                          width: 130,
+                          child: DropdownButtonFormField<String>(
+                            value: gerar.unidadeMedida,
+                            decoration: appInputDecoration("Unidade"),
+                            dropdownColor: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+                            style: TextStyle(color: text),
+                            items: [
+                              DropdownMenuItem(
+                                value: 'un',
+                                child: Text('Unidade', style: TextStyle(color: text)),
+                              ),
+                              DropdownMenuItem(
+                                value: 'kg',
+                                child: Text('Kg', style: TextStyle(color: text)),
+                              ),
+                            ],
+                            onChanged: (v) {
+                              if (v == null) return;
+                              context.read<GerarEtiquetaProvider>().setUnidadeMedida(v);
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: gerar.quantidadeCtrl,
+                            style: TextStyle(color: text),
+                            keyboardType: TextInputType.numberWithOptions(
+                              decimal: gerar.unidadeMedida == 'kg',
+                            ),
+                            decoration: appInputDecoration(
+                              gerar.unidadeMedida == 'kg'
+                                  ? "Quantidade em kg"
+                                  : "Quantidade",
+                            ),
+                            inputFormatters: gerar.unidadeMedida == 'kg'
+                                ? [
+                                    DecimalTextInputFormatter(decimalRange: 3),
+                                    LengthLimitingTextInputFormatter(8),
+                                  ]
+                                : [
+                                    FilteringTextInputFormatter.digitsOnly,
+                                    LengthLimitingTextInputFormatter(4),
+                                  ],
+                            validator: (v) {
+                              final s = (v ?? "").trim();
+
+                              if (s.isEmpty) return "Informe a quantidade.";
+
+                              final n = num.tryParse(s.replaceAll(",", "."));
+
+                              if (n == null) return "Quantidade inválida.";
+                              if (n <= 0) return "Quantidade deve ser maior que 0.";
+
+                              if (gerar.unidadeMedida == 'un' && n % 1 != 0) {
+                                return "Quantidade em unidade deve ser inteira.";
+                              }
+
+                              return null;
+                            },
+                          ),
+                        ),
                       ],
-                      validator: (v) {
-                        final s = (v ?? "").trim();
-                        if (s.isEmpty) return "Informe a quantidade.";
-                        final n = int.tryParse(s);
-                        if (n == null) return "Quantidade inválida.";
-                        if (n <= 0) return "Quantidade deve ser maior que 0.";
-                        return null;
-                      },
                     ),
 
                     const SizedBox(height: 12),
@@ -1051,6 +1107,8 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                                       uid: uid,
                                       tipoAtual: tipoParaSalvar,
                                     );
+
+                                    prov.resetAll();
 
                                     if (!context.mounted) return;
                                     Navigator.pushReplacement(

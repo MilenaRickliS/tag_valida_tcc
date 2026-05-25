@@ -215,13 +215,25 @@ class Etiqueta100x80LayoutV2 {
     return currentY + 4;
   }
 
+  String _fmtQtd(EtiquetaModel e) {
+    if (e.unidadeMedida == 'kg') {
+      return '${e.quantidade.toStringAsFixed(3).replaceAll(".", ",")} kg';
+    }
+
+    if (e.quantidade % 1 == 0) {
+      return '${e.quantidade.toInt()} un';
+    }
+
+    return '${formatNumber(e.quantidade)} un';
+  }
+
   Map<String, String> _buildValores(EtiquetaModel e) {
     final valores = <String, String>{
       'fabricacao': DateFormat('dd/MM/yyyy').format(e.dataFabricacao),
       'validade': DateFormat('dd/MM/yyyy').format(e.dataValidade),
       'categoria': e.categoriaNome,
       'setor': e.setorNome,
-      'quantidade': formatNumber(e.quantidade),
+      'quantidade': _fmtQtd(e),
       if (e.lote != null && e.lote!.isNotEmpty) 'lote': e.lote!,
     };
 

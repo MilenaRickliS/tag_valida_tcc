@@ -23,6 +23,7 @@ extension EtiquetaTemplateLocalMapper on EtiquetaTemplateModel {
           ? null
           : jsonEncode(tabelaNutricional!.toMap()),
       "quantidadePadrao": quantidadePadrao,
+      "unidadeMedidaPadrao": unidadeMedidaPadrao,
       "createdAt": createdAt?.millisecondsSinceEpoch ?? nowMs,
       "updatedAt": nowMs,
     };
@@ -53,6 +54,11 @@ extension EtiquetaTemplateLocalMapper on EtiquetaTemplateModel {
             Map<String, dynamic>.from(jsonDecode(tabelaStr)),
           );
 
+    final unidadeRaw =
+        (m["unidadeMedidaPadrao"] ?? "un").toString().trim().toLowerCase();
+
+    final unidadeMedidaPadrao = unidadeRaw == "kg" ? "kg" : "un";
+
     return EtiquetaTemplateModel(
       id: (m["id"] ?? "").toString(),
       tipoId: (m["tipoId"] ?? "").toString(),
@@ -66,6 +72,7 @@ extension EtiquetaTemplateLocalMapper on EtiquetaTemplateModel {
       incluirTabelaNutricional: (m["incluirTabelaNutricional"] ?? 0) == 1,
       tabelaNutricional: tabela,
       quantidadePadrao: asNum(m["quantidadePadrao"], def: 1),
+      unidadeMedidaPadrao: unidadeMedidaPadrao,
       createdAt: dt(m["createdAt"]),
       updatedAt: dt(m["updatedAt"]),
     );

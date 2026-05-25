@@ -8,25 +8,63 @@ import 'package:pdf/widgets.dart' as pw;
 import 'scanner_inventario_screen.dart';
 
 class InventarioResumoPdfService {
+
+  static String fmtQtd(num v, String un) {
+    final txt = v % 1 == 0
+        ? v.toInt().toString()
+        : v.toStringAsFixed(3).replaceAll('.', ',');
+
+    return '$txt $un';
+  }
+
+  static Map<String, num> agruparPorSetorUnidade(InventarioResumo resumo) {
+    final map = <String, num>{};
+
+    for (final item in resumo.itens) {
+      final unidade = item.unidadeMedida.trim().isEmpty ? 'un' : item.unidadeMedida;
+      final chave = '${item.setorNome} - $unidade';
+
+      map[chave] = (map[chave] ?? 0) + item.quantidade;
+    }
+
+    return map;
+  }
+
+  static Map<String, num> agruparPorCategoriaUnidade(InventarioResumo resumo) {
+    final map = <String, num>{};
+
+    for (final item in resumo.itens) {
+      final unidade = item.unidadeMedida.trim().isEmpty ? 'un' : item.unidadeMedida;
+      final chave = '${item.categoriaNome} - $unidade';
+
+      map[chave] = (map[chave] ?? 0) + item.quantidade;
+    }
+
+    return map;
+  }
+
   static Future<void> abrirOuCompartilharPdf(
     BuildContext context, {
     required InventarioResumo resumo,
   }) async {
     final pdf = pw.Document();
 
-    final setoresOrdenados = resumo.totalPorSetor.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final setoresOrdenados = agruparPorSetorUnidade(resumo).entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
 
-    final categoriasOrdenadas = resumo.totalPorCategoria.entries.toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
+    final categoriasOrdenadas = agruparPorCategoriaUnidade(resumo).entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
 
     final produtosConsolidados = <String, Map<String, dynamic>>{};
 
     for (final item in resumo.itens) {
+      final unidade = item.unidadeMedida.trim().isEmpty ? 'un' : item.unidadeMedida;
+
       final chave =
           '${item.produtoNome.trim().toLowerCase()}|'
           '${item.categoriaNome.trim().toLowerCase()}|'
-          '${item.setorNome.trim().toLowerCase()}';
+          '${item.setorNome.trim().toLowerCase()}|'
+          '$unidade';
 
       if (produtosConsolidados.containsKey(chave)) {
         produtosConsolidados[chave]!['quantidade'] += item.quantidade;
@@ -37,6 +75,7 @@ class InventarioResumoPdfService {
           'categoria': item.categoriaNome,
           'setor': item.setorNome,
           'quantidade': item.quantidade,
+          'unidadeMedida': unidade,
           'etiquetas': 1,
         };
       }
@@ -139,7 +178,9 @@ class InventarioResumoPdfService {
           pw.Expanded(
             child: _miniResumo(
               titulo: "Total de itens",
-              valor: resumo.totalItens.toString(),
+              valor: resumo.totalPorUnidade.entries
+              .map((e) => fmtQtd(e.value, e.key))
+              .join(' - '),
             ),
           ),
         ],
@@ -206,7 +247,7 @@ class InventarioResumoPdfService {
               ),
               pw.SizedBox(width: 8),
               pw.Text(
-                e.value.toString(),
+                fmtQtd(e.value, e.key.split(' - ').last),
                 style: pw.TextStyle(
                   fontSize: 11,
                   fontWeight: pw.FontWeight.bold,
@@ -251,7 +292,7 @@ class InventarioResumoPdfService {
                 ),
                 pw.SizedBox(height: 3),
                 pw.Text(
-                  "Etiquetas lidas: ${item['etiquetas']} | Quantidade total: ${item['quantidade']}",
+                  "Etiquetas lidas: ${item['etiquetas']} | Quantidade total: ${fmtQtd(item['quantidade'], item['unidadeMedida'])}",
                   style: pw.TextStyle(
                     fontSize: 10.5,
                     fontWeight: pw.FontWeight.bold,

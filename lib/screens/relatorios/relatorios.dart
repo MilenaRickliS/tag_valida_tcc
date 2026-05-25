@@ -12,7 +12,6 @@ import 'package:pdf/pdf.dart';
 import '../../providers/estoque_mov_provider.dart';
 import '../../models/estoque_mov_model.dart';
 import '../../widgets/menu.dart';
-import './widgets/chart_only_bar.dart';
 import './widgets/chart_only_pie.dart';
 import './widgets/charts_row.dart';
 import './widgets/header_actions.dart';
@@ -21,6 +20,7 @@ import './widgets/kpi_grid.dart';
 import './widgets/mov_list.dart';
 import './widgets/rankings_row.dart';
 import './widgets/section_card.dart';
+import './widgets/top_sold_bar_chart.dart';
 import './models/named_value.dart';
 
 
@@ -46,6 +46,8 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
 
   final GlobalKey _pieKeyPrint = GlobalKey();
   final GlobalKey _barKeyPrint = GlobalKey();
+  final GlobalKey _pieKeyKgPrint = GlobalKey();
+  final GlobalKey _barKeyKgPrint = GlobalKey();
   bool _printing = false;
 
   bool _isDark(BuildContext context) =>
@@ -193,13 +195,18 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
       await Future.delayed(const Duration(milliseconds: 150));
 
       final piePng = await _capturePng(_pieKeyPrint, pixelRatio: 3.0);
+      final pieKgPng = await _capturePng(_pieKeyKgPrint, pixelRatio: 3.0);
+
       final barPng = await _capturePng(_barKeyPrint, pixelRatio: 3.0);
+      final barKgPng = await _capturePng(_barKeyKgPrint, pixelRatio: 3.0);
 
       final bytes = await _buildPdfBytes(
         range: _range,
         movs: _filtered,
         piePng: piePng,
+        pieKgPng: pieKgPng,
         barPng: barPng,
+        barKgPng: barKgPng,
       );
 
       await Printing.layoutPdf(
@@ -256,6 +263,76 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
     return null;
   }
 
+  List<NamedValue> _topByTypeAndUnit(
+    List<EstoqueMovModel> movs,
+    String tipo,
+    String unidade, {
+    int topN = 5,
+  }) {
+    final map = <String, num>{};
+
+    for (final m in movs) {
+      if (m.tipo != tipo) continue;
+      if (m.unidadeMedida != unidade) continue;
+
+      final name = (m.produtoNome?.trim().isNotEmpty ?? false)
+          ? m.produtoNome!.trim()
+          : 'Sem nome';
+
+      map[name] = (map[name] ?? 0) + m.quantidade;
+    }
+
+    final list = map.entries.map((e) => NamedValue(name: e.key, value: e.value, unidadeMedida: unidade,)).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return list.take(topN).toList();
+  }
+
+  List<NamedValue> _topLossesByUnit(
+    List<EstoqueMovModel> movs,
+    String unidade, {
+    int topN = 5,
+  }) {
+    final map = <String, num>{};
+
+    for (final m in movs) {
+      final isLoss = m.tipo == EstoqueMovModel.tipoCancelamento ||
+          m.tipo == EstoqueMovModel.tipoExclusao ||
+          m.tipo == EstoqueMovModel.tipoDescarte;
+
+      if (!isLoss) continue;
+      if (m.unidadeMedida != unidade) continue;
+
+      final name = (m.produtoNome?.trim().isNotEmpty ?? false)
+          ? m.produtoNome!.trim()
+          : 'Sem nome';
+
+      map[name] = (map[name] ?? 0) + m.quantidade;
+    }
+
+    final list = map.entries.map((e) => NamedValue(name: e.key, value: e.value, unidadeMedida: unidade)).toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+
+    return list.take(topN).toList();
+  }
+
+  static String _fmtQtd(num v, String un) {
+    final txt = v % 1 == 0
+        ? v.toInt().toString()
+        : v.toStringAsFixed(3).replaceAll('.', ',');
+
+    return '$txt $un';
+  }
+
+  static String _fmtMapQtd(Map<String, num> map) {
+    if (map.isEmpty) return '0 un';
+
+    final entries = map.entries.toList()
+      ..sort((a, b) => a.key.compareTo(b.key));
+
+    return entries.map((e) => _fmtQtd(e.value, e.key)).join(' --- ');
+  }
+
   @override
   Widget build(BuildContext context) {
     final w = MediaQuery.of(context).size.width;
@@ -267,8 +344,20 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
         : 'Período: ${_df.format(_range!.start)} até ${_df.format(_range!.end)}';
 
     final kpis = _computeKpis(_filtered);
-    final topSold = _topByType(_filtered, EstoqueMovModel.tipoVenda, topN: 5);
-    final topLost = _topLosses(_filtered, topN: 5);
+    final topSoldUn = _topByTypeAndUnit(
+      _filtered,
+      EstoqueMovModel.tipoVenda,
+      'un',
+    );
+
+    final topSoldKg = _topByTypeAndUnit(
+      _filtered,
+      EstoqueMovModel.tipoVenda,
+      'kg',
+    );
+
+    final topLostUn = _topLossesByUnit(_filtered, 'un');
+    final topLostKg = _topLossesByUnit(_filtered, 'kg');
 
     return Stack(
       children: [
@@ -319,26 +408,29 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             InsightLine(
-                              label: 'Produto mais vendido',
-                              value: topSold.isEmpty
-                                  ? '—'
-                                  : '${topSold.first.name} (${_fmtNum(topSold.first.value)})',
-                              chipBg:
-                                  RelatorioCores.bg(EstoqueMovModel.tipoVenda),
-                              chipFg:
-                                  RelatorioCores.fg(EstoqueMovModel.tipoVenda),
-                            ),
-                            const SizedBox(height: 8),
-                            InsightLine(
-                              label: 'Produto com mais perda',
-                              value: topLost.isEmpty
-                                  ? '—'
-                                  : '${topLost.first.name} (${_fmtNum(topLost.first.value)})',
-                              chipBg: RelatorioCores.bg(
-                                  EstoqueMovModel.tipoExclusao),
-                              chipFg: RelatorioCores.fg(
-                                  EstoqueMovModel.tipoExclusao),
-                            ),
+                                label: 'Mais vendido (un)',
+                                value: topSoldUn.isEmpty
+                                    ? '—'
+                                    : '${topSoldUn.first.name} (${_fmtQtd(topSoldUn.first.value, 'un')})',
+                              ),
+                              InsightLine(
+                                label: 'Mais vendido (kg)',
+                                value: topSoldKg.isEmpty
+                                    ? '—'
+                                    : '${topSoldKg.first.name} (${_fmtQtd(topSoldKg.first.value, 'kg')})',
+                              ),
+                              InsightLine(
+                                label: 'Maior perda (un)',
+                                value: topLostUn.isEmpty
+                                    ? '—'
+                                    : '${topLostUn.first.name} (${_fmtQtd(topLostUn.first.value, 'un')})',
+                              ),
+                              InsightLine(
+                                label: 'Maior perda (kg)',
+                                value: topLostKg.isEmpty
+                                    ? '—'
+                                    : '${topLostKg.first.name} (${_fmtQtd(topLostKg.first.value, 'kg')})',
+                              ),
                             const SizedBox(height: 8),
                             InsightLine(
                               label: 'Total de movimentações no período',
@@ -354,9 +446,11 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                         movs: _filtered,
                       ),
                       const SizedBox(height: 14),
-                      RankingsRow(
-                        topSold: topSold,
-                        topLost: topLost,
+                     RankingsRow(
+                        topSoldUn: topSoldUn,
+                        topSoldKg: topSoldKg,
+                        topLostUn: topLostUn,
+                        topLostKg: topLostKg,
                       ),
                       const SizedBox(height: 14),
                       SectionCard(
@@ -373,21 +467,58 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
             type: MaterialType.transparency,
             child: SizedBox(
               width: 900,
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    RepaintBoundary(
-                      key: _pieKeyPrint,
-                      child: ChartOnlyPie(movs: _filtered),
-                    ),
-                    const SizedBox(height: 12),
-                    RepaintBoundary(
-                      key: _barKeyPrint,
-                      child: ChartOnlyBar(movs: _filtered),
-                    ),
-                  ],
+              height: 1200,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      RepaintBoundary(
+                        key: _pieKeyPrint,
+                        child: ChartOnlyPie(
+                          movs: _filtered,
+                          unidade: 'un',
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      RepaintBoundary(
+                        key: _pieKeyKgPrint,
+                        child: ChartOnlyPie(
+                          movs: _filtered,
+                          unidade: 'kg',
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      RepaintBoundary(
+                        key: _barKeyPrint,
+                        child: SizedBox(
+                          height: 260,
+                          child: TopSoldBarChart(
+                            movs: _filtered,
+                            unidade: 'un',
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      RepaintBoundary(
+                        key: _barKeyKgPrint,
+                        child: SizedBox(
+                          height: 260,
+                          child: TopSoldBarChart(
+                            movs: _filtered,
+                            unidade: 'kg',
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ),
             ),
@@ -397,45 +528,68 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
     );
   }
 
-  static String _fmtNum(num v) {
-    if (v % 1 == 0) return v.toInt().toString();
-    return v.toStringAsFixed(2);
-  }
+  Map<String, String> _computeKpis(List<EstoqueMovModel> movs) {
+    final entradas = <String, num>{};
+    final vendas = <String, num>{};
+    final cancel = <String, num>{};
+    final excl = <String, num>{};
+    final ajusteEnt = <String, num>{};
+    final ajusteSai = <String, num>{};
 
-  Map<String, num> _computeKpis(List<EstoqueMovModel> movs) {
-    num entradas = 0;
-    num vendas = 0;
-    num cancel = 0;
-    num excl = 0;
-    num ajusteEnt = 0;
-    num ajusteSai = 0;
-
-    for (final m in movs) {
-      final q = m.quantidade;
-
-      if (m.tipo == EstoqueMovModel.tipoEntrada) entradas += q;
-      if (m.tipo == EstoqueMovModel.tipoVenda) vendas += q;
-      if (m.tipo == EstoqueMovModel.tipoCancelamento) cancel += q;
-      if (m.tipo == EstoqueMovModel.tipoExclusao) excl += q;
-
-      if (_hasAjusteEntrada(m)) ajusteEnt += q;
-      if (_hasAjusteSaida(m)) ajusteSai += q;
+    void add(Map<String, num> map, EstoqueMovModel m) {
+      final un = m.unidadeMedida.trim().isEmpty ? 'un' : m.unidadeMedida;
+      map[un] = (map[un] ?? 0) + m.quantidade;
     }
 
-    final perdas = cancel + excl;
-    final saldo = entradas + ajusteEnt - vendas - perdas - ajusteSai;
+    for (final m in movs) {
+      if (m.tipo == EstoqueMovModel.tipoEntrada) add(entradas, m);
+      if (m.tipo == EstoqueMovModel.tipoVenda) add(vendas, m);
+      if (m.tipo == EstoqueMovModel.tipoCancelamento) add(cancel, m);
+      if (m.tipo == EstoqueMovModel.tipoExclusao) add(excl, m);
 
-    final map = <String, num>{
-      'Entradas': entradas,
-      'Vendas': vendas,
-      'Cancelamentos': cancel,
-      'Exclusões': excl,
-      'Perdas': perdas,
-      'Saldo': saldo,
+      if (_hasAjusteEntrada(m)) add(ajusteEnt, m);
+      if (_hasAjusteSaida(m)) add(ajusteSai, m);
+    }
+
+    Map<String, num> sumMaps(Map<String, num> a, Map<String, num> b) {
+      final r = <String, num>{...a};
+      for (final e in b.entries) {
+        r[e.key] = (r[e.key] ?? 0) + e.value;
+      }
+      return r;
+    }
+
+    Map<String, num> subMaps(Map<String, num> a, Map<String, num> b) {
+      final r = <String, num>{...a};
+      for (final e in b.entries) {
+        r[e.key] = (r[e.key] ?? 0) - e.value;
+      }
+      return r;
+    }
+
+    final perdas = sumMaps(cancel, excl);
+
+    var saldo = sumMaps(entradas, ajusteEnt);
+    saldo = subMaps(saldo, vendas);
+    saldo = subMaps(saldo, perdas);
+    saldo = subMaps(saldo, ajusteSai);
+
+    final map = <String, String>{
+      'Entradas': _fmtMapQtd(entradas),
+      'Vendas': _fmtMapQtd(vendas),
+      'Cancelamentos': _fmtMapQtd(cancel),
+      'Exclusões': _fmtMapQtd(excl),
+      'Perdas': _fmtMapQtd(perdas),
+      'Saldo': _fmtMapQtd(saldo),
     };
 
-    if (_existsTipoAjusteEntrada()) map['Ajuste Entrada'] = ajusteEnt;
-    if (_existsTipoAjusteSaida()) map['Ajuste Saída'] = ajusteSai;
+    if (_existsTipoAjusteEntrada()) {
+      map['Ajuste Entrada'] = _fmtMapQtd(ajusteEnt);
+    }
+
+    if (_existsTipoAjusteSaida()) {
+      map['Ajuste Saída'] = _fmtMapQtd(ajusteSai);
+    }
 
     return map;
   }
@@ -474,46 +628,42 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
     }
   }
 
-  List<NamedValue> _topByType(List<EstoqueMovModel> movs, String tipo,
-      {int topN = 5}) {
-    final map = <String, num>{};
-    for (final m in movs) {
-      if (m.tipo != tipo) continue;
-      final name = (m.produtoNome?.trim().isNotEmpty ?? false)
-          ? m.produtoNome!.trim()
-          : 'Sem nome';
-      map[name] = (map[name] ?? 0) + m.quantidade;
-    }
-    final list = map.entries.map((e) => NamedValue(e.key, e.value)).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return list.take(topN).toList();
-  }
-
-  List<NamedValue> _topLosses(List<EstoqueMovModel> movs, {int topN = 5}) {
-    final map = <String, num>{};
-    for (final m in movs) {
-      final isLoss = m.tipo == EstoqueMovModel.tipoCancelamento ||
-          m.tipo == EstoqueMovModel.tipoExclusao;
-      if (!isLoss) continue;
-      final name = (m.produtoNome?.trim().isNotEmpty ?? false)
-          ? m.produtoNome!.trim()
-          : 'Sem nome';
-      map[name] = (map[name] ?? 0) + m.quantidade;
-    }
-    final list = map.entries.map((e) => NamedValue(e.key, e.value)).toList()
-      ..sort((a, b) => b.value.compareTo(a.value));
-    return list.take(topN).toList();
-  }
-
+  
   Future<Uint8List> _buildPdfBytes({
     required DateTimeRange? range,
     required List<EstoqueMovModel> movs,
     required Uint8List? piePng,
+    required Uint8List? pieKgPng,
     required Uint8List? barPng,
+    required Uint8List? barKgPng,
   }) async {
     final kpis = _computeKpis(movs);
-    final topSold = _topByType(movs, EstoqueMovModel.tipoVenda, topN: 10);
-    final topLost = _topLosses(movs, topN: 10);
+
+    final topSoldUn = _topByTypeAndUnit(
+      movs,
+      EstoqueMovModel.tipoVenda,
+      'un',
+      topN: 10,
+    );
+
+    final topSoldKg = _topByTypeAndUnit(
+      movs,
+      EstoqueMovModel.tipoVenda,
+      'kg',
+      topN: 10,
+    );
+
+    final topLostUn = _topLossesByUnit(
+      movs,
+      'un',
+      topN: 10,
+    );
+
+    final topLostKg = _topLossesByUnit(
+      movs,
+      'kg',
+      topN: 10,
+    );
 
     final doc = pw.Document();
 
@@ -527,82 +677,191 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
         build: (context) => [
           pw.Text(
             'Relatório de Estoque',
-            style:
-                pw.TextStyle(fontSize: 20, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(
+              fontSize: 20,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
+
           pw.SizedBox(height: 6),
           pw.Text('Período: $period'),
+
           pw.SizedBox(height: 12),
+
           pw.Text(
             'Gráficos',
-            style:
-                pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
+
           pw.SizedBox(height: 8),
-          if (piePng != null) ...[
+
+         if (piePng != null) ...[
             pw.Text(
-              'Distribuição por tipo',
-              style:
-                  pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+              'Distribuição por tipo (un)',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
             ),
             pw.SizedBox(height: 6),
-            pw.Center(child: pw.Image(pw.MemoryImage(piePng), width: 420)),
-            pw.SizedBox(height: 10),
-          ],
-          if (barPng != null) ...[
-            pw.Text(
-              'Top vendidos (barras)',
-              style:
-                  pw.TextStyle(fontSize: 12, fontWeight: pw.FontWeight.bold),
+            pw.Center(
+              child: pw.Image(
+                pw.MemoryImage(piePng),
+                width: 300,
+              ),
             ),
-            pw.SizedBox(height: 6),
-            pw.Center(child: pw.Image(pw.MemoryImage(barPng), width: 420)),
             pw.SizedBox(height: 12),
           ],
+
+          if (pieKgPng != null) ...[
+            pw.Text(
+              'Distribuição por tipo (kg)',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            pw.Center(
+              child: pw.Image(
+                pw.MemoryImage(pieKgPng),
+                width: 300,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+          ],
+
+          if (barPng != null) ...[
+            pw.Text(
+              'Top vendidos (un)',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            pw.Center(
+              child: pw.Image(
+                pw.MemoryImage(barPng),
+                width: 300,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+          ],
+
+          if (barKgPng != null) ...[
+            pw.Text(
+              'Top vendidos (kg)',
+              style: pw.TextStyle(
+                fontSize: 12,
+                fontWeight: pw.FontWeight.bold,
+              ),
+            ),
+            pw.SizedBox(height: 6),
+            pw.Center(
+              child: pw.Image(
+                pw.MemoryImage(barKgPng),
+                width: 300,
+              ),
+            ),
+            pw.SizedBox(height: 12),
+          ],
+
           pw.Text(
             'Resumo',
-            style:
-                pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
+
           pw.SizedBox(height: 6),
+
           pw.Table(
             border: pw.TableBorder.all(width: 0.5),
             children: kpis.entries.map((e) {
-              return pw.TableRow(children: [
-                pw.Padding(
-                  padding: const pw.EdgeInsets.all(6),
-                  child: pw.Text(e.key),
-                ),
-                pw.Padding(
-                  padding: const pw.EdgeInsets.all(6),
-                  child: pw.Text(_fmtNum(e.value)),
-                ),
-              ]);
+              return pw.TableRow(
+                children: [
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Text(e.key),
+                  ),
+                  pw.Padding(
+                    padding: const pw.EdgeInsets.all(6),
+                    child: pw.Text((e.value)),
+                  ),
+                ],
+              );
             }).toList(),
           ),
+
           pw.SizedBox(height: 14),
+
           pw.Text(
-            'Top produtos vendidos',
-            style:
-                pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            'Top produtos vendidos (un)',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
+
           pw.SizedBox(height: 6),
-          _pdfRankTable(topSold),
+          _pdfRankTable(topSoldUn),
+
           pw.SizedBox(height: 14),
+
           pw.Text(
-            'Top perdas (cancelamento/exclusão)',
-            style:
-                pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            'Top produtos vendidos (kg)',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
+
           pw.SizedBox(height: 6),
-          _pdfRankTable(topLost),
+          _pdfRankTable(topSoldKg),
+
           pw.SizedBox(height: 14),
+
+          pw.Text(
+            'Top perdas (un)',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+
+          pw.SizedBox(height: 6),
+          _pdfRankTable(topLostUn),
+
+          pw.SizedBox(height: 14),
+
+          pw.Text(
+            'Top perdas (kg)',
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
+          ),
+
+          pw.SizedBox(height: 6),
+          _pdfRankTable(topLostKg),
+
+          pw.SizedBox(height: 14),
+
           pw.Text(
             'Movimentações (amostra)',
-            style:
-                pw.TextStyle(fontSize: 14, fontWeight: pw.FontWeight.bold),
+            style: pw.TextStyle(
+              fontSize: 14,
+              fontWeight: pw.FontWeight.bold,
+            ),
           ),
+
           pw.SizedBox(height: 6),
+
           pw.Table(
             border: pw.TableBorder.all(width: 0.5),
             children: [
@@ -615,19 +874,31 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
                   _pdfCell('Motivo', bold: true),
                 ],
               ),
+
               ...movs.take(35).map(
-                    (m) => pw.TableRow(
-                      children: [
-                        _pdfCell(_df.format(m.createdAt)),
-                        _pdfCell((m.produtoNome?.trim().isNotEmpty ?? false)
-                            ? m.produtoNome!.trim()
-                            : 'Sem nome'),
-                        _pdfCell(m.tipo),
-                        _pdfCell(_fmtNum(m.quantidade)),
-                        _pdfCell(m.motivo ?? ''),
-                      ],
+                (m) => pw.TableRow(
+                  children: [
+                    _pdfCell(_df.format(m.createdAt)),
+
+                    _pdfCell(
+                      (m.produtoNome?.trim().isNotEmpty ?? false)
+                          ? m.produtoNome!.trim()
+                          : 'Sem nome',
                     ),
-                  ),
+
+                    _pdfCell(m.tipo),
+
+                    _pdfCell(
+                      _fmtQtd(
+                        m.quantidade,
+                        m.unidadeMedida,
+                      ),
+                    ),
+
+                    _pdfCell(m.motivo ?? ''),
+                  ],
+                ),
+              ),
             ],
           ),
         ],
@@ -647,7 +918,12 @@ class _RelatoriosScreenState extends State<RelatoriosScreen> {
           _pdfCell('Quantidade', bold: true)
         ]),
         ...items.map((e) => pw.TableRow(
-              children: [_pdfCell(e.name), _pdfCell(_fmtNum(e.value))],
+              children: [_pdfCell(e.name), _pdfCell(
+                _fmtQtd(
+                  e.value,
+                  e.unidadeMedida,
+                ),
+              )],
             )),
       ],
     );
