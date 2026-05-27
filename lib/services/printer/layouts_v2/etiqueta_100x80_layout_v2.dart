@@ -18,7 +18,9 @@ class Etiqueta100x80LayoutV2 {
     int copias = 1,
   }) {
     final w = TsplWriter();
+    final deveImprimir = copias > 0;
     final qtdCopias = copias <= 0 ? 1 : copias;
+   
 
     final campos = [...design.campos]
       ..sort((a, b) => a.ordem.compareTo(b.ordem));
@@ -26,88 +28,124 @@ class Etiqueta100x80LayoutV2 {
     final visiveis = campos.where((c) => c.visivel).toList();
     final hasQr = visiveis.any((c) => c.tipo == CampoDesignV2Tipo.qrcode);
     final hasTabelaNutricional = etiqueta.incluirTabelaNutricional && etiqueta.tabelaNutricional != null;
-    final produto = cleanTsplText(etiqueta.produtoNome, max: 42);
+    final produto = cleanTsplText(
+      etiqueta.produtoNome,
+      max: design.tamanhoFonte == TamanhoFonteEtiqueta.grande ? 60 : 42,
+    );
     final empresa = _buildEmpresaText(usuario);
 
     w.setup(larguraMm: 100, alturaMm: 80);
 
+    const subirTudo = 38;
+
+    const outerTop = 16 - subirTudo;
+
     const outerLeft = 26;
-    const outerTop = 16;
+
     const outerWidth = 748;
     const outerHeight = 608;
     const padding = 16;
 
-    const qrX = 690;
-    const qrY = 45;
-
+    final larguraDots = mmToDots(100);
+    final outerPad = mmToDots(3.2);
+    final qrSize = hasQr ? 100 : 0;
+    final qrX = larguraDots - qrSize - 10;
+    final qrY = outerPad - subirTudo + 10;
+    final tagValidaY = qrY + 2;
     const headerTextLeft = outerLeft + padding;
-    const headerTextRight = qrX - 30;
-    const headerTextWidth = headerTextRight - headerTextLeft;
+    final isGrande = design.tamanhoFonte == TamanhoFonteEtiqueta.grande;
 
-    const dividerY = 174;
-    const contentTop = 190;
-    const contentBottom = outerTop + outerHeight - 12;
+    final headerTextRight = isGrande ? qrX - 130 : qrX - 30;
+    final headerTextWidth = headerTextRight - headerTextLeft;
+    final dividerY = isGrande
+        ? 228 - subirTudo
+        : 160 - subirTudo;
+
+    final contentTop = isGrande
+        ? 244 - subirTudo
+        : 176 - subirTudo;
+    
+    const contentBottom = outerTop + outerHeight - 4;
 
     const leftColX = outerLeft + padding;
     final leftColW = hasTabelaNutricional ? 230 : 690;
 
     final empresaCampo = _findCampo(visiveis, 'empresa');
     final produtoCampo = _findCampo(visiveis, 'produto');
-
-    const qrModule = 3;
-    const qrEstimatedSize = 93; 
-    const tagTextWidth = 72;   
-
-    final tagX = qrX + ((qrEstimatedSize - tagTextWidth) ~/ 2);
-
+     
     if (empresaCampo != null) {
-      _addMultiLineTextStyled(
+     _addMultiLineTextStyled(
         w: w,
+        design: design,
         text: empresa,
         xBase: headerTextLeft,
         y: outerTop + 8,
-        maxWidth: headerTextWidth,
-        spec: const TsplFontSpec(font: '1', xMul: 1, yMul: 1),
-        align: empresaCampo.align,
+        maxWidth: isGrande ? 360 : headerTextWidth,
+        spec: fontEtiquetaFromPt(
+          isGrande ? 5.8 : 6,
+          design.tamanhoFonte,
+          compact: true,
+        ),
+        align: isGrande ? TextAlign.left : empresaCampo.align,
         isBold: empresaCampo.isBold,
-        maxLines: 3,
-        hardRightLimit: headerTextRight,
+        maxLines: isGrande ? 4 : 3,
+        hardRightLimit: isGrande ? headerTextLeft + 360 : headerTextRight,
       );
     }
 
     if (produtoCampo != null) {
       _addMultiLineTextStyled(
         w: w,
+        design: design,
         text: produto,
         xBase: headerTextLeft,
-        y: outerTop + 64,
+        y: isGrande ? outerTop + 128 : outerTop + 64,
         maxWidth: headerTextWidth,
-        spec: const TsplFontSpec(font: '3', xMul: 1, yMul: 1),
+        spec: isGrande
+          ? const TsplFontSpec(font: '3', xMul: 1, yMul: 2)
+          : fontEtiquetaFromPt(
+              12,
+              design.tamanhoFonte,
+            ),
         align: produtoCampo.align,
         isBold: produtoCampo.isBold,
-        maxLines: 2,
+        maxLines:
+          design.tamanhoFonte ==
+                  TamanhoFonteEtiqueta.grande
+              ? 3
+              : 2,
         hardRightLimit: headerTextRight,
       );
     }
 
-    if (hasQr) {
-      if (design.mostrarMarcaTagValida) {
-       w.text(
-          x: tagX,
-          y: outerTop + 8,
+    
+
+  if (hasQr) {
+     
+        w.text(
+          x: qrX,
+          y: tagValidaY,
           spec: const TsplFontSpec(font: '1', xMul: 1, yMul: 1),
           text: 'TagValida',
           isBold: true,
+          max: 16,
         );
-      }
+
+        int resolveQrModule(String qrData) {
+          final isPublico =
+              qrData.startsWith('http://') ||
+              qrData.startsWith('https://');
+
+          return isPublico ? 3 : 2;
+        }
 
       w.qrCode(
         x: qrX,
-        y: qrY,
-        module: qrModule,
+        y: qrY + 20,
+        module: resolveQrModule(qrData),
         data: qrData,
       );
-    }
+  }
 
     w.bar(
       x: outerLeft + 4,
@@ -132,7 +170,9 @@ class Etiqueta100x80LayoutV2 {
 
     for (final campo in infoCampos) {
       final label = campo.labelImpresso ?? campo.nome;
-      final value = valores[campo.id];
+      final value =
+        valores[campo.id] ??
+        valores['custom_${campo.id}'];
 
       if (value == null || value.trim().isEmpty) continue;
 
@@ -146,6 +186,7 @@ class Etiqueta100x80LayoutV2 {
 
       final novoY = _printTextoCampo(
         w: w,
+        design: design,
         x: leftColX,
         y: y,
         text: textoFinal,
@@ -158,7 +199,7 @@ class Etiqueta100x80LayoutV2 {
               ? 90
               : 60,
         maxWidth: leftColW,
-        maxLines: campo.id == 'validade' && hasTabelaNutricional ? 2 : _maxLinesForCampo(campo),
+        maxLines: campo.id == 'validade' && hasTabelaNutricional ? 2 : _maxLinesForCampo(campo, design),
       );
 
       if (novoY <= limiteInferior) {
@@ -166,7 +207,9 @@ class Etiqueta100x80LayoutV2 {
       }
     }
 
-    w.print(copias: qtdCopias);
+    if (deveImprimir) {
+      w.print(copias: qtdCopias);
+    }
     return w.toString();
   }
 
@@ -182,6 +225,7 @@ class Etiqueta100x80LayoutV2 {
   }
 
   int _printTextoCampo({
+    required DesignEtiquetaV2Model design,
     required TsplWriter w,
     required int x,
     required int y,
@@ -201,11 +245,16 @@ class Etiqueta100x80LayoutV2 {
 
       currentY = _addMultiLineTextStyled(
         w: w,
+        design: design,
         text: textoLimpo,
         xBase: x,
         y: currentY,
         maxWidth: maxWidth,
-        spec: const TsplFontSpec(font: '2', xMul: 1, yMul: 1),
+        spec: fontEtiquetaFromPt(
+          8,
+          design.tamanhoFonte,
+          compact: true,
+        ),
         align: TextAlign.left,
         isBold: bold,
         maxLines: 1,
@@ -216,18 +265,154 @@ class Etiqueta100x80LayoutV2 {
   }
 
   String _fmtQtd(EtiquetaModel e) {
-    if (e.unidadeMedida == 'kg') {
-      return '${e.quantidade.toStringAsFixed(3).replaceAll(".", ",")} kg';
-    }
-
-    if (e.quantidade % 1 == 0) {
-      return '${e.quantidade.toInt()} un';
-    }
-
-    return '${formatNumber(e.quantidade)} un';
+    return formatQtdComUnidade(
+      e.quantidadeRestante,
+      e.unidadeMedida,
+    );
   }
 
-  Map<String, String> _buildValores(EtiquetaModel e) {
+  String _formatDate(DateTime date) {
+    final dia = date.day.toString().padLeft(2, '0');
+    final mes = date.month.toString().padLeft(2, '0');
+    final ano = date.year.toString();
+
+    return '$dia/$mes/$ano';
+  }
+
+String formatCampoCustomParaImpressao(dynamic value) {
+  if (value == null) return '';
+
+  if (value is bool) {
+    return value ? 'SIM' : 'NAO';
+  }
+
+  if (value is Map) {
+    final tipo = (value['tipo'] ?? value['type'] ?? '').toString().toLowerCase().trim();
+    final raw = value['value'] ?? value['valor'] ?? value['preco'];
+
+    if (tipo == 'bool' || tipo == 'booltype') {
+      if (raw == true) return 'SIM';
+
+      final s = raw?.toString().toLowerCase().trim() ?? '';
+      if (s == 'true' || s == '1' || s == 'sim' || s == 'yes') {
+        return 'SIM';
+      }
+
+      return 'NAO';
+    }
+    
+
+    if (tipo == 'date') {
+      if (raw == null) return '';
+
+      if (raw is DateTime) {
+        return _formatDate(raw);
+      }
+
+      if (raw is num) {
+        return _formatDate(
+          DateTime.fromMillisecondsSinceEpoch(raw.toInt()),
+        );
+      }
+
+      final texto = raw.toString().trim();
+
+      final numero = int.tryParse(texto);
+      if (numero != null && texto.length >= 10) {
+        return _formatDate(
+          DateTime.fromMillisecondsSinceEpoch(numero),
+        );
+      }
+
+      return texto;
+    }
+
+    final rawEhPrecoModo = raw is Map &&
+        (raw.containsKey('valor') ||
+            raw.containsKey('value') ||
+            raw.containsKey('preco'));
+
+    if (tipo == 'pricemode' ||
+        tipo == 'price_mode' ||
+        tipo == 'preco' ||
+        rawEhPrecoModo) {
+
+      final precoRaw = raw is Map
+          ? (raw['valor'] ?? raw['value'] ?? raw['preco'])
+          : raw;
+
+      final modoRaw = raw is Map
+          ? (raw['modo'] ??
+              raw['modoPreco'] ??
+              raw['priceMode'] ??
+              raw['mode'])
+          : null;
+
+      final preco = precoRaw?.toString().trim() ?? '';
+      final modo = modoRaw?.toString().trim() ?? '';
+
+      if (preco.isEmpty) return '';
+
+      final precoFinal =
+          preco.startsWith('R\$') ? preco : 'R\$ $preco';
+
+      if (modo.isEmpty) {
+        return precoFinal;
+      }
+
+      return '$precoFinal/$modo';
+    }
+
+    final prefixo = cleanUnit((value['prefixo'] ?? '').toString());
+    final sufixo = cleanUnit((value['sufixo'] ?? '').toString());
+
+    final unit = cleanUnit(
+      (value['unit'] ??
+              value['unidade'] ??
+              value['unidadeMedida'] ??
+              value['simbolo'] ??
+              '')
+          .toString(),
+    );
+
+    String texto;
+    if (raw is num) {
+      texto = formatNumber(raw);
+    } else {
+      texto = raw?.toString() ?? '';
+    }
+
+    if (prefixo.isNotEmpty) {
+      return '$prefixo $texto';
+    }
+
+    if (sufixo.isNotEmpty) {
+      return '$texto $sufixo';
+    }
+
+    if (unit.isNotEmpty) {
+      if (unit == r'R$') {
+        return 'R\$ $texto';
+      }
+
+      return '$texto $unit';
+    }
+
+    return texto;
+
+  }
+
+  final text = value.toString().trim().toLowerCase();
+
+  if (text == 'true' || text == '1' || text == 'sim') return 'SIM';
+  if (text == 'false' || text == '0' || text == 'não' || text == 'nao') {
+    return 'NAO';
+  }
+
+  return value.toString().trim();
+}
+
+ Map<String, String> _buildValores(EtiquetaModel e) {
     final valores = <String, String>{
       'fabricacao': DateFormat('dd/MM/yyyy').format(e.dataFabricacao),
       'validade': DateFormat('dd/MM/yyyy').format(e.dataValidade),
@@ -243,21 +428,44 @@ class Etiqueta100x80LayoutV2 {
 
       if (value == null) continue;
 
-      if (value is Map) {
-        valores['custom_$key'] = (value['value'] ?? '').toString();
-      } else {
-        valores['custom_$key'] = value.toString();
-      }
+      valores['custom_$key'] = formatCampoCustomParaImpressao(value);
     }
 
     return valores;
   }
 
-  int _maxLinesForCampo(CampoDesignEtiquetaV2Model campo) {
-    if (campo.id.contains('ingred')) return 5;
-    if (campo.id.contains('alerg')) return 4;
-    if (campo.id.contains('observ')) return 3;
+  int _maxLinesForCampo(
+    CampoDesignEtiquetaV2Model campo,
+    DesignEtiquetaV2Model design,
+  ) {
+    if (campo.id.contains('ingred')) {
+      return design.tamanhoFonte ==
+              TamanhoFonteEtiqueta.grande
+          ? 6
+          : 5;
+    }
+
+    if (campo.id.contains('alerg')) {
+      return design.tamanhoFonte ==
+              TamanhoFonteEtiqueta.grande
+          ? 5
+          : 4;
+    }
+
+    if (campo.id.contains('observ')) {
+      return design.tamanhoFonte ==
+              TamanhoFonteEtiqueta.grande
+          ? 4
+          : 3;
+    }
     return 1;
+  }
+  String _abreviarRua(String rua) {
+    return rua
+        .replaceAll('Rua ', 'R. ')
+        .replaceAll('Avenida ', 'Av. ')
+        .replaceAll('Travessa ', 'Tv. ')
+        .replaceAll('Rodovia ', 'Rod. ');
   }
 
   String _buildEmpresaText(UserModel usuario) {
@@ -268,7 +476,7 @@ class Etiqueta100x80LayoutV2 {
     final cnpj = usuario.cnpj.trim();
 
     final ruaNumero = [
-      usuario.rua.trim(),
+      _abreviarRua(usuario.rua.trim()),
       usuario.numero.trim(),
     ].where((e) => e.isNotEmpty).join(', ');
 
@@ -293,6 +501,7 @@ class Etiqueta100x80LayoutV2 {
 
   int _addMultiLineTextStyled({
     required TsplWriter w,
+    required DesignEtiquetaV2Model design,
     required String text,
     required int xBase,
     required int y,
@@ -346,7 +555,11 @@ class Etiqueta100x80LayoutV2 {
         isBold: isBold,
       );
 
-      currentY += lineHeight(spec);
+      currentY += lineHeight(spec) +
+        (design.tamanhoFonte ==
+                TamanhoFonteEtiqueta.grande
+            ? 2
+            : 0);
     }
 
     return currentY;

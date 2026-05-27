@@ -3,12 +3,14 @@ import 'package:flutter/material.dart';
 import '../../../models/design_etiqueta_v2_model.dart';
 import '../../../models/etiqueta_layout_preset.dart';
 import '../../../utils/preview_align_utils_v2.dart';
+import './preview_font_size_v2.dart';
 
 Widget buildProdutoPreviewV2(
   CampoDesignEtiquetaV2Model campo,
   DesignEtiquetaV2Model config,
 ) {
-  final fontSize = config.preset == EtiquetaLayoutPreset.mm60x40 ? 18.0 : 20.0;
+  final baseFontSize = config.preset == EtiquetaLayoutPreset.mm60x40 ? 18.0 : 20.0;
+  final fontSize = baseFontSize * previewFontFactorV2(config.tamanhoFonte);
 
   return Align(
     alignment: toAlignmentV2(campo.align),

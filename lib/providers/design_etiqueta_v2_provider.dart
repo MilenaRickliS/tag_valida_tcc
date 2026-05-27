@@ -33,6 +33,76 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
 
   bool get canSave => _validation?.ok ?? true;
 
+  DesignEtiquetaV2Model _mergeCamposCustomDoTipo(
+  DesignEtiquetaV2Model design,
+  TipoEtiquetaModel tipo,
+) {
+  final campos = [...design.campos];
+
+  String normalizar(String s) {
+    return s
+        .toLowerCase()
+        .trim()
+        .replaceAll('ç', 'c')
+        .replaceAll('ã', 'a')
+        .replaceAll('á', 'a')
+        .replaceAll('à', 'a')
+        .replaceAll('â', 'a')
+        .replaceAll('é', 'e')
+        .replaceAll('ê', 'e')
+        .replaceAll('í', 'i')
+        .replaceAll('ó', 'o')
+        .replaceAll('ô', 'o')
+        .replaceAll('õ', 'o')
+        .replaceAll('ú', 'u');
+  }
+
+  for (final custom in tipo.camposCustom) {
+    if (custom.tipo == CampoTipo.image) continue;
+
+    final indexMesmoId = campos.indexWhere((c) => c.id == custom.key);
+    if (indexMesmoId != -1) continue;
+
+    final nomeCustom = normalizar(custom.label);
+
+    final indexMesmoNome = campos.indexWhere(
+      (c) => normalizar(c.nome) == nomeCustom,
+    );
+
+    if (indexMesmoNome != -1) {
+      final antigo = campos[indexMesmoNome];
+
+      campos[indexMesmoNome] = antigo.copyWith(
+        id: custom.key,
+        nome: custom.label,
+        tipo: CampoDesignV2Tipo.info,
+        labelImpresso: custom.label,
+        valorExemplo: custom.label,
+        obrigatorio: custom.obrigatorio,
+      );
+
+      continue;
+    }
+
+    campos.add(
+      CampoDesignEtiquetaV2Model(
+        id: custom.key,
+        nome: custom.label,
+        tipo: CampoDesignV2Tipo.info,
+        ordem: campos.length,
+        visivel: true,
+        obrigatorio: custom.obrigatorio,
+        isBold: false,
+        align: TextAlign.left,
+        labelImpresso: custom.label,
+        valorExemplo: custom.label,
+      ),
+    );
+  }
+
+  return design.copyWith(campos: campos);
+}
+
   Future<void> loadTipo(
     TipoEtiquetaModel tipo, {
     EtiquetaLayoutPreset preset = EtiquetaLayoutPreset.mm60x40,
@@ -48,8 +118,12 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
       preset: preset,
     );
 
-    _config = DesignEtiquetaV2Model.fromMap(design.toMap())
-        .copyWith(preset: preset);
+    final designComCamposCustom = _mergeCamposCustomDoTipo(
+      DesignEtiquetaV2Model.fromMap(design.toMap()).copyWith(preset: preset),
+      tipo,
+    );
+
+    _config = designComCamposCustom;
 
     _revalidateInternal();
 
@@ -213,6 +287,26 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
     );
 
     _revalidateInternal();
+    notifyListeners();
+  }
+
+  void setTamanhoFonte(TamanhoFonteEtiqueta value) {
+    if (_config == null) return;
+
+    final tentativa = _config!.copyWith(
+      tamanhoFonte: value,
+    );
+
+    final resultado = DesignEtiquetaV2Limiter.validate(tentativa);
+
+    if (!resultado.ok) {
+      _validation = resultado;
+      notifyListeners();
+      return;
+    }
+
+    _config = tentativa;
+    _validation = resultado;
     notifyListeners();
   }
 }

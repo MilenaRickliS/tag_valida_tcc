@@ -7,7 +7,7 @@ class AppDb {
   static final AppDb instance = AppDb._();
 
   static const _dbName = 'tag_valida.db';
-  static const _dbVersion = 20;
+  static const _dbVersion = 21;
 
   Database? _db;
 
@@ -269,6 +269,7 @@ class AppDb {
         tipoEtiquetaNome TEXT NOT NULL,
 
         preset TEXT NOT NULL,
+        tamanhoFonte TEXT NOT NULL DEFAULT 'media',
 
         mostrarMarcaTagValida INTEGER NOT NULL DEFAULT 1,
         destacarValidade INTEGER NOT NULL DEFAULT 1,
@@ -697,6 +698,20 @@ class AppDb {
       if (!hasMovCol("unidadeMedida")) {
         await db.execute(
           "ALTER TABLE estoque_mov ADD COLUMN unidadeMedida TEXT NOT NULL DEFAULT 'un';",
+        );
+      }
+    }
+    if (oldVersion < 21) {
+      final cols = await db.rawQuery(
+        "PRAGMA table_info(design_etiqueta_v2_configs)",
+      );
+
+      bool hasCol(String name) =>
+          cols.any((c) => (c["name"]?.toString() == name));
+
+      if (!hasCol("tamanhoFonte")) {
+        await db.execute(
+          "ALTER TABLE design_etiqueta_v2_configs ADD COLUMN tamanhoFonte TEXT NOT NULL DEFAULT 'media';",
         );
       }
     }

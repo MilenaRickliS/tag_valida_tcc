@@ -8,6 +8,7 @@ import '../../../providers/auth_provider.dart';
 import 'campo_config_tile_v2.dart';
 import 'settings_card_v2.dart';
 import 'switch_tile_v2.dart';
+import './preview_font_size_v2.dart';
 
 const _orange = Color(0xFFED7227);
 const _gold = Color(0xFFD4AF37);
@@ -22,6 +23,9 @@ Widget buildConfigPanelV2({
   required DesignEtiquetaV2Model config,
   required DesignEtiquetaV2Provider designProvider,
 }) {
+  final camposVisiveis = config.campos
+    .where((c) => c.tipo != CampoDesignV2Tipo.imagem)
+    .toList();
   return Container(
     width: double.infinity,
     padding: const EdgeInsets.all(20),
@@ -91,6 +95,13 @@ Widget buildConfigPanelV2({
                 value: config.destacarValidade,
                 title: 'Destacar validade',
                 onChanged: (v) => designProvider.setDestacarValidade(v),
+              ),
+              const SizedBox(height: 12),
+
+              FontSizeSelectorV2(
+                selected: config.tamanhoFonte,
+                isDark: isDark,
+                onChanged: designProvider.setTamanhoFonte,
               ),
             ],
           ),
@@ -182,12 +193,13 @@ Widget buildConfigPanelV2({
           shrinkWrap: true,
           physics: const NeverScrollableScrollPhysics(),
           buildDefaultDragHandles: false,
-          itemCount: config.campos.length,
+          itemCount: camposVisiveis.length,
           onReorder: (oldIndex, newIndex) {
             designProvider.reorderCampos(oldIndex, newIndex);
           },
           itemBuilder: (context, index) {
-            final campo = config.campos[index];
+            
+            final campo = camposVisiveis[index];
 
             final isFixo = campo.id == 'empresa' ||
                 campo.id == 'produto' ||
@@ -254,3 +266,4 @@ Widget _dragHandle(bool isDark) {
     ),
   );
 }
+

@@ -54,6 +54,7 @@ class DesignEtiquetaV2LocalRepo {
         'tipoEtiquetaId': row['tipoEtiquetaId'],
         'tipoEtiquetaNome': row['tipoEtiquetaNome'],
         'preset': row['preset'],
+        'tamanhoFonte': row['tamanhoFonte'] ?? 'media',
         'mostrarMarcaTagValida':
             (row['mostrarMarcaTagValida'] as int? ?? 1) == 1,
         'destacarValidade':
@@ -82,6 +83,7 @@ class DesignEtiquetaV2LocalRepo {
       'uid': uid,
       'tipoEtiquetaNome': model.tipoEtiquetaNome,
       'preset': preset.storageKey,
+      'tamanhoFonte': model.tamanhoFonte.name,
       'mostrarMarcaTagValida': model.mostrarMarcaTagValida ? 1 : 0,
       'destacarValidade': model.destacarValidade ? 1 : 0,
       'camposJson': camposJson,
@@ -93,6 +95,7 @@ class DesignEtiquetaV2LocalRepo {
       'tipoEtiquetaId': model.tipoEtiquetaId,
       'tipoEtiquetaNome': model.tipoEtiquetaNome,
       'preset': preset.storageKey,
+      'tamanhoFonte': model.tamanhoFonte.name,
       'mostrarMarcaTagValida': model.mostrarMarcaTagValida,
       'destacarValidade': model.destacarValidade,
       'campos': jsonDecode(camposJson),
@@ -194,6 +197,7 @@ class DesignEtiquetaV2LocalRepo {
       tipoEtiquetaId: defaultModel.tipoEtiquetaId,
       tipoEtiquetaNome: defaultModel.tipoEtiquetaNome,
       preset: preset,
+      tamanhoFonte: saved.tamanhoFonte,
       mostrarMarcaTagValida: saved.mostrarMarcaTagValida,
       destacarValidade: saved.destacarValidade,
       campos: mergedCampos,

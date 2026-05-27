@@ -4,13 +4,15 @@ import 'package:flutter/material.dart';
 
 import '../../../models/design_etiqueta_v2_model.dart';
 import '../../../utils/preview_align_utils_v2.dart';
+import 'preview_font_size_v2.dart';
 
 Widget buildEmpresaPreviewV2(
   CampoDesignEtiquetaV2Model campo,
   DesignEtiquetaV2Model config,
 ) {
   final isSmall = config.preset.larguraMm <= 60;
-  final fontSize = isSmall ? 6.5 : 9.0;
+  final baseFontSize = isSmall ? 6.5 : 9.0;
+  final fontSize = baseFontSize * previewFontFactorV2(config.tamanhoFonte);
 
   return Align(
     alignment: toAlignmentV2(campo.align),

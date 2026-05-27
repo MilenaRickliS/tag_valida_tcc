@@ -59,21 +59,58 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
 
       final agora = DateTime.now();
 
-      final etiquetasTeste = [
-     
+     final etiquetasTeste = [
         EtiquetaModel(
-          id: 'teste_bom',
+          id: 'teste_unidades_bool',
           tipoId: config.tipoEtiquetaId,
           tipoNome: config.tipoEtiquetaNome,
-          produtoNome: 'Pão Francês',
+          produtoNome: 'Teste Campos',
           categoriaId: 'cat',
-          categoriaNome: 'Pães',
+          categoriaNome: 'Testes',
           setorId: 'setor',
           setorNome: 'Produção',
           dataFabricacao: agora,
           dataValidade: agora.add(const Duration(days: 3)),
           camposCustomValores: const {
-            'observacao': 'Produto fresco do dia',
+            'text': 'Campo texto normal',
+
+            'int': 10,
+            'int_a': {
+              'value': 20,
+              'unit': 'un',
+            },
+            'int_d': {
+              'value': 30,
+              'unit': 'cx',
+            },
+
+            'double': 2.5,
+            'double_a': {
+              'value': 1.750,
+              'unit': 'kg',
+            },
+            'double_d': {
+              'value': 500.5,
+              'unit': 'g',
+            },
+
+            'moeda': {
+              'value': '15,90',
+              'unit': r'R$',
+            },
+            'preco': {
+              'tipo': 'priceMode',
+              'value': {
+                'valor': '39,90',
+                'modo': 'kg',
+              },
+            },
+
+            'text_g': 'Texto grande para testar quebra de linha na etiqueta',
+
+            'data': '26/05/2026',
+
+            's_ou_n': true,
           },
           status: 'ativo',
           lote: 'L001',
@@ -86,35 +123,34 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
           createdAt: agora,
         ),
 
-       
         EtiquetaModel(
-          id: 'teste_alerta',
+          id: 'teste_quantidade_kg',
           tipoId: config.tipoEtiquetaId,
           tipoNome: config.tipoEtiquetaNome,
-          produtoNome: 'Croissant',
+          produtoNome: 'Produto por KG',
           categoriaId: 'cat',
-          categoriaNome: 'Folhados',
+          categoriaNome: 'Pesáveis',
           setorId: 'setor',
-          setorNome: 'Produção',
-          dataFabricacao: agora.subtract(const Duration(days: 1)),
-          dataValidade: agora.add(const Duration(days: 1)),
+          setorNome: 'Estoque',
+          dataFabricacao: agora,
+          dataValidade: agora.add(const Duration(days: 5)),
           camposCustomValores: const {
-            'observacao': 'Consumir rápido',
+            'observacao': 'Quantidade principal em kg',
+            'congelado': true,
           },
           status: 'ativo',
           lote: 'L002',
           incluirTabelaNutricional: false,
           tabelaNutricional: null,
-          quantidade: 5,
-          quantidadeRestante: 5,
-          unidadeMedida: 'un',
+          quantidade: 2.5,
+          quantidadeRestante: 2.5,
+          unidadeMedida: 'kg',
           statusEstoque: 'ativo',
           createdAt: agora,
         ),
 
-        
         EtiquetaModel(
-          id: 'teste_tabela',
+          id: 'teste_tabela_bool_unidades',
           tipoId: config.tipoEtiquetaId,
           tipoNome: config.tipoEtiquetaNome,
           produtoNome: 'Bolo de Chocolate',
@@ -125,6 +161,19 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
           dataFabricacao: agora.subtract(const Duration(days: 2)),
           dataValidade: agora.subtract(const Duration(days: 1)),
           camposCustomValores: const {
+            'preco': {
+              'tipo': 'priceMode',
+              'value': {
+                'valor': '39,90',
+                'modo': 'kg',
+              },
+            },
+            'peso': {
+              'value': '850',
+              'unit': 'g',
+            },
+            'tem_lactose': true,
+            'sem_acucar': false,
             'observacao': 'Produto com tabela nutricional',
           },
           status: 'ativo',

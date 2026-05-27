@@ -25,6 +25,19 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
     required this.qrData,
   });
 
+  double get _fontFactor {
+    switch (config.tamanhoFonte) {
+      case TamanhoFonteEtiqueta.pequena:
+        return 0.90;
+
+      case TamanhoFonteEtiqueta.media:
+        return 1.0;
+
+      case TamanhoFonteEtiqueta.grande:
+        return _is60x40 ? 1.10 : 1.22;
+    }
+  }
+
   bool get _is60x40 => config.preset == EtiquetaLayoutPreset.mm60x40;
 
   String _fmtDate(DateTime d) => DateFormat('dd/MM/yyyy').format(d);
@@ -140,16 +153,24 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
   }
 
   double _scaleFont(CampoDesignEtiquetaV2Model campo) {
-      if (campo.tipo == CampoDesignV2Tipo.produto || campo.id == 'produto') {
-        return _is60x40 ? 18 : 22;
-      }
+    double base;
 
-      if (campo.tipo == CampoDesignV2Tipo.blocoEmpresa || campo.id == 'empresa') {
-        return _is60x40 ? 10 : 13;
-      }
-
-      return _is60x40 ? 10 : 12;
+    if (campo.tipo == CampoDesignV2Tipo.produto ||
+        campo.id == 'produto') {
+      base = _is60x40 ? 18 : 22;
+    } else if (campo.tipo == CampoDesignV2Tipo.blocoEmpresa ||
+        campo.id == 'empresa') {
+      base = _is60x40 ? 10 : 13;
+    } else if (campo.id == 'ingredientes' ||
+        campo.id == 'alergenicos' ||
+        campo.id == 'observacao') {
+      base = _is60x40 ? 9 : 11;
+    } else {
+      base = _is60x40 ? 10 : 12;
     }
+
+    return base * _fontFactor;
+  }
 
   Widget _textoCampo(
     CampoDesignEtiquetaV2Model campo,
@@ -195,7 +216,10 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
             fontSize: _scaleFont(campo),
             fontWeight: campo.isBold ? FontWeight.w800 : FontWeight.w500,
             color: Colors.black,
-            height: 1.05,
+            height: config.tamanhoFonte ==
+                  TamanhoFonteEtiqueta.grande
+              ? 1.12
+              : 1.02,
           ),
         ),
       ),
@@ -235,13 +259,15 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
     final ratio = config.larguraMm / config.alturaMm;
     final previewHeight = previewWidth / ratio.clamp(0.3, 10.0);
 
-    final qrSize = _is60x40 ? 56.0 : 84.0;
+    final qrSize = config.tamanhoFonte == TamanhoFonteEtiqueta.grande
+      ? (_is60x40 ? 50.0 : 78.0)
+      : (_is60x40 ? 56.0 : 84.0);
     final outerPad = _is60x40 ? 6.0 : 10.0;
     final qrGap = _is60x40 ? 6.0 : 8.0;
-    final empresaBoxHeight = _is60x40 ? 40.0 : 60.0;
-    final produtoBoxHeight = _is60x40 ? 30.0 : 44.0;
-    final brandHeight = _is60x40 ? 10.0 : 14.0;
-    final brandFontSize = _is60x40 ? 8.0 : 9.0;
+    final empresaBoxHeight = (_is60x40 ? 40.0 : 60.0) * _fontFactor;
+    final produtoBoxHeight = (_is60x40 ? 30.0 : 44.0) * _fontFactor;
+    final brandHeight = (_is60x40 ? 10.0 : 14.0) * _fontFactor;
+    final brandFontSize = (_is60x40 ? 8.0 : 9.0) * _fontFactor;
 
     return Center(
       child: Container(
@@ -297,7 +323,10 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
                                 child: _textoCampo(
                                   empresaCampo,
                                   _valorCampo(empresaCampo),
-                                  maxLines: 6,
+                                  maxLines: config.tamanhoFonte ==
+                                      TamanhoFonteEtiqueta.grande
+                                  ? 7
+                                  : 6,
                                 ),
                               ),
                             const SizedBox(height: 2),
@@ -307,7 +336,10 @@ class EtiquetaPrintPreviewV2Real extends StatelessWidget {
                                 child: _textoCampo(
                                   produtoCampo,
                                   _valorCampo(produtoCampo),
-                                  maxLines: 2,
+                                  maxLines: config.tamanhoFonte ==
+                                      TamanhoFonteEtiqueta.grande
+                                  ? 3
+                                  : 2,
                                 ),
                               ),
                           ],

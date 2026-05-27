@@ -6,6 +6,7 @@ import '../../../models/design_etiqueta_v2_model.dart';
 import '../../../models/etiqueta_layout_preset.dart';
 import '../../../utils/preview_align_utils_v2.dart';
 import 'validade_v2.dart';
+import 'preview_font_size_v2.dart';
 
 Widget buildLinhaInfoV2(
   CampoDesignEtiquetaV2Model campo, {
@@ -66,25 +67,35 @@ double _previewFontForCampoV2(
   CampoDesignEtiquetaV2Model campo,
   DesignEtiquetaV2Model config,
 ) {
+  double base;
+
   switch (config.preset) {
     case EtiquetaLayoutPreset.mm60x40:
-      if (campo.id == 'validade') return 16.0;
-      if (campo.id == 'observacao' ||
+      if (campo.id == 'validade') {
+        base = 16.0;
+      } else if (campo.id == 'observacao' ||
           campo.id == 'ingredientes' ||
           campo.id == 'alergenicos') {
-        return 14.0;
+        base = 14.0;
+      } else {
+        base = 15.0;
       }
-      return 15.0;
+      break;
 
     case EtiquetaLayoutPreset.mm100x80:
-      if (campo.id == 'validade') return 11.0;
-      if (campo.id == 'observacao' ||
+      if (campo.id == 'validade') {
+        base = 11.0;
+      } else if (campo.id == 'observacao' ||
           campo.id == 'ingredientes' ||
           campo.id == 'alergenicos') {
-        return 10.5;
+        base = 10.5;
+      } else {
+        base = 10.8;
       }
-      return 10.8;
+      break;
   }
+
+  return base * previewFontFactorV2(config.tamanhoFonte);
 }
 
 int _maxLinesForCampoV2(CampoDesignEtiquetaV2Model campo) {

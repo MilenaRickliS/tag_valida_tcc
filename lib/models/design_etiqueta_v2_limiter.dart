@@ -18,7 +18,7 @@ class DesignEtiquetaV2Limiter {
       return true;
     }).toList();
 
-    final rules = _rulesForPreset(config.preset);
+    final rules = _rulesForPreset(config.preset, config.tamanhoFonte);
 
     final blocking = <String>[];
 
@@ -70,21 +70,41 @@ class DesignEtiquetaV2Limiter {
     );
   }
 
-  static _EtiquetaPresetRules _rulesForPreset(EtiquetaLayoutPreset preset) {
+  static double _fontHeightFactor(TamanhoFonteEtiqueta tamanho) {
+    switch (tamanho) {
+      case TamanhoFonteEtiqueta.pequena:
+        return 0.9;
+      case TamanhoFonteEtiqueta.media:
+        return 1.0;
+      case TamanhoFonteEtiqueta.grande:
+        return 1.25;
+    }
+  }
+
+  static _EtiquetaPresetRules _rulesForPreset(
+    EtiquetaLayoutPreset preset,
+    TamanhoFonteEtiqueta tamanhoFonte,
+  ) {
     switch (preset) {
       case EtiquetaLayoutPreset.mm60x40:
-        return const _EtiquetaPresetRules(
-          maxInfoFields: 9,
-          showEmpresa: true,
-          showProduto: true,
-        );
+        switch (tamanhoFonte) {
+          case TamanhoFonteEtiqueta.pequena:
+            return const _EtiquetaPresetRules(maxInfoFields: 9, showEmpresa: true, showProduto: true);
+          case TamanhoFonteEtiqueta.media:
+            return const _EtiquetaPresetRules(maxInfoFields: 7, showEmpresa: true, showProduto: true);
+          case TamanhoFonteEtiqueta.grande:
+            return const _EtiquetaPresetRules(maxInfoFields: 5, showEmpresa: true, showProduto: true);
+        }
 
       case EtiquetaLayoutPreset.mm100x80:
-        return const _EtiquetaPresetRules(
-          maxInfoFields: 10,
-          showEmpresa: true,
-          showProduto: true,
-        );
+        switch (tamanhoFonte) {
+          case TamanhoFonteEtiqueta.pequena:
+            return const _EtiquetaPresetRules(maxInfoFields: 10, showEmpresa: true, showProduto: true);
+          case TamanhoFonteEtiqueta.media:
+            return const _EtiquetaPresetRules(maxInfoFields: 9, showEmpresa: true, showProduto: true);
+          case TamanhoFonteEtiqueta.grande:
+            return const _EtiquetaPresetRules(maxInfoFields: 7, showEmpresa: true, showProduto: true);
+        }
     }
   }
 
@@ -115,12 +135,14 @@ class DesignEtiquetaV2Limiter {
     required DesignEtiquetaV2Model config,
     required int visibleInfoCount,
   }) {
+    final factor = _fontHeightFactor(config.tamanhoFonte);
+
     switch (config.preset) {
       case EtiquetaLayoutPreset.mm60x40:
-        return 10 + (visibleInfoCount * 2.6);
+        return 10 + (visibleInfoCount * 2.6 * factor);
 
       case EtiquetaLayoutPreset.mm100x80:
-        return 25 + (visibleInfoCount * 4.2);
+        return 25 + (visibleInfoCount * 4.2 * factor);
     }
   }
 

@@ -369,9 +369,30 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
     required TipoEtiquetaModel tipo,
     required EtiquetaModel etiqueta,
   }) {
-    if (etiqueta.incluirTabelaNutricional &&
-        etiqueta.tabelaNutricional != null) {
+
+    final largura = tipo.larguraMm;
+    final altura = tipo.alturaMm;
+
+    if (largura >= 90 || altura >= 70) {
       return EtiquetaLayoutPreset.mm100x80;
+    }
+
+    return EtiquetaLayoutPreset.mm60x40;
+  }
+
+  EtiquetaLayoutPreset _presetDaImpressoraOuTipo({
+    required String printerSize,
+    required TipoEtiquetaModel tipo,
+    required EtiquetaModel etiqueta,
+  }) {
+    final size = printerSize.trim().toLowerCase();
+
+    if (size.contains('100x80') || size.contains('100')) {
+      return EtiquetaLayoutPreset.mm100x80;
+    }
+
+    if (size.contains('60x40') || size.contains('60')) {
+      return EtiquetaLayoutPreset.mm60x40;
     }
 
     final largura = tipo.larguraMm;
@@ -385,70 +406,95 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
   }
 
   Future<void> _imprimirComConfigSalva(
-    BuildContext context, {
-    required String uid,
-    required EtiquetaModel etiqueta,
-    required TipoEtiquetaModel tipoEtiqueta,
-    required UserModel usuario,
-    required String qrData,
-  }) async {
-    try {
-      final copias = await _abrirModalQuantidadeEtiquetas(context);
-      if (copias == null) return;
+  BuildContext context, {
+  required String uid,
+  required EtiquetaModel etiqueta,
+  required TipoEtiquetaModel tipoEtiqueta,
+  required UserModel usuario,
+  required String qrData,
+}) async {
+  try {
+    final copias = await _abrirModalQuantidadeEtiquetas(context);
+    if (copias == null) return;
 
-      final printerProvider = context.read<PrinterConfigProvider>();
+    final printerProvider = context.read<PrinterConfigProvider>();
 
-      if (printerProvider.defaultPrinter == null) {
-        await printerProvider.load(uid);
-      }
+    if (printerProvider.defaultPrinter == null) {
+      await printerProvider.load(uid);
+    }
 
-      final printer = printerProvider.defaultPrinter;
+    final printer = printerProvider.defaultPrinter;
 
-      if (printer == null) {
-        throw Exception('Nenhuma impressora padrão configurada.');
-      }
+    if (printer == null) {
+      throw Exception('Nenhuma impressora padrão configurada.');
+    }
 
-      if (!printer.ativo) {
-        throw Exception('A impressora padrão está inativa.');
-      }
+    if (!printer.ativo) {
+      throw Exception('A impressora padrão está inativa.');
+    }
 
-      final preset = _presetCorreto(
-        tipo: tipoEtiqueta,
-        etiqueta: etiqueta,
+    final preset = _presetDaImpressoraOuTipo(
+      printerSize: printer.tamanhoEtiqueta,
+      tipo: tipoEtiqueta,
+      etiqueta: etiqueta,
+    );
+
+    final repo = DesignEtiquetaV2LocalRepo();
+
+    var presetFinal = preset;
+
+    var design = await repo.loadSavedByTipoId(
+      etiqueta.tipoId,
+      preset: presetFinal,
+    );
+
+    if (design == null && presetFinal == EtiquetaLayoutPreset.mm60x40) {
+      presetFinal = EtiquetaLayoutPreset.mm100x80;
+
+      design = await repo.loadSavedByTipoId(
+        etiqueta.tipoId,
+        preset: presetFinal,
       );
+    }
 
-      final appService = PrinterAppServiceV2(
-        designRepo: DesignEtiquetaV2LocalRepo(),
+    if (design == null) {
+      throw Exception(
+        'Nenhum design salvo encontrado para ${etiqueta.tipoNome}.',
       );
+    }
 
-      await appService.imprimirEtiquetaComDesignV2(
-        printer: printer,
-        etiqueta: etiqueta,
-        usuario: usuario,
-        qrData: qrData,
-        preset: preset,
-        copias: copias,
-      );
+    final appService = PrinterAppServiceV2(
+      designRepo: repo,
+    );
 
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              copias == 1
-                  ? '1 etiqueta enviada para impressão.'
-                  : '$copias etiquetas enviadas para impressão.',
-            ),
+    await appService.imprimirEtiquetaComDesignV2(
+      printer: printer,
+      etiqueta: etiqueta,
+      usuario: usuario,
+      qrData: qrData,
+      preset: presetFinal,
+      copias: copias,
+    );
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            copias == 1
+                ? '1 etiqueta enviada para impressão.'
+                : '$copias etiquetas enviadas para impressão.',
           ),
-        );
-      }
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Erro ao imprimir: $e')),
-        );
-      }
+        ),
+      );
+    }
+  } catch (e) {
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Erro ao imprimir: $e')),
+      );
     }
   }
+}
 
  Future<void> _abrirPreviewImpressao(
     BuildContext context, {
@@ -458,23 +504,60 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
     required String qrData,
   }) async {
     try {
-      final preset = _presetCorreto(
-        tipo: tipoEtiqueta,
-        etiqueta: etiqueta,
-      );
+      final printerProvider = context.read<PrinterConfigProvider>();
+
+      if (printerProvider.defaultPrinter == null) {
+        await printerProvider.load(widget.uid);
+      }
+
+      final printer = printerProvider.defaultPrinter;
+
+      final preset = printer == null
+          ? _presetCorreto(
+              tipo: tipoEtiqueta,
+              etiqueta: etiqueta,
+            )
+          : _presetDaImpressoraOuTipo(
+              printerSize: printer.tamanhoEtiqueta,
+              tipo: tipoEtiqueta,
+              etiqueta: etiqueta,
+            );
+      
 
       final repo = DesignEtiquetaV2LocalRepo();
 
-      final design = await repo.loadSavedByTipoId(
+      var presetFinal = preset;
+
+      var design = await repo.loadSavedByTipoId(
         etiqueta.tipoId,
-        preset: preset,
+        preset: presetFinal,
       );
+
+      if (design == null && presetFinal == EtiquetaLayoutPreset.mm60x40) {
+        presetFinal = EtiquetaLayoutPreset.mm100x80;
+
+        design = await repo.loadSavedByTipoId(
+          etiqueta.tipoId,
+          preset: presetFinal,
+        );
+      }
+
+      if (design == null && presetFinal == EtiquetaLayoutPreset.mm100x80) {
+        presetFinal = EtiquetaLayoutPreset.mm60x40;
+
+        design = await repo.loadSavedByTipoId(
+          etiqueta.tipoId,
+          preset: presetFinal,
+        );
+      }
 
       if (design == null) {
         throw Exception(
-          'Nenhum design salvo encontrado para ${etiqueta.tipoNome} no tamanho ${preset.label}.',
+          'Nenhum design salvo encontrado para ${etiqueta.tipoNome}.',
         );
       }
+
+      final designFinal = design;
 
       if (!context.mounted) return;
 
@@ -506,7 +589,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
                     const SizedBox(height: 18),
 
                     EtiquetaPrintPreviewV2Real(
-                      config: design,
+                      config: designFinal,
                       etiqueta: etiqueta,
                       usuario: usuario,
                       qrData: qrData,
@@ -899,6 +982,23 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
 
           final custom = Map<String, dynamic>.from(etiqueta.camposCustomValores);
 
+          final customCompleto = <String, dynamic>{};
+
+          for (final campo in tipoEtiqueta.camposCustom) {
+            if (campo.key == 'lote') continue;
+
+            if (custom.containsKey(campo.key)) {
+              customCompleto[campo.key] = custom[campo.key];
+            } else if (campo.tipo == CampoTipo.boolType) {
+              customCompleto[campo.key] = {
+                "label": campo.label,
+                "tipo": "bool",
+                "value": false,
+              };
+            }
+          }
+
+          customCompleto.remove("lote");
           String? loteValue;
           String loteLabel = "Lote";
 
@@ -910,8 +1010,6 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
             final s = v?.toString().trim();
             if (s != null && s.isNotEmpty) loteValue = s;
           }
-
-          final customSemLote = Map<String, dynamic>.from(custom)..remove("lote");
 
           final hasLote = loteValue != null && loteValue.trim().isNotEmpty;
 
@@ -1098,7 +1196,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
                       saidas: _fmtNum(saidas),
                       restante: _fmtNum(restanteView),
                       unidadeMedida: etiqueta.unidadeMedida,
-                      customSemLote: customSemLote,
+                      customSemLote: customCompleto,
                       incluirTabelaNutricional: etiqueta.incluirTabelaNutricional,
                       tabelaNutricional: etiqueta.tabelaNutricional,
                       formatCustomDate: (ms) =>

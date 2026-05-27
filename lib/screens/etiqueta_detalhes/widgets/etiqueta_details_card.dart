@@ -397,6 +397,12 @@ class EtiquetaDetailsCard extends StatelessWidget {
                   casasDecimais: casasDecimais,
                 );
 
+                final isBoolField = tipo == "bool" || tipo == "boolType";
+
+                if (!isBoolField && texto.trim().isEmpty) {
+                  return const SizedBox.shrink();
+                }
+
                 return _linha(label, texto);
               }),
           ],

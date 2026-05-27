@@ -3,6 +3,12 @@ import 'package:flutter/material.dart';
 
 import 'etiqueta_layout_preset.dart';
 
+enum TamanhoFonteEtiqueta {
+  pequena,
+  media,
+  grande,
+}
+
 enum CampoDesignV2Tipo {
   blocoEmpresa,
   produto,
@@ -124,11 +130,13 @@ class DesignEtiquetaV2Model {
   final bool destacarValidade;
 
   final List<CampoDesignEtiquetaV2Model> campos;
+  final TamanhoFonteEtiqueta tamanhoFonte;
 
   const DesignEtiquetaV2Model({
     required this.tipoEtiquetaId,
     required this.tipoEtiquetaNome,
     required this.preset,
+    required this.tamanhoFonte,
     required this.mostrarMarcaTagValida,
     required this.destacarValidade,
     required this.campos,
@@ -155,6 +163,10 @@ class DesignEtiquetaV2Model {
       tipoEtiquetaId: map['tipoEtiquetaId'] ?? '',
       tipoEtiquetaNome: map['tipoEtiquetaNome'] ?? '',
       preset: preset,
+      tamanhoFonte: TamanhoFonteEtiqueta.values.firstWhere(
+        (e) => e.name == map['tamanhoFonte'],
+        orElse: () => TamanhoFonteEtiqueta.media,
+      ),
       mostrarMarcaTagValida: map['mostrarMarcaTagValida'] ?? true,
       destacarValidade: map['destacarValidade'] ?? true,
       campos: camposMap,
@@ -163,11 +175,12 @@ class DesignEtiquetaV2Model {
 
   Map<String, dynamic> toMap() {
     return {
-      'version': 3,
+      'version': 4,
       'preset': preset.storageKey,
       'tipoEtiquetaId': tipoEtiquetaId,
       'tipoEtiquetaNome': tipoEtiquetaNome,
       'larguraMm': preset.larguraMm,
+      'tamanhoFonte': tamanhoFonte.name,
       'alturaMm': preset.alturaMm,
       'mostrarMarcaTagValida': mostrarMarcaTagValida,
       'destacarValidade': destacarValidade,
@@ -189,6 +202,7 @@ class DesignEtiquetaV2Model {
     String? tipoEtiquetaId,
     String? tipoEtiquetaNome,
     EtiquetaLayoutPreset? preset,
+    TamanhoFonteEtiqueta? tamanhoFonte,
     bool? mostrarMarcaTagValida,
     bool? destacarValidade,
     List<CampoDesignEtiquetaV2Model>? campos,
@@ -197,6 +211,7 @@ class DesignEtiquetaV2Model {
       tipoEtiquetaId: tipoEtiquetaId ?? this.tipoEtiquetaId,
       tipoEtiquetaNome: tipoEtiquetaNome ?? this.tipoEtiquetaNome,
       preset: preset ?? this.preset,
+      tamanhoFonte: tamanhoFonte ?? this.tamanhoFonte,
       mostrarMarcaTagValida:
           mostrarMarcaTagValida ?? this.mostrarMarcaTagValida,
       destacarValidade: destacarValidade ?? this.destacarValidade,

@@ -15,6 +15,7 @@ class TsplWriter {
     _sb.writeln('DIRECTION 1');
     _sb.writeln('REFERENCE 0,0');
     _sb.writeln('CLS');
+    _sb.writeln('CODEPAGE 1252');
   }
 
   void text({

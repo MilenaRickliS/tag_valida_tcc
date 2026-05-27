@@ -278,11 +278,10 @@ class TabelaNutricional100x80LayoutV2 {
       w: w,
       text:
           '* Percentual de valores diarios\n'
-          'fornecidos por porcao, com base\n'
-          'em uma dieta de 2000 kcal. Seus\n'
-          'valores podem ser diferentes\n'
-          'dependendo de suas necessidades\n'
-          'energeticas.',
+          'fornecidos por porcao, com base em uma\n'
+          'dieta de 2000 kcal. Seus valores podem\n'
+          'ser diferentes dependendo de suas\n'
+          'necessidades energeticas.\n',
       xBase: tableLeft + 6,
       y: rowY + 8,
       maxWidth: tableWidth - 20,

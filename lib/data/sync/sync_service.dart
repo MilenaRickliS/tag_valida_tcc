@@ -288,6 +288,20 @@ class SyncService {
                 map["campos"] = [];
               }
             }
+
+            if (map.containsKey("tamanhoFonte")) {
+              final v = (map["tamanhoFonte"] ?? "media")
+                  .toString()
+                  .trim()
+                  .toLowerCase();
+
+              map["tamanhoFonte"] =
+                  (v == "pequena" || v == "grande")
+                      ? v
+                      : "media";
+            } else {
+              map["tamanhoFonte"] = "media";
+            }
           }
           if (entity == "estoque_mov") {
             if (map.containsKey("unidadeMedida")) {
@@ -598,6 +612,7 @@ class SyncService {
           "uid": uid,
           "tipoEtiquetaNome": (d["tipoEtiquetaNome"] ?? "").toString(),
           "preset": (d["preset"] ?? "60x40").toString(),
+          "tamanhoFonte": (d["tamanhoFonte"] ?? "media").toString(),
           "mostrarMarcaTagValida":
               toBool(d["mostrarMarcaTagValida"], defaultValue: true) ? 1 : 0,
           "destacarValidade":

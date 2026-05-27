@@ -38,16 +38,12 @@ class Etiqueta100x80TabelaLayoutV2 {
       copias: 0,
     );
 
-    final baseSemPrint = base.replaceAll(
-      RegExp(r'PRINT\s+\d+,1'),
-      '',
-    );
 
-    w.raw(baseSemPrint);
+    w.raw(base);
 
     const separatorX = 350;
-    const contentTop = 190;
-    const contentHeight = 420;
+    const contentTop = 138;
+    const contentHeight = 434;
 
     w.bar(
       x: separatorX,
@@ -59,7 +55,7 @@ class Etiqueta100x80TabelaLayoutV2 {
     TabelaNutricional100x80LayoutV2().build(
       w: w,
       x: 360,
-      y: 192,
+      y: 138,
       width: 420,
       tabela: tabela,
     );

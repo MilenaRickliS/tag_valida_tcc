@@ -10,7 +10,7 @@ String cleanTsplText(String value, {int max = 30}) {
       .trim();
 
   text = removeAccents(text);
-  text = text.replaceAll(RegExp(r'[^\x20-\x7E]'), '');
+  text = text.replaceAll(RegExp(r'[^\x20-\x7E%°²³\$]'), '');
 
   if (text.length > max) {
     text = text.substring(0, max);
@@ -39,6 +39,27 @@ String cleanQr(String value) {
 String formatNumber(num value) {
   if (value % 1 == 0) return value.toInt().toString();
   return value.toStringAsFixed(2).replaceAll('.', ',');
+}
+
+String cleanUnit(String unit) {
+  final u = unit.trim();
+
+  if (u == '__outro__') return '';
+
+  if (u == r'R$') return r'R$';
+  if (u == r'R\$') return r'R$';
+
+  return cleanTsplText(u, max: 10);
+}
+
+String formatQtdComUnidade(num qtd, String unidade) {
+  final unit = cleanUnit(unidade);
+
+  final numero = qtd % 1 == 0
+      ? qtd.toInt().toString()
+      : qtd.toStringAsFixed(3).replaceAll('.', ',');
+
+  return unit.isNotEmpty ? '$numero $unit' : numero;
 }
 
 List<String> wrapText(String text, {required int maxChars}) {

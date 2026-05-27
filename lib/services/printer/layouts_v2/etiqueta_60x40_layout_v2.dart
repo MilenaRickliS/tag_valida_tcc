@@ -48,29 +48,46 @@ class Etiqueta60x40LayoutV2 {
     if (empresaCampo != null) {
       y = _writeMultiline(
         w,
-        text: _buildEmpresa(usuario),
+        design: design,
+        text: _buildEmpresa(usuario, isSmall: true),
         x: textAreaX,
         y: y,
         width: textAreaWidth,
-        spec: fontSpecFromPt(6, compact: true),
+        spec: fontEtiquetaFromPt(
+          6,
+          design.tamanhoFonte,
+          compact: true,
+          isSmallLabel: true,
+        ),
         maxLines: 3,
         bold: empresaCampo.isBold,
         isEmpresa: true,
         align: empresaCampo.align,
       );
 
-      y += 8;
+      y += design.tamanhoFonte == TamanhoFonteEtiqueta.grande
+        ? 12
+        : 8;
     }
 
     if (produtoCampo != null) {
       y = _writeMultiline(
         w,
+        design: design,
         text: etiqueta.produtoNome,
         x: textAreaX,
         y: y,
         width: textAreaWidth,
-        spec: fontSpecFromPt(8, compact: true),
-        maxLines: 1,
+        spec: fontEtiquetaFromPt(
+          8,
+          design.tamanhoFonte,
+          compact: true,
+          isSmallLabel: true,
+        ),
+        maxLines: design.tamanhoFonte ==
+        TamanhoFonteEtiqueta.grande
+          ? 2
+          : 1,
         bold: produtoCampo.isBold,
         align: produtoCampo.align,
       );
@@ -87,15 +104,28 @@ class Etiqueta60x40LayoutV2 {
           max: 16,
         );
 
+        int resolveQrModule(String qrData) {
+          final isPublico =
+              qrData.startsWith('http://') ||
+              qrData.startsWith('https://');
+
+          return isPublico ? 3 : 2;
+        }
+
       w.qrCode(
         x: qrX,
         y: qrY + 10,
-        module: 2,
+        module: resolveQrModule(qrData),
         data: qrData,
       );
     }
 
-    final dividerY = y + mmToDots(1.8);
+    final dividerY = y +
+      mmToDots(
+        design.tamanhoFonte == TamanhoFonteEtiqueta.grande
+            ? 2.6
+            : 1.8,
+      );
     final dividerEnd = hasQr ? qrX - mmToDots(0.5) : larguraDots - outerPad;
 
     w.bar(
@@ -136,17 +166,27 @@ class Etiqueta60x40LayoutV2 {
 
       y = _writeMultiline(
         w,
+        design: design,
         text: textoFinal,
         x: textAreaX,
         y: y,
         width: textAreaWidth,
-        spec: fontSpecFromPt(7, compact: true),
-        maxLines: _maxLinesForCampo(campo),
+        spec: fontEtiquetaFromPt(
+          7,
+          design.tamanhoFonte,
+          compact: true,
+          isSmallLabel: true,
+        ),
+        maxLines: _maxLinesForCampo(campo, design),
         bold: campo.isBold || campo.id == 'validade',
         align: campo.align,
       );
 
-      y += mmToDots(0.8);
+      y += mmToDots(
+        design.tamanhoFonte == TamanhoFonteEtiqueta.grande
+            ? 1.2
+            : 0.8,
+      );
     }
 
     w.print(copias: copias);
@@ -164,22 +204,151 @@ class Etiqueta60x40LayoutV2 {
     }
   }
 
-  String _fmtQtd(EtiquetaModel e) {
-    if (e.unidadeMedida == 'kg') {
-      return '${e.quantidade.toStringAsFixed(3).replaceAll(".", ",")} kg';
-    }
+ String _fmtQtd(EtiquetaModel e) {
+  return formatQtdComUnidade(
+    e.quantidadeRestante,
+    e.unidadeMedida,
+  );
+}
 
-    if (e.quantidade % 1 == 0) {
-      return '${e.quantidade.toInt()} un';
-    }
 
-    return '${formatNumber(e.quantidade)} un';
+String formatCampoCustomParaImpressao(dynamic value) {
+  if (value == null) return '';
+
+  if (value is bool) {
+    return value ? 'SIM' : 'NAO';
   }
+
+  if (value is Map) {
+    final tipo = (value['tipo'] ?? value['type'] ?? '').toString().toLowerCase().trim();
+    final raw = value['value'] ?? value['valor'] ?? value['preco'];
+
+    if (tipo == 'bool' || tipo == 'booltype') {
+      if (raw == true) return 'SIM';
+
+      final s = raw?.toString().toLowerCase().trim() ?? '';
+      if (s == 'true' || s == '1' || s == 'sim' || s == 'yes') {
+        return 'SIM';
+      }
+
+      return 'NAO';
+    }
+    
+
+    if (tipo == 'date') {
+      if (raw == null) return '';
+
+      if (raw is DateTime) {
+        return _formatDate(raw);
+      }
+
+      if (raw is num) {
+        return _formatDate(
+          DateTime.fromMillisecondsSinceEpoch(raw.toInt()),
+        );
+      }
+
+      final texto = raw.toString().trim();
+
+      final numero = int.tryParse(texto);
+      if (numero != null && texto.length >= 10) {
+        return _formatDate(
+          DateTime.fromMillisecondsSinceEpoch(numero),
+        );
+      }
+
+      return texto;
+    }
+
+    final rawEhPrecoModo = raw is Map &&
+        (raw.containsKey('valor') ||
+            raw.containsKey('value') ||
+            raw.containsKey('preco'));
+
+    if (tipo == 'pricemode' ||
+        tipo == 'price_mode' ||
+        tipo == 'preco' ||
+        rawEhPrecoModo) {
+
+      final precoRaw = raw is Map
+          ? (raw['valor'] ?? raw['value'] ?? raw['preco'])
+          : raw;
+
+      final modoRaw = raw is Map
+          ? (raw['modo'] ??
+              raw['modoPreco'] ??
+              raw['priceMode'] ??
+              raw['mode'])
+          : null;
+
+      final preco = precoRaw?.toString().trim() ?? '';
+      final modo = modoRaw?.toString().trim() ?? '';
+
+      if (preco.isEmpty) return '';
+
+      final precoFinal =
+          preco.startsWith('R\$') ? preco : 'R\$ $preco';
+
+      if (modo.isEmpty) {
+        return precoFinal;
+      }
+
+      return '$precoFinal/$modo';
+    }
+
+    final prefixo = cleanUnit((value['prefixo'] ?? '').toString());
+    final sufixo = cleanUnit((value['sufixo'] ?? '').toString());
+
+    final unit = cleanUnit(
+      (value['unit'] ??
+              value['unidade'] ??
+              value['unidadeMedida'] ??
+              value['simbolo'] ??
+              '')
+          .toString(),
+    );
+
+    String texto;
+    if (raw is num) {
+      texto = formatNumber(raw);
+    } else {
+      texto = raw?.toString() ?? '';
+    }
+
+    if (prefixo.isNotEmpty) {
+      return '$prefixo $texto';
+    }
+
+    if (sufixo.isNotEmpty) {
+      return '$texto $sufixo';
+    }
+
+    if (unit.isNotEmpty) {
+      if (unit == r'R$') {
+        return 'R\$ $texto';
+      }
+
+      return '$texto $unit';
+    }
+
+    return texto;
+
+  }
+
+  final text = value.toString().trim().toLowerCase();
+
+  if (text == 'true' || text == '1' || text == 'sim') return 'SIM';
+  if (text == 'false' || text == '0' || text == 'não' || text == 'nao') {
+    return 'NAO';
+  }
+
+  return value.toString().trim();
+}
 
   Map<String, String> _buildValores(EtiquetaModel e) {
     final valores = <String, String>{
-      'validade': _formatDate(e.dataValidade),
       'fabricacao': _formatDate(e.dataFabricacao),
+      'validade': _formatDate(e.dataValidade),
       'categoria': e.categoriaNome,
       'setor': e.setorNome,
       'quantidade': _fmtQtd(e),
@@ -192,45 +361,53 @@ class Etiqueta60x40LayoutV2 {
 
       if (value == null) continue;
 
-      if (value is Map) {
-        valores['custom_$key'] = (value['value'] ?? '').toString();
-      } else {
-        valores['custom_$key'] = value.toString();
-      }
+      valores['custom_$key'] = formatCampoCustomParaImpressao(value);
     }
 
     return valores;
   }
 
- String _buildEmpresa(UserModel u) {
+ String _buildEmpresa(UserModel u, {required bool isSmall}) {
     final nome = (u.razao.isNotEmpty ? u.razao : u.nome).toUpperCase();
 
-    final linhas = <String>[
-      nome,
-    ];
-
-    if (u.cnpj.isNotEmpty) {
-      linhas.add('CNPJ: ${u.cnpj}');
+    if (isSmall) {
+      return [
+        nome,
+        if (u.cnpj.isNotEmpty) 'CNPJ: ${u.cnpj}',
+        if (u.cidade.isNotEmpty && u.estado.isNotEmpty)
+          '${u.cidade} - ${u.estado}',
+      ].join('\n');
     }
 
-    final endereco = [
-      if (u.rua.isNotEmpty) u.rua,
+    final enderecoCurto = [
+      if (u.rua.isNotEmpty) _abreviarRua(u.rua),
       if (u.numero.isNotEmpty) u.numero,
-      if (u.bairro.isNotEmpty) u.bairro,
     ].join(', ');
 
-    if (endereco.isNotEmpty) {
-      linhas.add(endereco);
-    }
-
-    return linhas.join('\n');
+    return [
+      nome,
+      if (u.cnpj.isNotEmpty) 'CNPJ: ${u.cnpj}',
+      if (enderecoCurto.isNotEmpty) enderecoCurto,
+      if (u.cidade.isNotEmpty && u.estado.isNotEmpty)
+        '${u.cidade} - ${u.estado}',
+    ].join('\n');
+  }
+  String _abreviarRua(String rua) {
+    return rua
+        .replaceAll('Rua ', 'R. ')
+        .replaceAll('Avenida ', 'Av. ')
+        .replaceAll('Travessa ', 'Tv. ')
+        .replaceAll('Rodovia ', 'Rod. ');
   }
 
-  int _maxLinesForCampo(CampoDesignEtiquetaV2Model campo) {
+  int _maxLinesForCampo(CampoDesignEtiquetaV2Model campo, DesignEtiquetaV2Model design,) {
     if (campo.id.contains('ingred') ||
         campo.id.contains('alerg') ||
         campo.id.contains('observ')) {
-      return 2;
+      return design.tamanhoFonte ==
+          TamanhoFonteEtiqueta.grande
+      ? 3
+      : 2;
     }
 
     return 1;
@@ -289,6 +466,7 @@ String _validadeDestaque(EtiquetaModel etiqueta) {
   int _writeMultiline(
     TsplWriter w, {
     required String text,
+    required DesignEtiquetaV2Model design,
     required int x,
     required int y,
     required int width,
@@ -330,7 +508,12 @@ String _validadeDestaque(EtiquetaModel etiqueta) {
         isBold: bold,
       );
 
-      currentY += lineHeight(spec) - (isEmpresa ? 2 : 6);
+      final spacing = design.tamanhoFonte ==
+              TamanhoFonteEtiqueta.grande
+          ? (isEmpresa ? 0 : 3)
+          : (isEmpresa ? 2 : 6);
+
+      currentY += lineHeight(spec) - spacing;
     }
 
     return currentY;

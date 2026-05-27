@@ -476,22 +476,56 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
 
       if (kIsWeb) {
       final bytes = await picked.readAsBytes();
-        await ref.putData(bytes, metadata);
+        await ref.putData(bytes, metadata).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception("Sem conexão com a internet.");
+          },
+        );
       } else {
         final file = File(picked.path);
-        await ref.putFile(file, metadata);
+        await ref.putFile(file, metadata).timeout(
+          const Duration(seconds: 10),
+          onTimeout: () {
+            throw Exception("Sem conexão com a internet.");
+          },
+        );
       }
 
       
       final url = await ref.getDownloadURL();
       return url;
-    } catch (e) {
-      if (!mounted) return null;
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Erro ao enviar imagem: $e')),
-      );
-      return null;
-    }
+      } on FirebaseException catch (e) {
+        if (!mounted) return null;
+
+        String msg = "Erro ao enviar imagem.";
+
+        if (e.code == "network-request-failed" ||
+            e.code == "unavailable" ||
+            e.code == "unknown" ||
+            e.message?.toLowerCase().contains("network") == true) {
+          msg = "Sem conexão com a internet. Verifique sua conexão e tente enviar a imagem novamente.";
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(msg)),
+        );
+
+        return null;
+      } catch (e) {
+        if (!mounted) return null;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            backgroundColor: Colors.red,
+            content: Text(
+              "Sem conexão com a internet. Não foi possível enviar a imagem.",
+            ),
+          ),
+        );
+
+        return null;
+      }
   }
 
   String _contentTypeFromExt(String ext) {
@@ -1084,6 +1118,19 @@ class _CriarEtiquetaScreenState extends State<CriarEtiquetaScreen> {
                                   );
                                   return;
                                 }
+
+                                for (final campo in tipoParaSalvar.camposCustom) {
+                                    if (campo.tipo == CampoTipo.boolType) {
+                                      final atual = prov.camposValores[campo.key];
+
+                                      prov.setCampoValor(
+                                        key: campo.key,
+                                        label: campo.label,
+                                        value: atual?["value"] == true,
+                                        tipo: campo.tipo,
+                                      );
+                                    }
+                                  }
 
                                 try {
                                   if (isEditing) {

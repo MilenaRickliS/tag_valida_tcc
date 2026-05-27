@@ -23,6 +23,7 @@ class _PreviewLayoutV2 {
   final double dividerGap;
   final double infoTopGap;
   final double infoBottomGap;
+  final double fontFactor;
 
   const _PreviewLayoutV2({
     required this.outerPad,
@@ -34,34 +35,53 @@ class _PreviewLayoutV2 {
     required this.dividerGap,
     required this.infoTopGap,
     required this.infoBottomGap,
+    required this.fontFactor,
   });
 
-  factory _PreviewLayoutV2.fromPreset(EtiquetaLayoutPreset preset) {
+  static double _fontFactor(TamanhoFonteEtiqueta tamanho) {
+    switch (tamanho) {
+      case TamanhoFonteEtiqueta.pequena:
+        return 0.92;
+      case TamanhoFonteEtiqueta.media:
+        return 1.0;
+      case TamanhoFonteEtiqueta.grande:
+        return 1.20;
+    }
+  }
+
+ factory _PreviewLayoutV2.fromPreset(
+    EtiquetaLayoutPreset preset,
+    TamanhoFonteEtiqueta tamanhoFonte,
+  ) {
+    final factor = _fontFactor(tamanhoFonte);
+
     switch (preset) {
       case EtiquetaLayoutPreset.mm60x40:
-        return const _PreviewLayoutV2(
+        return _PreviewLayoutV2(
           outerPad: 6,
           qrSize: 56,
           qrGap: 6,
-          empresaBoxHeight: 28,
-          produtoBoxHeight: 30,
-          brandHeight: 10,
+          empresaBoxHeight: 28 * factor,
+          produtoBoxHeight: 30 * factor,
+          brandHeight: 10 * factor,
           dividerGap: 3,
           infoTopGap: 4,
           infoBottomGap: 3,
+          fontFactor: factor,
         );
 
       case EtiquetaLayoutPreset.mm100x80:
-        return const _PreviewLayoutV2(
+        return _PreviewLayoutV2(
           outerPad: 10,
           qrSize: 84,
           qrGap: 8,
-          empresaBoxHeight: 42,
-          produtoBoxHeight: 44,
-          brandHeight: 14,
+          empresaBoxHeight: 42 * factor,
+          produtoBoxHeight: 44 * factor,
+          brandHeight: 14 * factor,
           dividerGap: 5,
           infoTopGap: 6,
           infoBottomGap: 6,
+          fontFactor: factor,
         );
     }
   }
@@ -96,9 +116,18 @@ Widget buildEtiquetaPreviewV2(
     return true;
   }).toList();
 
-  final layout = _PreviewLayoutV2.fromPreset(config.preset);
+  final layout = _PreviewLayoutV2.fromPreset(
+    config.preset,
+    config.tamanhoFonte,
+  );
   final is100x80 = config.preset == EtiquetaLayoutPreset.mm100x80;
-  final brandFontSize = config.preset == EtiquetaLayoutPreset.mm60x40 ? 10.0 : 11.0;
+  final baseBrandFontSize =
+      config.preset == EtiquetaLayoutPreset.mm60x40
+          ? 10.0
+          : 11.0;
+
+  final brandFontSize =
+      baseBrandFontSize * layout.fontFactor;
 
   return DefaultTextStyle(
     style: const TextStyle(

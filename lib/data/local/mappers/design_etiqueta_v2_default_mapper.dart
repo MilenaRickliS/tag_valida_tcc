@@ -137,6 +137,7 @@ class DesignEtiquetaV2DefaultMapper {
       tipoEtiquetaNome: tipo.nome,
       preset: preset,
       mostrarMarcaTagValida: true,
+      tamanhoFonte: TamanhoFonteEtiqueta.media,
       destacarValidade: true,
       campos: campos,
     );

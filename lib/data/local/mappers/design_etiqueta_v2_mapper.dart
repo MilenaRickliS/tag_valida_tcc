@@ -34,6 +34,10 @@ class DesignEtiquetaV2Mapper {
       tipoEtiquetaId: map['tipoEtiquetaId'] ?? '',
       tipoEtiquetaNome: map['tipoEtiquetaNome'] ?? '',
       preset: preset,
+      tamanhoFonte: TamanhoFonteEtiqueta.values.firstWhere(
+        (e) => e.name == map['tamanhoFonte'],
+        orElse: () => TamanhoFonteEtiqueta.media,
+      ),
       mostrarMarcaTagValida: map['mostrarMarcaTagValida'] ?? true,
       destacarValidade: map['destacarValidade'] ?? true,
       campos: camposMap,
@@ -45,13 +49,14 @@ class DesignEtiquetaV2Mapper {
     required EtiquetaLayoutPreset preset,
   }) {
     return {
-      'version': 3,
+      'version': 4,
       'preset': preset.storageKey,
       'tipoEtiquetaId': model.tipoEtiquetaId,
       'tipoEtiquetaNome': model.tipoEtiquetaNome,
       'larguraMm': preset.larguraMm,
       'alturaMm': preset.alturaMm,
       'mostrarMarcaTagValida': model.mostrarMarcaTagValida,
+      'tamanhoFonte': model.tamanhoFonte.name,
       'destacarValidade': model.destacarValidade,
       'campos': model.campos
           .asMap()

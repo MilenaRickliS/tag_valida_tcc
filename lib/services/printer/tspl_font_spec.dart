@@ -1,3 +1,5 @@
+import '../../models/design_etiqueta_v2_model.dart';
+
 class TsplFontSpec {
   final String font;
   final int xMul;
@@ -8,6 +10,37 @@ class TsplFontSpec {
     required this.xMul,
     required this.yMul,
   });
+}
+
+double fontScaleFromTamanho(
+  TamanhoFonteEtiqueta tamanho, {
+  bool isSmallLabel = false,
+}) {
+  switch (tamanho) {
+    case TamanhoFonteEtiqueta.pequena:
+      return -1;
+
+    case TamanhoFonteEtiqueta.media:
+      return 0;
+
+    case TamanhoFonteEtiqueta.grande:
+      return isSmallLabel ? 1 : 2;
+  }
+}
+
+TsplFontSpec fontEtiquetaFromPt(
+  double basePt,
+  TamanhoFonteEtiqueta tamanho, {
+  bool compact = false,
+  bool isSmallLabel = false,
+}) {
+  return fontSpecFromPt(
+    basePt + fontScaleFromTamanho(
+      tamanho,
+      isSmallLabel: isSmallLabel,
+    ),
+    compact: compact,
+  );
 }
 
 TsplFontSpec fontSpecFromPt(double pt, {bool compact = false}) {
