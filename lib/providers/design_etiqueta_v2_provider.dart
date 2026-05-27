@@ -78,7 +78,7 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
         tipo: CampoDesignV2Tipo.info,
         labelImpresso: custom.label,
         valorExemplo: custom.label,
-        obrigatorio: custom.obrigatorio,
+        obrigatorio: false,
       );
 
       continue;
@@ -91,7 +91,7 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
         tipo: CampoDesignV2Tipo.info,
         ordem: campos.length,
         visivel: true,
-        obrigatorio: custom.obrigatorio,
+        obrigatorio: false,
         isBold: false,
         align: TextAlign.left,
         labelImpresso: custom.label,
@@ -198,7 +198,7 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
 
     final atualizados = _config!.campos.map((c) {
       if (c.id != id) return c;
-      if (c.obrigatorio) return c;
+     
       return c.copyWith(visivel: value);
     }).toList();
 

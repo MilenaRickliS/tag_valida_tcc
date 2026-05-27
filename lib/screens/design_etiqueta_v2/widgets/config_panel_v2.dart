@@ -212,6 +212,10 @@ Widget buildConfigPanelV2({
                       c.id == 'tabela_nutricional'),
             );
 
+            final isObrigatorioDesign = campo.id == 'produto' ||
+                campo.id == 'fabricacao' ||
+                campo.id == 'validade';
+
             return Padding(
               key: ValueKey(campo.id),
               padding: const EdgeInsets.only(bottom: 12),
@@ -226,12 +230,12 @@ Widget buildConfigPanelV2({
                         index: index,
                         child: _dragHandle(isDark),
                       ),
-                onToggle: campo.obrigatorio
-                    ? null
-                    : (v) => designProvider.toggleCampo(
-                          campo.id,
-                          v ?? false,
-                        ),
+                onToggle: isObrigatorioDesign
+                  ? null
+                  : (v) => designProvider.toggleCampo(
+                        campo.id,
+                        v ?? false,
+                      ),
                 onBoldChanged: (v) =>
                     designProvider.setBold(campo.id, v),
                 onAlignChanged: (v) {
