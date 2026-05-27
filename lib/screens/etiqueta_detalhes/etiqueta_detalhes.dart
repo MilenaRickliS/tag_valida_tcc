@@ -1336,7 +1336,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
                         style: TextStyle(fontWeight: FontWeight.w800),
                       ),
                     ),
-                    const SizedBox(height: 25),
+                    const SizedBox(height: 50),
                   ],
                 ),
               ),

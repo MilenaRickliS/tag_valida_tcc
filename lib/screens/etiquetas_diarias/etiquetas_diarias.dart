@@ -258,6 +258,7 @@ class _EtiquetasDiariasScreenState extends State<EtiquetasDiariasScreen> {
                     ),
                   ),
                 ),
+          
             ],
           );
         },

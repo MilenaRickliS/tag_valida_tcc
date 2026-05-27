@@ -344,9 +344,7 @@ class EtiquetaFinalizadaCard extends StatelessWidget {
                             style: TextStyle(fontWeight: FontWeight.w900),
                           ),
                           style: ElevatedButton.styleFrom(
-                            backgroundColor: _isDark(context)
-                                ? const Color(0xFFD4AF37)
-                                : const Color(0xFF428E2E),
+                            backgroundColor: const Color(0xFF428E2E),
                             foregroundColor:
                                 _isDark(context) ? Colors.black : Colors.white,
                             elevation: 0,

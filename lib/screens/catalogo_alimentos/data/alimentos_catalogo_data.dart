@@ -61,7 +61,7 @@ class AlimentosCatalogoData {
       textura: ['Macia', 'Pegajosa'],
       cor: ['Vermelho vivo', 'Escurecido'],
       imagemAsset: 'assets/alimentos/danesse.jpg',
-      veioDaIA: true,
+      veioDaIA: false,
     ),
 
     //LATICÍNIOS 
@@ -140,6 +140,21 @@ class AlimentosCatalogoData {
       cor: ['Amarela', 'Preta'],
       imagemAsset: 'assets/alimentos/banana.jpg',
       veioDaIA: false,
+    ),
+
+    AlimentoCatalogo(
+      id: '13',
+      nome: 'Morango',
+      categoria: 'Frutas',
+      descricao: 'Fruta delicada, muito sensível à umidade e ao mofo.',
+      sinaisBom: ['Vermelho vivo', 'Firme', 'Sem manchas'],
+      sinaisAlerta: ['Partes amolecidas', 'Umidade excessiva', 'Escurecimento'],
+      sinaisRuim: ['Mofo visível', 'Cheiro fermentado', 'Muito mole'],
+      cheiro: ['Fresco e levemente doce', 'Fermentado quando ruim'],
+      textura: ['Firme e suculenta', 'Mole ou pegajosa'],
+      cor: ['Vermelho vivo', 'Escura, esbranquiçada ou com mofo'],
+      imagemAsset: 'assets/alimentos/morango.jpg',
+      veioDaIA: true,
     ),
 
     //HORTALIÇAS

@@ -487,7 +487,7 @@ class _CriarTipoEtiquetaScreenState extends State<CriarTipoEtiquetaScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 32),
+                  const SizedBox(height: 50),
                 ],
               ),
             ),

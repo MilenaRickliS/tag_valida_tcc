@@ -313,7 +313,7 @@ class FiltersBarPretty extends StatelessWidget {
                 ],
               );
             },
-          ),
+          ),          
         ],
       ),
     );

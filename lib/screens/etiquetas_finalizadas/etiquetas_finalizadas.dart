@@ -44,8 +44,7 @@ class _EtiquetasFinalizadasScreenState
       ? const Color(0xFFD4AF37).withOpacity(0.16)
       : Colors.black.withOpacity(0.08);
 
-  Color _brand(BuildContext context) =>
-      _isDark(context) ? const Color(0xFFD4AF37) : const Color(0xFF428E2E);
+  Color _brand(BuildContext context) => const Color(0xFFFF9800);
 
   @override
   void initState() {

@@ -360,7 +360,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                 Container(
                   width: double.infinity,
                   padding:
-                      const EdgeInsets.symmetric(vertical: 22, horizontal: 24),
+                      const EdgeInsets.symmetric(vertical: 60, horizontal: 24),
                   color: footerColor,
                   child: const Text(
                     '© 2026 TagVálida — Todos os direitos reservados.',
@@ -417,6 +417,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
               ),
             ),
           ),
+          
         ],
       ),
     );

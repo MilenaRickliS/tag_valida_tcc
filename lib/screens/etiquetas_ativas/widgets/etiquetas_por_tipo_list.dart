@@ -167,188 +167,221 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
     backgroundColor: Colors.transparent,
     barrierColor: Colors.black.withOpacity(0.35),
     builder: (_) {
-      return DraggableScrollableSheet(
-        initialChildSize: 0.70,
-        minChildSize: 0.45,
-        maxChildSize: 0.92,
-        builder: (context, scrollCtrl) {
-          return Container(
-            decoration: BoxDecoration(
-              color: sheetBg,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-              border: Border.all(color: border),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withOpacity(0.18),
-                  blurRadius: 26,
-                  spreadRadius: 2,
-                  offset: const Offset(0, -10),
-                ),
-              ],
-            ),
-            child: Column(
-              children: [
-                const SizedBox(height: 10),
-                Container(
-                  width: 44,
-                  height: 5,
-                  decoration: BoxDecoration(
-                    color: isDark
-                        ? Colors.white.withOpacity(0.18)
-                        : Colors.black.withOpacity(0.18),
-                    borderRadius: BorderRadius.circular(999),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 2, 12, 10),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: Text(
-                          "Filtros",
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                            color: text,
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        tooltip: "Fechar",
-                        onPressed: () => Navigator.pop(context),
-                        icon: Icon(
-                          Icons.close_rounded,
-                          color: isDark ? brand : null,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                Expanded(
-                  child: SingleChildScrollView(
-                    controller: scrollCtrl,
-                    padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        FiltersBarPretty(
-                          fBom: _fBom,
-                          fAlerta: _fAlerta,
-                          fVencido: _fVencido,
-                          onToggleBom: () => setState(() => _fBom = !_fBom),
-                          onToggleAlerta: () => setState(() => _fAlerta = !_fAlerta),
-                          onToggleVencido: () => setState(() => _fVencido = !_fVencido),
-                          setores: setores,
-                          categorias: categorias,
-                          setorSelecionado: _setorFiltro,
-                          categoriaSelecionada: _categoriaFiltro,
-                          onSetorChanged: (v) => setState(() => _setorFiltro = v),
-                          onCategoriaChanged: (v) => setState(() => _categoriaFiltro = v),
-                          onClearAll: _clearAll,
-                          countBySetor: countBySetor,
-                          countByCategoria: countByCategoria,
-                          countBom: countBom,
-                          countAlerta: countAlerta,
-                          countVencido: countVencido,
-                        ),
-                        const SizedBox(height: 14),
-                        Container(
-                          width: double.infinity,
-                          padding: const EdgeInsets.all(12),
-                          decoration: BoxDecoration(
-                            color: card,
-                            borderRadius: BorderRadius.circular(16),
-                            border: Border.all(color: border),
-                          ),
-                          child: Text(
-                            "Você pode combinar status + setor + categoria + busca.",
-                            style: TextStyle(
-                              color: muted,
-                              height: 1.35,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 90),
-                      ],
+      return StatefulBuilder(
+        builder: (context, modalSetState) {
+          void atualizarModal(VoidCallback action) {
+            setState(action);     
+            modalSetState(() {});  
+          }
+
+          return DraggableScrollableSheet(
+            initialChildSize: 0.70,
+            minChildSize: 0.45,
+            maxChildSize: 0.92,
+            builder: (context, scrollCtrl) {
+              return Container(
+            
+                decoration: BoxDecoration(
+                  color: sheetBg,
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                  border: Border.all(color: border),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.18),
+                      blurRadius: 26,
+                      spreadRadius: 2,
+                      offset: const Offset(0, -10),
                     ),
-                  ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
-                  decoration: BoxDecoration(
-                    color: sheetBg,
-                    border: Border(
-                      top: BorderSide(color: border),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 10),
+                    Container(
+                      width: 44,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: isDark
+                            ? Colors.white.withOpacity(0.18)
+                            : Colors.black.withOpacity(0.18),
+                        borderRadius: BorderRadius.circular(999),
+                      ),
                     ),
-                  ),
-                  child: Row(
-                    children: [
-                      Expanded(
-                        child: TextButton.icon(
-                          onPressed: () {
-                            _clearAll();
-                            Navigator.pop(context);
-                          },
-                          style: TextButton.styleFrom(
-                            foregroundColor:
-                                isDark ? const Color(0xFFD4AF37) : const Color(0xFF2B2B2B),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
+                    const SizedBox(height: 10),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(16, 2, 12, 10),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              "Filtros",
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w900,
+                                color: text,
+                              ),
                             ),
                           ),
-                          icon: Icon(
-                            Icons.restart_alt_rounded,
-                            size: 18,
-                            color: isDark ? const Color(0xFFD4AF37) : Colors.black,
-                          ),
-                          label: Text(
-                            "Limpar",
-                            style: TextStyle(
-                              fontWeight: FontWeight.w800,
-                              color: isDark ? const Color(0xFFD4AF37) : Colors.black,
+                          IconButton(
+                            tooltip: "Fechar",
+                            onPressed: () => Navigator.pop(context),
+                            icon: Icon(
+                              Icons.close_rounded,
+                              color: isDark ? brand : null,
                             ),
                           ),
+                        ],
+                      ),
+                    ),
+                    Expanded(
+                      child: SingleChildScrollView(
+                        controller: scrollCtrl,
+                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            FiltersBarPretty(
+                              fBom: _fBom,
+                              fAlerta: _fAlerta,
+                              fVencido: _fVencido,
+
+                              onToggleBom: () => atualizarModal(() => _fBom = !_fBom),
+                              onToggleAlerta: () => atualizarModal(() => _fAlerta = !_fAlerta),
+                              onToggleVencido: () => atualizarModal(() => _fVencido = !_fVencido),
+
+                              setores: setores,
+                              categorias: categorias,
+                              setorSelecionado: _setorFiltro,
+                              categoriaSelecionada: _categoriaFiltro,
+
+                              onSetorChanged: (v) => atualizarModal(() => _setorFiltro = v),
+                              onCategoriaChanged: (v) => atualizarModal(() => _categoriaFiltro = v),
+
+                              onClearAll: () {
+                                atualizarModal(() {
+                                  _fBom = true;
+                                  _fAlerta = true;
+                                  _fVencido = true;
+                                  _setorFiltro = null;
+                                  _categoriaFiltro = null;
+                                  _searchCtrl.clear();
+                                });
+                              },
+
+                              countBySetor: countBySetor,
+                              countByCategoria: countByCategoria,
+                              countBom: countBom,
+                              countAlerta: countAlerta,
+                              countVencido: countVencido,
+                            ),
+                            const SizedBox(height: 14),
+                            Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.all(12),
+                              decoration: BoxDecoration(
+                                color: card,
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: border),
+                              ),
+                              child: Text(
+                                "Você pode combinar status + setor + categoria + busca.",
+                                style: TextStyle(
+                                  color: muted,
+                                  height: 1.35,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                            const SizedBox(height: 90),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: ElevatedButton.icon(
-                          onPressed: () => Navigator.pop(context),
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: brand,
-                            foregroundColor: onBrand,
-                            elevation: 0,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 14,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(14),
-                            ),
-                          ),
-                          icon: Icon(
-                            Icons.check_rounded,
-                            size: 18,
-                            color: onBrand,
-                          ),
-                          label: const Text(
-                            "Aplicar",
-                            style: TextStyle(fontWeight: FontWeight.w900),
-                          ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.fromLTRB(16, 10, 16, 16),
+                      decoration: BoxDecoration(
+                        color: sheetBg,
+                        border: Border(
+                          top: BorderSide(color: border),
                         ),
                       ),
-                    ],
-                  ),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: TextButton.icon(
+                              onPressed: () {
+                                atualizarModal(() {
+                                  _fBom = true;
+                                  _fAlerta = true;
+                                  _fVencido = true;
+                                  _setorFiltro = null;
+                                  _categoriaFiltro = null;
+                                  _searchCtrl.clear();
+                                });
+                                Navigator.pop(context);
+                              },
+                              style: TextButton.styleFrom(
+                                foregroundColor:
+                                    isDark ? const Color(0xFFD4AF37) : const Color(0xFF2B2B2B),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 14,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              icon: Icon(
+                                Icons.restart_alt_rounded,
+                                size: 18,
+                                color: isDark ? const Color(0xFFD4AF37) : Colors.black,
+                              ),
+                              label: Text(
+                                "Limpar",
+                                style: TextStyle(
+                                  fontWeight: FontWeight.w800,
+                                  color: isDark ? const Color(0xFFD4AF37) : Colors.black,
+                                ),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: ElevatedButton.icon(
+                              onPressed: () => Navigator.pop(context),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: brand,
+                                foregroundColor: onBrand,
+                                elevation: 0,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                  vertical: 14,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
+                              icon: Icon(
+                                Icons.check_rounded,
+                                size: 18,
+                                color: onBrand,
+                              ),
+                              label: const Text(
+                                "Aplicar",
+                                style: TextStyle(fontWeight: FontWeight.w900),
+                              ),
+                            ),
+                          ),
+                          
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 50),
+                  ],
                 ),
-              ],
-            ),
-          );
+              );
+            }
+          );  
         },
       );
     },
