@@ -118,6 +118,9 @@ class PreviewPanelV2 extends StatelessWidget {
                     child: SingleChildScrollView(
                       scrollDirection: Axis.horizontal,
                       child: EtiquetaPreviewImageWidgetV2(
+                        key: ValueKey(
+                          '${config.tipoEtiquetaId}_${config.preset.storageKey}_${config.tamanhoFonte.name}_${config.campos.map((c) => '${c.id}:${c.visivel}:${c.ordem}:${c.isBold}:${c.align}').join('|')}',
+                        ),
                         config: config,
                         isInvalid: isInvalid,
                         errorMessage: designProvider.validation?.message,

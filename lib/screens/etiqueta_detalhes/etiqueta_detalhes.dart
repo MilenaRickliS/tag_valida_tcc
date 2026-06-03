@@ -445,6 +445,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
 
     var design = await repo.loadSavedByTipoId(
       etiqueta.tipoId,
+      uid: uid,
       preset: presetFinal,
     );
 
@@ -453,6 +454,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
 
       design = await repo.loadSavedByTipoId(
         etiqueta.tipoId,
+        uid: uid,
         preset: presetFinal,
       );
     }
@@ -468,6 +470,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
     );
 
     await appService.imprimirEtiquetaComDesignV2(
+      uid: uid,
       printer: printer,
       etiqueta: etiqueta,
       usuario: usuario,
@@ -530,6 +533,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
 
       var design = await repo.loadSavedByTipoId(
         etiqueta.tipoId,
+        uid: widget.uid,
         preset: presetFinal,
       );
 
@@ -538,6 +542,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
 
         design = await repo.loadSavedByTipoId(
           etiqueta.tipoId,
+          uid: widget.uid,
           preset: presetFinal,
         );
       }
@@ -547,6 +552,7 @@ class _EtiquetaDetalhesScreenState extends State<EtiquetaDetalhesScreen> {
 
         design = await repo.loadSavedByTipoId(
           etiqueta.tipoId,
+          uid: widget.uid,
           preset: presetFinal,
         );
       }

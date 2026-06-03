@@ -410,6 +410,7 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
       if (tiposProvider.items.isNotEmpty && designProvider.config == null) {
         await designProvider.loadTipo(
           tiposProvider.items.first,
+          uid: uid,
           preset: EtiquetaLayoutPreset.mm60x40,
         );
       }
@@ -429,7 +430,19 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
 
     final tiposProvider = context.watch<TiposEtiquetaProvider>();
     final designProvider = context.watch<DesignEtiquetaV2Provider>();
+    final uid = context.watch<AuthProvider>().user?.uid;
 
+    if (uid == null || uid.isEmpty) {
+      return Scaffold(
+        backgroundColor: bg,
+        body: Center(
+          child: Text(
+            'Faça login novamente.',
+            style: TextStyle(color: text),
+          ),
+        ),
+      );
+    }
     final tipos = tiposProvider.items;
     final config = designProvider.config;
 
@@ -456,15 +469,17 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
                     TipoEtiquetaDesignSelectorV2(
                       tipos: tipos,
                       selectedId: designProvider.tipoSelecionado?.id,
-                      onSelected: (tipo) async {
-                        await context
-                            .read<DesignEtiquetaV2Provider>()
-                            .loadTipo(
-                              tipo,
-                              preset: context
-                                  .read<DesignEtiquetaV2Provider>()
-                                  .preset,
-                            );
+                     onSelected: (tipo) async {
+                        final provider = context.read<DesignEtiquetaV2Provider>();
+
+                        final salvou = await provider.saveAtual(uid);
+                        if (!salvou) return;
+
+                        await provider.loadTipo(
+                          tipo,
+                          uid: uid,
+                          preset: provider.preset,
+                        );
                       },
                       isDark: isDark,
                     ),
@@ -473,10 +488,14 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
                     TamanhoEtiquetaSelectorV2(
                       selected: designProvider.preset,
                       onChanged: (preset) async {
-                        await context
-                            .read<DesignEtiquetaV2Provider>()
-                            .setPreset(preset);
-                      },
+                          final provider = context.read<DesignEtiquetaV2Provider>();
+
+                          final salvou = await provider.saveAtual(uid);
+                          if (!salvou) return;
+
+
+                          await provider.setPreset(preset, uid: uid);
+                        },
                       isDark: isDark,
                     ),
                     const SizedBox(height: 18),

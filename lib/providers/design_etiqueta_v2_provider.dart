@@ -33,80 +33,12 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
 
   bool get canSave => _validation?.ok ?? true;
 
-  DesignEtiquetaV2Model _mergeCamposCustomDoTipo(
-  DesignEtiquetaV2Model design,
-  TipoEtiquetaModel tipo,
-) {
-  final campos = [...design.campos];
-
-  String normalizar(String s) {
-    return s
-        .toLowerCase()
-        .trim()
-        .replaceAll('ç', 'c')
-        .replaceAll('ã', 'a')
-        .replaceAll('á', 'a')
-        .replaceAll('à', 'a')
-        .replaceAll('â', 'a')
-        .replaceAll('é', 'e')
-        .replaceAll('ê', 'e')
-        .replaceAll('í', 'i')
-        .replaceAll('ó', 'o')
-        .replaceAll('ô', 'o')
-        .replaceAll('õ', 'o')
-        .replaceAll('ú', 'u');
-  }
-
-  for (final custom in tipo.camposCustom) {
-    if (custom.tipo == CampoTipo.image) continue;
-
-    final indexMesmoId = campos.indexWhere((c) => c.id == custom.key);
-    if (indexMesmoId != -1) continue;
-
-    final nomeCustom = normalizar(custom.label);
-
-    final indexMesmoNome = campos.indexWhere(
-      (c) => normalizar(c.nome) == nomeCustom,
-    );
-
-    if (indexMesmoNome != -1) {
-      final antigo = campos[indexMesmoNome];
-
-      campos[indexMesmoNome] = antigo.copyWith(
-        id: custom.key,
-        nome: custom.label,
-        tipo: CampoDesignV2Tipo.info,
-        labelImpresso: custom.label,
-        valorExemplo: custom.label,
-        obrigatorio: false,
-      );
-
-      continue;
-    }
-
-    campos.add(
-      CampoDesignEtiquetaV2Model(
-        id: custom.key,
-        nome: custom.label,
-        tipo: CampoDesignV2Tipo.info,
-        ordem: campos.length,
-        visivel: true,
-        obrigatorio: false,
-        isBold: false,
-        align: TextAlign.left,
-        labelImpresso: custom.label,
-        valorExemplo: custom.label,
-      ),
-    );
-  }
-
-  return design.copyWith(campos: campos);
-}
 
   Future<void> loadTipo(
     TipoEtiquetaModel tipo, {
+    required String uid,
     EtiquetaLayoutPreset preset = EtiquetaLayoutPreset.mm60x40,
-  }) async {
+  })async {
     _tipoSelecionado = tipo;
     _preset = preset;
 
@@ -115,15 +47,21 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
 
     final design = await repo.loadForTipo(
       tipo,
+      uid: uid,
       preset: preset,
     );
 
-    final designComCamposCustom = _mergeCamposCustomDoTipo(
-      DesignEtiquetaV2Model.fromMap(design.toMap()).copyWith(preset: preset),
-      tipo,
-    );
+    debugPrint('PROVIDER LOAD TIPO: ${tipo.id} - ${tipo.nome}');
+    debugPrint('PROVIDER RECEBEU CAMPOS: ${design.campos.map((c) => '${c.id}:${c.visivel}:${c.ordem}').join(' | ')}');
 
-    _config = designComCamposCustom;
+    final normalizado = DesignEtiquetaV2Model.fromMap(
+      design.toMap(),
+    ).copyWith(preset: preset);
+
+
+     _config = normalizado.copyWith(
+      campos: _deduplicarCampos(normalizado.campos),
+    );
 
     _revalidateInternal();
 
@@ -131,36 +69,74 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<void> setPreset(EtiquetaLayoutPreset preset) async {
+  Future<void> setPreset(
+    EtiquetaLayoutPreset preset, {
+    required String uid,
+  }) async {
     if (_tipoSelecionado == null) return;
 
     _preset = preset;
 
-    await loadTipo(_tipoSelecionado!, preset: preset);
+    await loadTipo(
+      _tipoSelecionado!,
+      uid: uid,
+      preset: preset,
+    );
   }
 
-  Future<void> saveAtual(String uid) async {
+  Future<bool> saveAtual(String uid) async {
     final cfg = _config;
-    if (cfg == null) return;
+    if (cfg == null) return false;
+
+    final camposSemImagem = cfg.campos.map((c) {
+      if (c.tipo == CampoDesignV2Tipo.imagem || c.id == 'imagem') {
+        return c.copyWith(visivel: false);
+      }
+      return c;
+    }).toList();
+
+    _config = cfg.copyWith(
+      campos: _deduplicarCampos(camposSemImagem),
+    );
 
     _revalidateInternal();
+
     if (!canSave) {
       notifyListeners();
-      return;
+      return false;
     }
-
 
     _saving = true;
     notifyListeners();
 
     await repo.saveForTipo(
-      cfg,
+      _config!,
       preset: preset,
       uid: uid,
     );
 
+    final tipo = _tipoSelecionado;
+
+    if (tipo != null) {
+      final recarregado = await repo.loadForTipo(
+        tipo,
+        uid: uid,
+        preset: preset,
+      );
+
+      final normalizado = recarregado.copyWith(preset: preset);
+
+       _config = normalizado.copyWith(
+        campos: _deduplicarCampos(normalizado.campos),
+      );
+
+      _revalidateInternal();
+    }
+
     _saving = false;
     notifyListeners();
+
+    return true;
   }
 
   Future<void> resetAtual(String uid) async {
@@ -176,7 +152,49 @@ class DesignEtiquetaV2Provider extends ChangeNotifier {
       uid: uid,
     );
 
-    await loadTipo(tipo, preset: _preset);
+    await loadTipo(
+      tipo,
+      uid: uid,
+      preset: _preset,
+    );
+  }
+
+  String _normalizarCampoId(String id) {
+    var key = id.trim().toLowerCase();
+
+    if (key.startsWith('custom_')) {
+      key = key.substring(7);
+    }
+
+    return key;
+  }
+
+  List<CampoDesignEtiquetaV2Model> _deduplicarCampos(
+    List<CampoDesignEtiquetaV2Model> campos,
+  ) {
+    final map = <String, CampoDesignEtiquetaV2Model>{};
+
+    for (final campo in campos) {
+      final key = _normalizarCampoId(campo.id);
+
+      if (!map.containsKey(key)) {
+        map[key] = campo;
+      } else {
+        final antigo = map[key]!;
+
+        final preferido = antigo.id.startsWith('custom_') ? antigo : campo;
+
+        map[key] = preferido.copyWith(
+          visivel: antigo.visivel || campo.visivel,
+          isBold: antigo.isBold || campo.isBold,
+          align: antigo.align,
+          ordem: antigo.ordem < campo.ordem ? antigo.ordem : campo.ordem,
+        );
+      }
+    }
+
+    return map.values.toList()
+      ..sort((a, b) => a.ordem.compareTo(b.ordem));
   }
 
   void _revalidateInternal() {

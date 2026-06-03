@@ -17,6 +17,7 @@ class PrinterAppServiceV2 {
   });
 
   Future<void> imprimirEtiquetaComDesignV2({
+    required String uid,
     required PrinterConfigModel printer,
     required EtiquetaModel etiqueta,
     required UserModel usuario,
@@ -42,6 +43,7 @@ class PrinterAppServiceV2 {
 
     final design = await designRepo.loadSavedByTipoId(
       etiqueta.tipoId,
+      uid: uid,
       preset: preset,
     );
 

@@ -23,9 +23,7 @@ Widget buildConfigPanelV2({
   required DesignEtiquetaV2Model config,
   required DesignEtiquetaV2Provider designProvider,
 }) {
-  final camposVisiveis = config.campos
-    .where((c) => c.tipo != CampoDesignV2Tipo.imagem)
-    .toList();
+  final camposVisiveis = config.campos.toList();
   return Container(
     width: double.infinity,
     padding: const EdgeInsets.all(20),
@@ -125,12 +123,19 @@ Widget buildConfigPanelV2({
               spacing: 10,
               children: [
                 OutlinedButton.icon(
-                  onPressed: designProvider.loading
-                      ? null
-                      : () async {
-                        final uid = context.read<AuthProvider>().user!.uid;
-                          await designProvider.resetAtual(uid);
-                        },
+                onPressed: designProvider.loading
+                  ? null
+                  : () async {
+                      final uid = context.read<AuthProvider>().user!.uid;
+
+                      await designProvider.resetAtual(uid);
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text('Design restaurado para o padrão.'),
+                        ),
+                      );
+                    },
                   icon: const Icon(Icons.restart_alt_rounded),
                   label: const Text('Restaurar'),
                 ),
@@ -138,29 +143,55 @@ Widget buildConfigPanelV2({
                   style: FilledButton.styleFrom(
                     backgroundColor: _orange,
                   ),
-                  onPressed: designProvider.saving || !designProvider.canSave
-                      ? null
-                      : () async {
+                  onPressed: designProvider.saving
+                    ? null
+                    : () async {
                         final uid = context.read<AuthProvider>().user!.uid;
-                          await designProvider.saveAtual(uid);
 
-                          final validation = designProvider.validation;
+                        final camposImagem = designProvider.config?.campos
+                                .where((c) =>
+                                    c.tipo == CampoDesignV2Tipo.imagem ||
+                                    c.id == 'imagem')
+                                .toList() ??
+                            [];
 
-                          if (validation != null && !validation.ok) {
-                            ScaffoldMessenger.of(context).showSnackBar(
-                              SnackBar(
-                                content: Text(validation.message ?? ''),
-                              ),
-                            );
-                            return;
+                        for (final campo in camposImagem) {
+                          if (campo.visivel) {
+                            designProvider.toggleCampo(campo.id, false);
                           }
+                        }
 
+                        final salvou = await designProvider.saveAtual(uid);
+
+                        if (!salvou) {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Design salvo com sucesso.'),
+                            SnackBar(
+                              content: Text(
+                                designProvider.validation?.message ??
+                                    'Não foi possível salvar. Ajuste o layout da etiqueta.',
+                              ),
                             ),
                           );
-                        },
+                          return;
+                        }
+
+                        final validation = designProvider.validation;
+
+                        if (validation != null && !validation.ok) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text(validation.message ?? 'Design salvo, mas o layout precisa de ajuste.'),
+                            ),
+                          );
+                          return;
+                        }
+
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Design salvo com sucesso.'),
+                          ),
+                        );
+                      },
                   icon: designProvider.saving
                       ? const SizedBox(
                           width: 16,

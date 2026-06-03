@@ -1,6 +1,5 @@
 import 'dart:convert';
-import 'package:sqflite/sqflite.dart';
-
+import 'package:flutter/foundation.dart';
 import '../../../../models/design_etiqueta_v2_model.dart';
 import '../../../../models/tipo_etiqueta_model.dart';
 import '../../../models/etiqueta_layout_preset.dart';
@@ -18,14 +17,19 @@ class DesignEtiquetaV2LocalRepo {
 
   Future<DesignEtiquetaV2Model> loadForTipo(
     TipoEtiquetaModel tipo, {
+    required String uid,
     EtiquetaLayoutPreset preset = EtiquetaLayoutPreset.mm60x40,
-  }) async {
+  })async {
     final defaultModel = DesignEtiquetaV2DefaultMapper.fromTipoEtiqueta(
       tipo,
       preset: preset,
     );
 
-    final saved = await loadSavedByTipoId(tipo.id, preset: preset);
+    final saved = await loadSavedByTipoId(
+      tipo.id,
+      uid: uid,
+      preset: preset,
+    );
 
     if (saved == null) return defaultModel;
 
@@ -34,23 +38,31 @@ class DesignEtiquetaV2LocalRepo {
 
   Future<DesignEtiquetaV2Model?> loadSavedByTipoId(
     String tipoId, {
+    required String uid,
     EtiquetaLayoutPreset preset = EtiquetaLayoutPreset.mm60x40,
   }) async {
     final local = await AppDb.instance.db;
 
     final rows = await local.query(
       _table,
-      where: 'tipoEtiquetaId = ? AND preset = ?',
-      whereArgs: [tipoId, preset.storageKey],
+      where: 'uid = ? AND tipoEtiquetaId = ? AND preset = ?',
+      whereArgs: [uid, tipoId, preset.storageKey],
+      orderBy: 'updatedAt DESC',
       limit: 1,
     );
+
+    debugPrint('BUSCANDO DESIGN SALVO');
+    debugPrint('uid: $uid');
+    debugPrint('tipo: $tipoId');
+    debugPrint('preset: ${preset.storageKey}');
+    debugPrint('rows encontrados: ${rows.length}');
 
     if (rows.isEmpty) return null;
 
     try {
       final row = rows.first;
 
-      return DesignEtiquetaV2Mapper.fromMap({
+     final model = DesignEtiquetaV2Mapper.fromMap({
         'tipoEtiquetaId': row['tipoEtiquetaId'],
         'tipoEtiquetaNome': row['tipoEtiquetaNome'],
         'preset': row['preset'],
@@ -61,8 +73,14 @@ class DesignEtiquetaV2LocalRepo {
             (row['destacarValidade'] as int? ?? 1) == 1,
         'campos': jsonDecode(row['camposJson'].toString()),
       });
-    } catch (_) {
-      return null;
+
+      debugPrint('LOAD SAVED CAMPOS: ${model.campos.map((c) => '${c.id}:${c.visivel}:${c.ordem}').join(' | ')}');
+
+      return model;
+    } catch (e, s) {
+      debugPrint('ERRO AO CARREGAR DESIGN SALVO: $e');
+      debugPrint('$s');
+      rethrow;
     }
   }
 
@@ -103,11 +121,24 @@ class DesignEtiquetaV2LocalRepo {
       'updatedAtMs': now,
     };
 
+    debugPrint('SALVANDO DESIGN');
+    debugPrint('uid: $uid');
+    debugPrint('tipo: ${model.tipoEtiquetaId}');
+    debugPrint('preset: ${preset.storageKey}');
+    debugPrint('campos: $camposJson');
+
     await local.transaction((txn) async {
+    
+
+      await txn.delete(
+        _table,
+        where: 'uid = ? AND tipoEtiquetaId = ? AND preset = ?',
+        whereArgs: [uid, model.tipoEtiquetaId, preset.storageKey],
+      );
+
       await txn.insert(
         _table,
         row,
-        conflictAlgorithm: ConflictAlgorithm.replace,
       );
 
       await txn.insert(
@@ -170,28 +201,48 @@ class DesignEtiquetaV2LocalRepo {
     }
   }
 
-  DesignEtiquetaV2Model _mergeWithDefault(
+ DesignEtiquetaV2Model _mergeWithDefault(
     DesignEtiquetaV2Model saved,
     DesignEtiquetaV2Model defaultModel,
     EtiquetaLayoutPreset preset,
   ) {
     final savedMap = {
-      for (final c in saved.campos) c.id: c,
+      for (final c in saved.campos) c.id.trim().toLowerCase(): c,
     };
 
+    final defaultIds = defaultModel.campos
+        .map((c) => c.id.trim().toLowerCase())
+        .toSet();
+
     final mergedCampos = defaultModel.campos.map((defaultCampo) {
-      final savedCampo = savedMap[defaultCampo.id];
+      final key = defaultCampo.id.trim().toLowerCase();
+      final savedCampo = savedMap[key];
 
       if (savedCampo == null) return defaultCampo;
 
       return defaultCampo.copyWith(
-        visivel: defaultCampo.obrigatorio ? true : savedCampo.visivel,
+        visivel: savedCampo.visivel,
         isBold: savedCampo.isBold,
         align: savedCampo.align,
         ordem: savedCampo.ordem,
       );
-    }).toList()
-      ..sort((a, b) => a.ordem.compareTo(b.ordem));
+    }).toList();
+
+    final camposCustomSalvos = saved.campos.where((campo) {
+      final key = campo.id.trim().toLowerCase();
+      return !defaultIds.contains(key);
+    }).toList();
+
+    final todosCampos = [
+      ...mergedCampos,
+      ...camposCustomSalvos,
+    ]..sort((a, b) => a.ordem.compareTo(b.ordem));
+
+    debugPrint('DEFAULT CAMPOS: ${defaultModel.campos.map((c) => '${c.id}:${c.visivel}:${c.ordem}').join(' | ')}');
+
+    debugPrint('SAVED CAMPOS: ${saved.campos.map((c) => '${c.id}:${c.visivel}:${c.ordem}').join(' | ')}');
+
+    debugPrint('MERGE FINAL CAMPOS: ${todosCampos.map((c) => '${c.id}:${c.visivel}:${c.ordem}').join(' | ')}');
 
     return DesignEtiquetaV2Model(
       tipoEtiquetaId: defaultModel.tipoEtiquetaId,
@@ -200,7 +251,7 @@ class DesignEtiquetaV2LocalRepo {
       tamanhoFonte: saved.tamanhoFonte,
       mostrarMarcaTagValida: saved.mostrarMarcaTagValida,
       destacarValidade: saved.destacarValidade,
-      campos: mergedCampos,
+      campos: todosCampos,
     );
   }
 }

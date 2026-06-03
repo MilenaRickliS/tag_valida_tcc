@@ -92,7 +92,7 @@ Widget buildEtiquetaPreviewV2(
   required bool isInvalid,
   String? errorMessage,
 }) {
-  final camposOrdenados = [...config.campos]
+  final camposOrdenados = _deduplicarCamposPreview(config.campos)
     ..sort((a, b) => a.ordem.compareTo(b.ordem));
 
   final camposPreview = camposOrdenados.where((c) => c.visivel).toList();
@@ -128,6 +128,9 @@ Widget buildEtiquetaPreviewV2(
 
   final brandFontSize =
       baseBrandFontSize * layout.fontFactor;
+  
+
+  debugPrint('PREVIEW CAMPOS VISIVEIS: ${camposPreview.map((c) => '${c.id}:${c.visivel}:${c.ordem}').join(' | ')}');
 
   return DefaultTextStyle(
     style: const TextStyle(
@@ -329,4 +332,20 @@ CampoDesignEtiquetaV2Model? _findCampoV2(
   } catch (_) {
     return null;
   }
+}
+
+List<CampoDesignEtiquetaV2Model> _deduplicarCamposPreview(
+  List<CampoDesignEtiquetaV2Model> campos,
+) {
+  final map = <String, CampoDesignEtiquetaV2Model>{};
+
+  for (final campo in campos) {
+    final key = campo.id.trim().toLowerCase();
+
+    if (!map.containsKey(key)) {
+      map[key] = campo;
+    }
+  }
+
+  return map.values.toList();
 }

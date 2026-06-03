@@ -25,14 +25,15 @@ Widget campoConfigTileV2({
   final text = isDark ? Colors.white : _lightText;
   final muted = text.withOpacity(0.65);
   final isQrCode = campo.tipo == CampoDesignV2Tipo.qrcode;
+  final isImagem = campo.tipo == CampoDesignV2Tipo.imagem;
   final isTabelaNutricional =
       campo.tipo == CampoDesignV2Tipo.tabelaNutricional ||
       campo.id == 'tabela_nutricional';
   
-  final podeEditarEstilo = !isQrCode && !isTabelaNutricional;
+  final podeEditarEstilo = !isQrCode && !isTabelaNutricional && !isImagem;
 
   final podeAlinhar = !isQrCode &&
-    !isTabelaNutricional &&
+    !isTabelaNutricional && !isImagem && 
     (
       !temTabelaNutricional ||
       campo.id == 'empresa' ||
@@ -42,7 +43,9 @@ Widget campoConfigTileV2({
   return Container(
     padding: const EdgeInsets.all(14),
     decoration: BoxDecoration(
-      color: tileBg,
+      color: isImagem
+          ? tileBg.withOpacity(0.55)
+          : tileBg,
       borderRadius: BorderRadius.circular(18),
       border: Border.all(color: border),
     ),
@@ -50,14 +53,14 @@ Widget campoConfigTileV2({
       children: [
         Row(
           children: [
-            isTabelaNutricional
+            isTabelaNutricional || isImagem
               ? const SizedBox(width: 24)
               : dragHandle,
             const SizedBox(width: 10),
 
             Checkbox(
               value: campo.visivel,
-              onChanged: onToggle,
+              onChanged: isImagem ? null : onToggle,
               activeColor: _orange,
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(4),
@@ -83,6 +86,10 @@ Widget campoConfigTileV2({
                       if (bloqueado || isTabelaNutricional) ...[
                         const SizedBox(width: 6),
                         _tag('Fixo'),
+                      ],
+                      if (isImagem) ...[
+                        const SizedBox(width: 6),
+                        _tag('Campo em teste'),
                       ],
                     ],
                   ),
