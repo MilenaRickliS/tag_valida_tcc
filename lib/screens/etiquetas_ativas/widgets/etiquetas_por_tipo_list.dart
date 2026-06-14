@@ -579,7 +579,15 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
         final totalPorUnidade = <String, num>{};
 
         
-        for (final e in all) {
+        final allAtivas = all.where((e) {
+          final st = e.statusEstoque.trim().isEmpty
+              ? "ativo"
+              : e.statusEstoque.trim().toLowerCase();
+
+          return st == "ativo";
+        }).toList();
+
+        for (final e in allAtivas) {
           final unidade = e.unidadeMedida.trim().isEmpty ? 'un' : e.unidadeMedida;
 
           final qtd = e.quantidade;
@@ -630,8 +638,8 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
             ? "Sem categoria"
             : e.categoriaNome.trim();
 
-        final setores = all.map(setorKey).toSet().toList()..sort();
-        final categorias = all.map(categoriaKey).toSet().toList()..sort();
+        final setores = allAtivas.map(setorKey).toSet().toList()..sort();
+        final categorias = allAtivas.map(categoriaKey).toSet().toList()..sort();
 
         if (_setorFiltro != null && !setores.contains(_setorFiltro)) {
           _setorFiltro = null;
@@ -645,7 +653,7 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
         final countBySetor = <String, int>{};
         final countByCategoria = <String, int>{};
 
-        for (final e in all) {
+        for (final e in allAtivas) {
           final val = e.dataValidade;
           if (_isVencida(val)) {
             countVencido++;
@@ -674,31 +682,26 @@ class _EtiquetasPorTipoListState extends State<EtiquetasPorTipoList> {
 
        
         final q = _q.trim().toLowerCase();
-          var items = all.where((e) {
-                  final st = (e.statusEstoque.trim().isEmpty)
-              ? "ativo"
-              : e.statusEstoque.trim().toLowerCase();
+          var items = allAtivas.where((e) {
+                  
+            final val = e.dataValidade;
 
-        
-          if (st != "ativo") return false;
-          final val = e.dataValidade;
+            final okStatus = (_fVencido && _isVencida(val)) ||
+                (_fAlerta && _isAlerta(val)) ||
+                (_fBom && _isBom(val));
+            if (!okStatus) return false;
 
-          final okStatus = (_fVencido && _isVencida(val)) ||
-              (_fAlerta && _isAlerta(val)) ||
-              (_fBom && _isBom(val));
-          if (!okStatus) return false;
+            if (_setorFiltro != null && setorKey(e) != _setorFiltro) return false;
+            if (_categoriaFiltro != null && categoriaKey(e) != _categoriaFiltro) {
+              return false;
+            }
 
-          if (_setorFiltro != null && setorKey(e) != _setorFiltro) return false;
-          if (_categoriaFiltro != null && categoriaKey(e) != _categoriaFiltro) {
-            return false;
-          }
+            if (q.isNotEmpty) {
+              final nome = (e.produtoNome).trim().toLowerCase();
+              if (!nome.contains(q)) return false;
+            }
 
-          if (q.isNotEmpty) {
-            final nome = (e.produtoNome).trim().toLowerCase();
-            if (!nome.contains(q)) return false;
-          }
-
-          return true;
+            return true;
         }).toList();
 
         
