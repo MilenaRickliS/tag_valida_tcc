@@ -211,23 +211,30 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
             'sufixo': ' kg',
             'casasDecimais': 2,
           },
-          'ingredientes': {
-            'tipo': 'multiline',
-            'label': 'Ingredientes',
-            'value': 'Farinha de trigo, açúcar, ovos, leite, chocolate em pó e fermento.',
-            'prefixo': null,
-            'sufixo': null,
-            'casasDecimais': 2,
-          },
+         'ingredientes': {
+              'tipo': 'multiline',
+              'label': 'Ingredientes',
+              'value': '''
+            Farinha de trigo,
+            açúcar,
+            ovos,
+            leite,
+            chocolate em pó,
+            fermento.
+            ''',
+            },
 
-          'alergenicos': {
-            'tipo': 'multiline',
-            'label': 'Alergênicos',
-            'value': 'Contém glúten, leite e ovos. Pode conter soja.',
-            'prefixo': null,
-            'sufixo': null,
-            'casasDecimais': 2,
-          },
+            'alergenicos': {
+              'tipo': 'multiline',
+              'label': 'Alergênicos',
+              'value': '''
+            CONTÉM:
+            Glúten, leite e ovos.
+
+            PODE CONTER:
+            Soja.
+            ''',
+            },
           'congelado': {
             'tipo': 'bool',
             'label': 'Congelado',
@@ -288,22 +295,29 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
             },
           },
           'ingredientes': {
-              'tipo': 'multiline',
-              'label': 'Ingredientes',
-              'value': 'Farinha de trigo, açúcar, ovos, leite, chocolate em pó e fermento.',
-              'prefixo': null,
-              'sufixo': null,
-              'casasDecimais': 2,
-            },
+            'tipo': 'multiline',
+            'label': 'Ingredientes',
+            'value': '''
+          Farinha de trigo,
+          açúcar,
+          ovos,
+          leite,
+          chocolate em pó,
+          fermento.
+          ''',
+          },
 
-            'alergenicos': {
-              'tipo': 'multiline',
-              'label': 'Alergênicos',
-              'value': 'Contém glúten, leite e ovos. Pode conter soja.',
-              'prefixo': null,
-              'sufixo': null,
-              'casasDecimais': 2,
-            },
+          'alergenicos': {
+            'tipo': 'multiline',
+            'label': 'Alergênicos',
+            'value': '''
+          CONTÉM:
+          Glúten, leite e ovos.
+
+          PODE CONTER:
+          Soja.
+          ''',
+          },
           'peso': {
             'tipo': 'decimal',
             'label': 'Peso',

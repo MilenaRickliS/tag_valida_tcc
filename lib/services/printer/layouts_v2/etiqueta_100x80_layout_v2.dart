@@ -257,7 +257,7 @@ class Etiqueta100x80LayoutV2 {
         ),
         align: TextAlign.left,
         isBold: bold,
-        maxLines: 1,
+        maxLines: maxLines,
       );
     }
 
