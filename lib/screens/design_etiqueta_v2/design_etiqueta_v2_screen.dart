@@ -211,6 +211,23 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
             'sufixo': ' kg',
             'casasDecimais': 2,
           },
+          'ingredientes': {
+            'tipo': 'multiline',
+            'label': 'Ingredientes',
+            'value': 'Farinha de trigo, açúcar, ovos, leite, chocolate em pó e fermento.',
+            'prefixo': null,
+            'sufixo': null,
+            'casasDecimais': 2,
+          },
+
+          'alergenicos': {
+            'tipo': 'multiline',
+            'label': 'Alergênicos',
+            'value': 'Contém glúten, leite e ovos. Pode conter soja.',
+            'prefixo': null,
+            'sufixo': null,
+            'casasDecimais': 2,
+          },
           'congelado': {
             'tipo': 'bool',
             'label': 'Congelado',
@@ -270,6 +287,23 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
               'modo': 'kg',
             },
           },
+          'ingredientes': {
+              'tipo': 'multiline',
+              'label': 'Ingredientes',
+              'value': 'Farinha de trigo, açúcar, ovos, leite, chocolate em pó e fermento.',
+              'prefixo': null,
+              'sufixo': null,
+              'casasDecimais': 2,
+            },
+
+            'alergenicos': {
+              'tipo': 'multiline',
+              'label': 'Alergênicos',
+              'value': 'Contém glúten, leite e ovos. Pode conter soja.',
+              'prefixo': null,
+              'sufixo': null,
+              'casasDecimais': 2,
+            },
           'peso': {
             'tipo': 'decimal',
             'label': 'Peso',
