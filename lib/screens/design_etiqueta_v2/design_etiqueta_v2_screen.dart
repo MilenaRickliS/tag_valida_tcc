@@ -214,25 +214,16 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
          'ingredientes': {
               'tipo': 'multiline',
               'label': 'Ingredientes',
-              'value': '''
-            Farinha de trigo,
-            açúcar,
-            ovos,
-            leite,
-            chocolate em pó,
-            fermento.
+              'value': '''Farinha de trigo,açúcar,ovos,leite,
+              chocolate em pó,fermento.
             ''',
             },
 
             'alergenicos': {
               'tipo': 'multiline',
               'label': 'Alergênicos',
-              'value': '''
-            CONTÉM:
-            Glúten, leite e ovos.
-
-            PODE CONTER:
-            Soja.
+              'value': '''CONTÉM:Glúten, leite e ovos.
+              PODE CONTER:Soja.
             ''',
             },
           'congelado': {
@@ -297,25 +288,19 @@ class _DesignEtiquetaV2ScreenState extends State<DesignEtiquetaV2Screen> {
           'ingredientes': {
             'tipo': 'multiline',
             'label': 'Ingredientes',
-            'value': '''
-          Farinha de trigo,
-          açúcar,
-          ovos,
-          leite,
-          chocolate em pó,
-          fermento.
+            'value': '''Farinha 
+            de trigo,açúcar,ovos,
+            leite,chocolate em
+            pó,fermento.
           ''',
           },
 
           'alergenicos': {
             'tipo': 'multiline',
             'label': 'Alergênicos',
-            'value': '''
-          CONTÉM:
-          Glúten, leite e ovos.
-
-          PODE CONTER:
-          Soja.
+            'value': '''CONTÉM:
+            Glúten, leite e ovos.
+            PODE CONTER: Soja.
           ''',
           },
           'peso': {

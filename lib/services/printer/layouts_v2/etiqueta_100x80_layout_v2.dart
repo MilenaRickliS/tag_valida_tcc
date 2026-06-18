@@ -196,10 +196,11 @@ class Etiqueta100x80LayoutV2 {
           : campo.id.contains('ingred') ||
                   campo.id.contains('alerg') ||
                   campo.id.contains('observ')
-              ? 90
+              ? 120
               : 60,
-        maxWidth: leftColW,
+        maxWidth: hasTabelaNutricional ? 285 : leftColW,
         maxLines: campo.id == 'validade' && hasTabelaNutricional ? 2 : _maxLinesForCampo(campo, design),
+        hardRightLimit: hasTabelaNutricional ? 345 : null,
       );
 
       if (novoY <= limiteInferior) {
@@ -234,6 +235,7 @@ class Etiqueta100x80LayoutV2 {
     required int max,
     required int maxWidth,
     required int maxLines,
+    int? hardRightLimit,
   }) {
     
     final partes = text.split('|');
@@ -258,6 +260,7 @@ class Etiqueta100x80LayoutV2 {
         align: TextAlign.left,
         isBold: bold,
         maxLines: maxLines,
+        hardRightLimit: hardRightLimit,
       );
     }
 
