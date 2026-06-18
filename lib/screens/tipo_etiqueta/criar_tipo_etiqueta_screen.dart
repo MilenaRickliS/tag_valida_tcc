@@ -415,6 +415,13 @@ class _CriarTipoEtiquetaScreenState extends State<CriarTipoEtiquetaScreen> {
 
                   const SizedBox(height: 10),
 
+                  if (_permiteTabelaNutricional) ...[
+                      buildAvisoTabelaNutricional(
+                        isDark: isDark,
+                      ),
+                      const SizedBox(height: 10),
+                    ],
+
                   _switchCard(
                     title: "QR Code público",
                     subtitle: _tipoQr == TipoQrEtiqueta.publico
@@ -496,4 +503,49 @@ class _CriarTipoEtiquetaScreenState extends State<CriarTipoEtiquetaScreen> {
       ),
     );
   }
+}
+
+Widget buildAvisoTabelaNutricional({
+  required bool isDark,
+}) {
+  final bg = isDark
+      ? const Color(0xFF2A2112)
+      : const Color(0xFFFFF3E0);
+
+  final border = isDark
+      ? const Color(0xFFD4AF37).withOpacity(0.35)
+      : const Color(0xFFED7227).withOpacity(0.35);
+
+  final text = isDark ? Colors.white : const Color(0xFF3A2A1A);
+  final icon = isDark ? const Color(0xFFD4AF37) : const Color(0xFFED7227);
+
+  return Container(
+    padding: const EdgeInsets.all(14),
+    decoration: BoxDecoration(
+      color: bg,
+      borderRadius: BorderRadius.circular(16),
+      border: Border.all(color: border),
+    ),
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(Icons.warning_amber_rounded, color: icon),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            'Atenção: esta etiqueta possui tabela nutricional. '
+            'Verifique se a arte final contém ingredientes, alergênicos '
+            'e as lupas da rotulagem frontal, quando necessário, seguindo '
+            'a legislação. O app não imprime a imagem das lupas automaticamente; '
+            'elas devem ser adicionadas de outra forma na etiqueta.',
+            style: TextStyle(
+              color: text,
+              fontWeight: FontWeight.w700,
+              height: 1.35,
+            ),
+          ),
+        ),
+      ],
+    ),
+  );
 }
